@@ -1,5 +1,10 @@
 version: 1.2
 workflows:
+- name: HGSVC2DownloadAssemblies
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/HGSVC2DownloadAssemblies.wdl
+  testParameterFiles:
 - name: HGSVC2Download
   subclass: wdl
   publish: True

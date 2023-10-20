@@ -1,6 +1,7 @@
 version 1.0
 
 
+# Downloads BAM files up to a given coverage.
 #
 workflow HGSVC2Download {
     input {
