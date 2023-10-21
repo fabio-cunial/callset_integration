@@ -60,6 +60,7 @@ task HGSVC2DownloadImpl {
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         BILLING_PROJECT="broad-firecloud-dsde-methods"
         
+        LIST_FILE=~{write_lines(bam_addresses)}
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
         while read ADDRESS; do
@@ -81,7 +82,7 @@ task HGSVC2DownloadImpl {
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
             fi
-        done < ~{write_lines(bam_addresses)}
+        done < ${LIST_FILE}
         head -c ${TARGET_N_BYTES} tmp1.fastq > tmp2.fastq
         rm -f tmp1.fastq
         N_ROWS=$(wc -l < tmp2.fastq)
