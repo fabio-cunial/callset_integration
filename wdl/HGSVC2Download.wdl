@@ -71,9 +71,9 @@ task HGSVC2DownloadImpl {
             FILE_NAME=$(basename ${ADDRESS})
             if [[ ${FILE_NAME} == *.bam ]]; then
                 ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME} >> tmp1.fastq 
-            else if [[ ${FILE_NAME} == *.fastq.gz ]]; then
+            elif [[ ${FILE_NAME} == *.fastq.gz ]]; then
                 gunzip ${FILE_NAME} >> tmp1.fastq
-            else if [[ ${FILE_NAME} == *.fastq ]]; then
+            elif [[ ${FILE_NAME} == *.fastq ]]; then
                 cat ${FILE_NAME} >> tmp1.fastq
             fi
             rm -f ${FILE_NAME}
