@@ -67,7 +67,7 @@ task HGSVC2DownloadImpl {
             ${TIME_COMMAND} wget ${ADDRESS}
             FILE_NAME=$(basename ${ADDRESS})
             FILE_NAME=${FILE_NAME%.bam}
-            ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n >> tmp1.fastq 
+            ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME}.bam >> tmp1.fastq 
             N_BYTES=$(wc -c tmp1.fastq)
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
