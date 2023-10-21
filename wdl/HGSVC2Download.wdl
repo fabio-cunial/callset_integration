@@ -5,8 +5,8 @@ version 1.0
 #
 workflow HGSVC2Download {
     input {
-        Array[String] sample_ids
-        Array[File] bam_addresses
+        String sample_id
+        Array[String] bam_addresses
         Int target_coverage
         String remote_dir
         Int n_cpus
@@ -16,16 +16,14 @@ workflow HGSVC2Download {
         remote_dir: "Root directory in the remote bucket. Every sample is stored in a subdirectory."
     }
     
-    scatter(i in range(length(sample_ids))) {
-        call HGSVC2DownloadImpl {
-            input:
-                sample_id = sample_ids[i],
-                bam_addresses = bam_addresses[i],
-                target_coverage = target_coverage,
-                remote_dir = remote_dir,
-                n_cpus = n_cpus,
-                ram_size_gb = ram_size_gb
-        }
+    call HGSVC2DownloadImpl {
+        input:
+            sample_id = sample_id,
+            bam_addresses = bam_addresses,
+            target_coverage = target_coverage,
+            remote_dir = remote_dir,
+            n_cpus = n_cpus,
+            ram_size_gb = ram_size_gb
     }
     
     output {
@@ -36,7 +34,7 @@ workflow HGSVC2Download {
 task HGSVC2DownloadImpl {
     input {
         String sample_id
-        File bam_addresses
+        Array[String] bam_addresses
         Int target_coverage
         String remote_dir
         Int n_cpus
@@ -73,7 +71,7 @@ task HGSVC2DownloadImpl {
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
             fi
-        done < ~{bam_addresses}
+        done < ~{write_lines(bam_addresses)}
         head -c ${TARGET_N_BYTES} tmp1.fastq > tmp2.fastq
         rm -f tmp1.fastq
         N_ROWS=$(wc -l < tmp2.fastq)
