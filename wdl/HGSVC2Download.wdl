@@ -62,7 +62,11 @@ task HGSVC2DownloadImpl {
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
         while read ADDRESS; do
-            ${TIME_COMMAND} wget ${ADDRESS}
+            if [[ ${ADDRESS} == gs://* ]]; then
+                ${TIME_COMMAND} gsutil cp ${ADDRESS} .
+            else
+                ${TIME_COMMAND} wget ${ADDRESS}
+            fi
             FILE_NAME=$(basename ${ADDRESS})
             FILE_NAME=${FILE_NAME%.bam}
             ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME}.bam >> tmp1.fastq 
