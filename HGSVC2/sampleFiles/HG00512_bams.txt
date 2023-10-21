@@ -1,0 +1,6 @@
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20190920_S64018_PL100139347-1_A01.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20190920_S64018_PL100139347-1_C01.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20191004_S64018_PL100139347-2_A01.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20191004_S64018_PL100139347-2_B01.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20191007_S64049_PL100139347-2_A01.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191031_CHS_PacBio_HG00512_HiFi/HG00512_PacBio_Sequel2_CCS__EDEVI_20191007_S64049_PL100139347-2_B01.ccs.bam

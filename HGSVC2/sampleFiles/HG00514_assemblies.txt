@@ -1,0 +1,2 @@
+https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/release/v1.0/assemblies/20200810_HHU_assembly-results_HG00514_v12/assemblies/phased/v12_HG00514_hgsvc_pbsq2-ccs_1000-pereg.h1-un.racon-p2.fasta
+https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/release/v1.0/assemblies/20200810_HHU_assembly-results_HG00514_v12/assemblies/phased/v12_HG00514_hgsvc_pbsq2-ccs_1000-pereg.h2-un.racon-p2.fasta

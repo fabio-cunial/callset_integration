@@ -1,0 +1,4 @@
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/globus/eee/HG03125/ccs/data/m64043_200320_170631.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/globus/eee/HG03125/ccs/data/m64043_200321_231851.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/globus/eee/HG03125/ccs/data/m64043_200323_054328.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/globus/eee/HG03125/ccs/data/m64043_200324_120818.ccs.bam

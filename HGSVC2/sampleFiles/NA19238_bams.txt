@@ -1,0 +1,8 @@
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m54336U_191015_222230.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m54336U_191017_101413.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190817_141701.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190818_202358.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190828_220241.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190830_040857.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190831_102034.ccs.bam
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20191205_YRI_PacBio_NA19238_HIFI/NA19238_20191205_CLEE_m64039_190901_163200.ccs.bam

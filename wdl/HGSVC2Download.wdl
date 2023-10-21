@@ -68,7 +68,8 @@ task HGSVC2DownloadImpl {
             FILE_NAME=$(basename ${ADDRESS})
             FILE_NAME=${FILE_NAME%.bam}
             ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME}.bam >> tmp1.fastq 
-            N_BYTES=$(wc -c tmp1.fastq)
+            rm -f ${FILE_NAME}.bam
+            N_BYTES=$(wc -c < tmp1.fastq)
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
             fi

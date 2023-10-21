@@ -1,0 +1,3 @@
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20200731_CHS_PacBio_HG00514_HiFi_reseq/m54329U_200715_194535.ccs.bam.pbi
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20200731_CHS_PacBio_HG00514_HiFi_reseq/m54329U_200717_235548.ccs.bam.pbi
+http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC2/working/20200731_CHS_PacBio_HG00514_HiFi_reseq/m54329U_200719_061020.ccs.bam.pbi
