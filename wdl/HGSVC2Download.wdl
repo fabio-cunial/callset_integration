@@ -58,7 +58,7 @@ task HGSVC2DownloadImpl {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
-        BILLING_PROJECT="broad-dsde-methods"
+        BILLING_PROJECT="broad-firecloud-dsde-methods"
         
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
