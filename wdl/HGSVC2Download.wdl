@@ -69,9 +69,14 @@ task HGSVC2DownloadImpl {
                 ${TIME_COMMAND} wget ${ADDRESS}
             fi
             FILE_NAME=$(basename ${ADDRESS})
-            FILE_NAME=${FILE_NAME%.bam}
-            ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME}.bam >> tmp1.fastq 
-            rm -f ${FILE_NAME}.bam
+            if [[ ${FILE_NAME} == *.bam ]]; then
+                ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME} >> tmp1.fastq 
+            else if [[ ${FILE_NAME} == *.fastq.gz ]]; then
+                gunzip ${FILE_NAME} >> tmp1.fastq
+            else if [[ ${FILE_NAME} == *.fastq ]]; then
+                cat ${FILE_NAME} >> tmp1.fastq
+            fi
+            rm -f ${FILE_NAME}
             N_BYTES=$(wc -c < tmp1.fastq)
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
