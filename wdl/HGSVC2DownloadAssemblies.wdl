@@ -5,21 +5,19 @@ version 1.0
 #
 workflow HGSVC2DownloadAssemblies {
     input {
-        Array[String] sample_ids
-        Array[File] addresses
+        String sample_id
+        Array[String] addresses
         String remote_dir
     }
     parameter_meta {
         remote_dir: "Root directory in the remote bucket. Every sample is stored in a subdirectory."
     }
     
-    scatter(i in range(length(sample_ids))) {
-        call HGSVC2DownloadAssembliesImpl {
-            input:
-                sample_id = sample_ids[i],
-                addresses = addresses[i],
-                remote_dir = remote_dir
-        }
+    call HGSVC2DownloadAssembliesImpl {
+        input:
+            sample_id = sample_id,
+            addresses = addresses,
+            remote_dir = remote_dir
     }
     
     output {
@@ -30,7 +28,7 @@ workflow HGSVC2DownloadAssemblies {
 task HGSVC2DownloadAssembliesImpl {
     input {
         String sample_id
-        File addresses
+        Array[String] addresses
         String remote_dir
     }
     parameter_meta {
@@ -51,13 +49,15 @@ task HGSVC2DownloadAssembliesImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
+        LIST_FILE=~{write_lines(addresses)}
+        cat ${LIST_FILE}
         while read ADDRESS; do
             ${TIME_COMMAND} wget ${ADDRESS} &
             ${TIME_COMMAND} wget ${ADDRESS}.fai &
-        done < ~{addresses}
+        done < ${LIST_FILE}
         wait
         while : ; do
-            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp '*.fasta*' ~{remote_dir}/~{sample_id}/ && echo 0 || echo 1)
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp '*.fa*' ~{remote_dir}/~{sample_id}/ && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error uploading files. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
