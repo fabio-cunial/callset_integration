@@ -43,7 +43,7 @@ task HGSVC2DownloadImpl {
     parameter_meta {
     }
     
-    Int disk_size_gb = (3*target_coverage)*2 + 120
+    Int disk_size_gb = (3*target_coverage)*2 + 512
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -61,6 +61,7 @@ task HGSVC2DownloadImpl {
         BILLING_PROJECT="broad-firecloud-dsde-methods"
         
         LIST_FILE=~{write_lines(bam_addresses)}
+        cat ${LIST_FILE}
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
         while read ADDRESS; do
