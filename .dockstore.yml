@@ -1,5 +1,10 @@
 version: 1.2
 workflows:
+- name: HGSVC2Align
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/HGSVC2Align.wdl
+  testParameterFiles:
 - name: HGSVC2DownloadAssemblies
   subclass: wdl
   publish: True

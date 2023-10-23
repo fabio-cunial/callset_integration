@@ -70,7 +70,7 @@ task HGSVC2DownloadAssembliesImpl {
     output {
     }
     runtime {
-        docker: "us-central1-docker.pkg.dev/broad-dsp-lrma/aou-lr/hgsvc2:fc_hgsvc2_setup"
+        docker: "fcunial/callset_integration"
         cpu: 2
         memory: "8 GB"
         disks: "local-disk 50 HDD"
