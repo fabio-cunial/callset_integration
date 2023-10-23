@@ -8,6 +8,7 @@ workflow HGSVC2Align {
     input {
         String sample_id
         File reference_fa
+        File reference_fai
         File reads_fastq_gz
         String remote_dir
         Int n_cpus
@@ -21,6 +22,7 @@ workflow HGSVC2Align {
         input:
             sample_id = sample_id,
             reference_fa = reference_fa,
+            reference_fai = reference_fai,
             reads_fastq_gz = reads_fastq_gz,
             remote_dir = remote_dir,
             n_cpus = n_cpus,
@@ -36,6 +38,7 @@ task HGSVC2AlignImpl {
     input {
         String sample_id
         File reference_fa
+        File reference_fai
         File reads_fastq_gz
         String remote_dir
         Int n_cpus
