@@ -1,0 +1,5 @@
+fasta	gs://broad-dsde-methods-long-reads/resources/references/chm13/release/2.0/chm13v2.0.ebv.fa
+fai	gs://broad-dsde-methods-long-reads/resources/references/chm13/release/2.0/chm13v2.0.ebv.fa.fai
+dict	gs://broad-dsde-methods-long-reads/resources/references/chm13/release/2.0/chm13v2.0.ebv.dict
+tandem_repeat_bed	gs://broad-dsde-methods-long-reads/resources/references/chm13/release/2.0/annotations/trf.bb.bed
+mt_chr_name	chrM
