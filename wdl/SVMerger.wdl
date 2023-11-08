@@ -131,10 +131,10 @@ task SVMergerImpl {
         
         gsutil -m cp ~{remote_dir}/~{sample_id}/tsvs/~{chromosome_id}.tsv .
         gsutil -m cp ~{remote_trf_dir}/~{chromosome_id}.trf.sorted.gor  .
-        ${TIME_COMMAND} python2 ~{work_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor DEL
+        ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor DEL
         ls -laht
         tree
-        ${TIME_COMMAND} python2 ~{work_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor INS
+        ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor INS
         ls -laht
         tree
         #.outtrr.merged.csv
