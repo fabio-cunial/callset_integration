@@ -15,3 +15,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/HGSVC2Download.wdl
   testParameterFiles:
+- name: SVMerger
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/SVMerger.wdl
+  testParameterFiles:

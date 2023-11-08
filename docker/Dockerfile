@@ -92,3 +92,9 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
 ARG pbmm2_version=1.13.0
 RUN conda install -c bioconda pbmm2=${pbmm2_version} \
     && pbmm2 --help
+
+# SV-MERGER
+RUN pip install intervaltree \
+    && git clone https://github.com/DecodeGenetics/sv-merger.git
+COPY *.java .
+RUN javac *.java
