@@ -60,21 +60,22 @@ task GetTSVs {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
+        cp ~{docker_dir}/*.class .
         rm -f *.tsv
         
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pbsv.vcf.gz .
         gunzip --stdout ~{sample_id}.pbsv.vcf.gz > tmp.vcf
-        java ~{docker_dir}/VCF2SVMerger tmp.vcf ~{sample_id} pbsv >> pbsv.tsv
+        java VCF2SVMerger tmp.vcf ~{sample_id} pbsv >> pbsv.tsv
         rm -f tmp.vcf
         
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.sniffles.vcf.gz .
         gunzip --stdout ~{sample_id}.sniffles.vcf.gz > tmp.vcf
-        java ~{docker_dir}/VCF2SVMerger tmp.vcf ~{sample_id} sniffles >> sniffles.tsv
+        java VCF2SVMerger tmp.vcf ~{sample_id} sniffles >> sniffles.tsv
         rm -f tmp.vcf
         
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pav_sv.vcf.gz .
         gunzip --stdout ~{sample_id}.pav_sv.vcf.gz > tmp.vcf
-        java ~{docker_dir}/VCF2SVMerger tmp.vcf ~{sample_id} pav >> pav.tsv
+        java VCF2SVMerger tmp.vcf ~{sample_id} pav >> pav.tsv
         rm -f tmp.vcf
         
         for CHR in $(seq 1 22) X Y; do
