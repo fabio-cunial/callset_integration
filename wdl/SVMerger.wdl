@@ -27,7 +27,8 @@ workflow SVMerger {
                 remote_dir = remote_dir,
                 sample_id = sample_id,
                 remote_trf_dir = remote_trf_dir,
-                chromosome_id = chr
+                chromosome_id = chr,
+                artificial_input = GetTSVs.artificial_output
         }
     }
     
@@ -87,6 +88,7 @@ task GetTSVs {
     >>>
     
     output {
+        Int artificial_output = 0
     }
     runtime {
         docker: "fcunial/callset_integration"
@@ -104,10 +106,12 @@ task SVMergerImpl {
         String sample_id
         String remote_trf_dir
         String chromosome_id
+        Int artificial_input
     }
     parameter_meta {
         remote_dir: "Root dir (contains every sample subdir)."
         remote_trf_dir: "Contains per-chromosome TRF files."
+        artificial_input: "Just to force task execution order."
     }
     
     String docker_dir = "/hgsvc2"
