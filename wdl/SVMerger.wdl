@@ -134,14 +134,18 @@ task SVMergerImpl {
         ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor DEL
         ls -laht
         tree
-        ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor INS
-        ls -laht
-        tree
+        
+        
+        #${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor INS
+        #ls -laht
+        #tree
         #.outtrr.merged.csv
         #.intrr.merged.csv
     >>>
     
     output {
+        File outtrr = work_dir + "/" + chromosome_id + ".tsv.outtrr.merged.csv"
+        File intrr = work_dir + "/" + chromosome_id + ".tsv.intrr.merged.csv"
     }
     runtime {
         docker: "fcunial/callset_integration"
