@@ -130,8 +130,8 @@ task SVMergerImpl {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         function svMerger() {
-            local CHROMOSOME_ID = $1
-            local SVTYPE = $2
+            local CHROMOSOME_ID=$1
+            local SVTYPE=$2
             
             if [ ${SVTYPE} = "del" ]; then
                 AWK_COMMAND='$7 == "DEL"'
