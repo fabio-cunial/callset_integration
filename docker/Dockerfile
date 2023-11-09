@@ -94,7 +94,9 @@ RUN conda install -c bioconda pbmm2=${pbmm2_version} \
     && pbmm2 --help
 
 # SV-MERGER
-RUN pip install intervaltree \
+RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py \
+    && python2 get-pip.py \
+    && pip2 install intervaltree \
     && git clone https://github.com/DecodeGenetics/sv-merger.git
 COPY *.java .
 RUN javac *.java

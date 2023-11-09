@@ -129,23 +129,44 @@ task SVMergerImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
+        function svMerger() {
+            local CHROMOSOME_ID = $1
+            local SVTYPE = $2
+            
+            if [ ${SVTYPE} = "del" ]; then
+                AWK_COMMAND='$7 == "DEL"'
+            else
+                AWK_COMMAND='$7 == "INS"'
+            fi
+            awk "${AWK_COMMAND}" ${CHROMOSOME_ID}.tsv > ${CHROMOSOME_ID}.${SVTYPE}.tsv
+            ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ${CHROMOSOME_ID}.del.tsv ${CHROMOSOME_ID}.trf.sorted.gor ${SVTYPE}
+            sort -k 4 ${CHROMOSOME_ID}.${SVTYPE}.tsv > chr.tsv
+            ls -laht; tree
+            # Outside TRs
+            sort -k 1 ${CHROMOSOME_ID}.tsv.outtrr.merged.csv > outtrr.tsv
+            join -1 4 -2 1 chr.tsv outtrr.tsv | tr ' ' '\t' | sort --version-sort --key 9 > cliques.tsv
+            ls -laht; tree
+            java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-outttr.tsv
+            # Inside TRs
+            sort -k 1 ${CHROMOSOME_ID}.tsv.intrr.merged.csv > intrr.tsv
+            join -1 4 -2 1 chr.tsv intrr.tsv | tr ' ' '\t' | sort --version-sort --key 9 > cliques.tsv
+            ls -laht; tree
+            java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-inttr.tsv
+            cat clique-representatives-${SVTYPE}-outttr.tsv clique-representatives-${SVTYPE}-inttr.tsv | sort > clique-representatives-${SVTYPE}.tsv
+        }
+        
+        cp ~{docker_dir}/*.class .
         gsutil -m cp ~{remote_dir}/~{sample_id}/tsvs/~{chromosome_id}.tsv .
-        gsutil -m cp ~{remote_trf_dir}/~{chromosome_id}.trf.sorted.gor  .
-        ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor DEL
-        ls -laht
-        tree
-        
-        
-        #${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ~{chromosome_id}.tsv ~{chromosome_id}.trf.sorted.gor INS
-        #ls -laht
-        #tree
-        #.outtrr.merged.csv
-        #.intrr.merged.csv
+        gsutil -m cp ~{remote_trf_dir}/~{chromosome_id}.trf.sorted.gor  .        
+        svMerger ~{chromosome_id} del
+        ls -laht; tree
+        svMerger ~{chromosome_id} ins
+        ls -laht; tree
+        cat clique-representatives-del.tsv clique-representatives-ins.tsv | sort > clique-representatives-~{chromosome_id}.tsv
     >>>
     
     output {
-        File outtrr = work_dir + "/" + chromosome_id + ".tsv.outtrr.merged.csv"
-        File intrr = work_dir + "/" + chromosome_id + ".tsv.intrr.merged.csv"
+        File outtrr = work_dir + "/clique-representatives-" + chromosome_id + ".tsv"
     }
     runtime {
         docker: "fcunial/callset_integration"
