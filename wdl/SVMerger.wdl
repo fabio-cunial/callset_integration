@@ -80,9 +80,9 @@ task GetTSVs {
         rm -f tmp.vcf
         
         for CHR in $(seq 1 22) X Y; do
-            grep ^chr${CHR} pbsv.tsv >> chr${CHR}.tsv
-            grep ^chr${CHR} sniffles.tsv >> chr${CHR}.tsv
-            grep ^chr${CHR} pav.tsv >> chr${CHR}.tsv
+            grep ^chr${CHR}'\t' pbsv.tsv >> chr${CHR}.tsv
+            grep ^chr${CHR}'\t' sniffles.tsv >> chr${CHR}.tsv
+            grep ^chr${CHR}'\t' pav.tsv >> chr${CHR}.tsv
         done
         gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp '*.tsv' ~{remote_dir}/~{sample_id}/tsvs/
     >>>
