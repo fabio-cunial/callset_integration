@@ -139,16 +139,16 @@ task SVMergerImpl {
                 AWK_COMMAND='$7 == "INS"'
             fi
             awk "${AWK_COMMAND}" ${CHROMOSOME_ID}.tsv > ${CHROMOSOME_ID}.${SVTYPE}.tsv
-            ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ${CHROMOSOME_ID}.del.tsv ${CHROMOSOME_ID}.trf.sorted.gor ${SVTYPE}
+            ${TIME_COMMAND} python2 ~{docker_dir}/sv-merger/main.py MERGE ${CHROMOSOME_ID}.${SVTYPE}.tsv ${CHROMOSOME_ID}.trf.sorted.gor ${SVTYPE}
             sort -k 4 ${CHROMOSOME_ID}.${SVTYPE}.tsv > chr.tsv
             ls -laht; tree
             # Outside TRs
-            sort -k 1 ${CHROMOSOME_ID}.tsv.outtrr.merged.csv > outtrr.tsv
+            sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv > outtrr.tsv
             join -1 4 -2 1 chr.tsv outtrr.tsv | tr ' ' '\t' | sort --version-sort --key 9 > cliques.tsv
             ls -laht; tree
             java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-outttr.tsv
             # Inside TRs
-            sort -k 1 ${CHROMOSOME_ID}.tsv.intrr.merged.csv > intrr.tsv
+            sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv > intrr.tsv
             join -1 4 -2 1 chr.tsv intrr.tsv | tr ' ' '\t' | sort --version-sort --key 9 > cliques.tsv
             ls -laht; tree
             java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-inttr.tsv
