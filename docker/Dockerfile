@@ -88,6 +88,19 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
     && rm -rf samtools-${samtools_version} \
     && samtools --help
 
+# BCFTOOLS
+ARG bcftools_version=1.16
+RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_version}/bcftools-${bcftools_version}.tar.bz2 \
+    && tar xjf bcftools-${bcftools_version}.tar.bz2 \
+    && rm bcftools-${bcftools_version}.tar.bz2 \
+    && cd bcftools-${bcftools_version} \
+    && ./configure --without-curses \
+    && make \
+    && make install \
+    && cd ${work_dir} \
+    && rm -rf bcftools-${bcftools_version} \
+    && bcftools --help
+
 # PBMM2
 ARG pbmm2_version=1.13.0
 RUN conda install -c bioconda pbmm2=${pbmm2_version} \

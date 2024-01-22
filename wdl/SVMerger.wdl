@@ -252,7 +252,7 @@ task SVMerger2VCF {
             bcftools view --no-header all_calls.vcf.gz ${CHR} | sort -k 3 > input.vcf
             gsutil -m cp ~{remote_dir}/~{sample_id}/tsvs/clique-representatives-${CHR}.tsv ./representatives.tsv
             bcftools view --header-only all_calls.vcf.gz > ${CHR}.vcf
-            join -t $'\t' -1 3 -2 1 input.vcf representatives.tsv | cut -f 1-10 >> ${CHR}.vcf
+            join -t $'\t' -1 3 -2 1 input.vcf representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1, $4, $5, $6, $7, $8, $9, $10 }' >> ${CHR}.vcf
             bcftools sort ${CHR}.vcf --output-type z > ${CHR}.vcf.gz
             tabix ${CHR}.vcf.gz
             rm -f ${CHR}.vcf
