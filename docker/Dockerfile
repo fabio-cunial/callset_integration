@@ -119,6 +119,6 @@ RUN pip install pysam \
     && git clone https://github.com/DecodeGenetics/svimmer.git \
     && chmod +x ./svimmer/svimmer
 # Fixing two bugs in SVIMMER
-#COPY ./svimmer ${work_dir}/svimmer-${svimmer_version}/svimmer
+COPY ./svimmer ${work_dir}/svimmer/svimmer
 ENV PATH=${work_dir}/svimmer:${PATH}
 RUN svimmer -h

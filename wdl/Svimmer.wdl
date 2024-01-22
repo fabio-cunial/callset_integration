@@ -29,8 +29,11 @@ task SvimmerImpl {
     input {
         String sample_id
         File pbsv_vcf_gz
+        File pbsv_vcf_gz_tbi
         File sniffles_vcf_gz
+        File sniffles_vcf_gz_tbi
         File pav_vcf_gz
+        File pav_vcf_gz_tbi
     }
     parameter_meta {
     }
@@ -50,13 +53,9 @@ task SvimmerImpl {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         TIME_COMMAND="/usr/bin/time --verbose"
         
-        gunzip --to-stdout ~{pbsv_vcf_gz} > pbsv.vcf
-        gunzip --to-stdout ~{sniffles_vcf_gz} > sniffles.vcf
-        gunzip --to-stdout ~{pav_vcf_gz} > pav.vcf
-        rm -f list.txt
-        echo "pbsv.vcf" >> list.txt
-        echo "sniffles.vcf" >> list.txt
-        echo "pav.vcf" >> list.txt
+        echo ~{pbsv_vcf_gz} >> list.txt
+        echo ~{sniffles_vcf_gz} >> list.txt
+        echo ~{pav_vcf_gz} >> list.txt
         ${TIME_COMMAND} svimmer --threads ${N_THREADS} --ids --output ~{sample_id}.svimmer.vcf list.txt chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY
         bcftools sort ~{sample_id}.svimmer.vcf --output-type z > ~{sample_id}.svimmer.vcf.gz
         tabix ~{sample_id}.svimmer.vcf.gz        
