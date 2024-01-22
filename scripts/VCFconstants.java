@@ -1,4 +1,3 @@
-
 /**
  * Basic constants of VCF files
  */
@@ -236,5 +235,21 @@ public class VCFconstants {
 			else return -1;
 		}
 	}
+    
+    
+    public static final String type2str(int svType) {
+        switch (svType) {
+            case TYPE_INSERTION: return INS_STR;
+            case TYPE_DELETION: return DEL_STR;
+            case TYPE_DEL_INV: return DEL_INV_STR;
+            case TYPE_INVERSION: return INV_STR;
+	        case TYPE_INV_DUP: return INV_DUP_STR;
+            case TYPE_DUPLICATION: return DUP_STR;
+            case TYPE_CNV: return CNV_STR;
+            case TYPE_BREAKEND: return BND_STR;
+            case TYPE_TRANSLOCATION: return TRA_STR;
+        }
+        return "";
+    }
 	
 }

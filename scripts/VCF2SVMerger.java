@@ -2,12 +2,13 @@ import java.io.*;
 
 
 /**
- * 
+ * Transforms a VCF into the TSV needed by sv-merger (printed to STDOUT):
+ *
+ * chr \t start \t end \t svID \t sampleID \t caller \t svType \t svLength
+ *
  */
 public class VCF2SVMerger {
-    /**
-     * Prints to STDOUT
-     */
+
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
         final String SAMPLE_ID = args[1];
@@ -41,7 +42,7 @@ public class VCF2SVMerger {
             field=VCFconstants.getField(tokens[7],VCFconstants.SVTYPE_STR);
             if (field!=null) type=VCFconstants.getType_infoField(field);
             else type=VCFconstants.getType_altField(tokens[4]);
-            if (type!=VCFconstants.TYPE_INSERTION && type!=VCFconstants.TYPE_DELETION) {
+            if (type!=VCFconstants.TYPE_INSERTION && type!=VCFconstants.TYPE_DELETION && type!=VCFconstants.TYPE_DUPLICATION && type!=VCFconstants.TYPE_INVERSION) {
                 nDiscarded_type++;
                 str=br.readLine();
                 continue;
@@ -52,7 +53,7 @@ public class VCF2SVMerger {
             if (field!=null) {
                 length=Integer.parseInt(field);
                 if (length<0) length=-length;
-                end=pos+length;
+                end=pos+length;  // This is necessary also for INS
             }
             else {
                 if (tokens[4].charAt(0)!='<' && tokens[4].charAt(tokens[4].length()-1)!='>') {
@@ -74,7 +75,7 @@ public class VCF2SVMerger {
                 }
             }
             
-            System.out.println(tokens[0]+"\t"+pos+"\t"+end+"\t"+CALLER_ID+"-"+tokens[2]+"\t"+SAMPLE_ID+"\t"+CALLER_ID+"\t"+(type==VCFconstants.TYPE_INSERTION?"INS":"DEL")+"\t"+length);
+            System.out.println(tokens[0]+"\t"+pos+"\t"+end+"\t"+CALLER_ID+"-"+tokens[2]+"\t"+SAMPLE_ID+"\t"+CALLER_ID+"\t"+VCFconstants.type2str(type)+"\t"+length);
             str=br.readLine();
         }
         br.close();

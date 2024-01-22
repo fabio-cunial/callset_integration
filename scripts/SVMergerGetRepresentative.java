@@ -4,7 +4,12 @@ import java.io.*;
 
 
 /**
- * 
+ * Assume we have a TSV file that is exactly the same as the input needed by
+ * sv-merger, but that also contains one additional (last) column with the ID of
+ * the clique assigned to each SV by sv-merger. Assume also that such a file is
+ * sorted by clique ID. The program prints to STDOUT the ID of every clique
+ * representative, i.e. of an SV of the clique whose (start,end) pair has 
+ * largest frequency in the clique (as suggested in the sv-merger readme).
  */
 public class SVMergerGetRepresentative {
     /**
