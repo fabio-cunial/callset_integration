@@ -115,10 +115,13 @@ COPY *.java .
 RUN javac *.java
 
 # SVIMMER
+ARG svimmer_version=0.1
 RUN pip install pysam \
-    && git clone https://github.com/DecodeGenetics/svimmer.git \
-    && chmod +x ./svimmer/svimmer
+    && wget https://github.com/DecodeGenetics/svimmer/archive/refs/tags/v${svimmer_version}.tar.gz -O svimmer.tar.gz \
+    && tar xzvf svimmer.tar.gz \
+    && rm svimmer.tar.gz \
+    && chmod +x ./svimmer-${svimmer_version}/svimmer
 # Fixing two bugs in SVIMMER
-COPY ./svimmer ${work_dir}/svimmer/svimmer
-ENV PATH=${work_dir}/svimmer:${PATH}
+COPY ./svimmer ${work_dir}/svimmer-${svimmer_version}/svimmer
+ENV PATH=${work_dir}/svimmer-${svimmer_version}:${PATH}
 RUN svimmer -h
