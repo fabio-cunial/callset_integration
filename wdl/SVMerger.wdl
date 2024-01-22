@@ -155,18 +155,23 @@ task SVMergerImpl {
                 sort -k 4 ${CHROMOSOME_ID}.${SVTYPE}.tsv > chr.tsv
                 ls -laht; tree
                 # Outside TRs
-                sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv > outtrr.tsv
-                join -t $'\t' -1 4 -2 1 chr.tsv outtrr.tsv | sort --version-sort --key 9 > cliques.tsv
-                # tr ' ' '\t' | 
-                ls -laht; tree
-                java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-outttr.tsv
+                if [ -s ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv ]; then
+                    sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv > outtrr.tsv
+                    join -t $'\t' -1 4 -2 1 chr.tsv outtrr.tsv | sort --version-sort --key 9 > cliques.tsv
+                    # tr ' ' '\t' | 
+                    ls -laht; tree
+                    java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-outttr.tsv
+                    rm -f cliques.tsv outtrr.tsv ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv
+                fi
                 # Inside TRs
-                sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv > intrr.tsv
-                join -t $'\t' -1 4 -2 1 chr.tsv intrr.tsv | sort --version-sort --key 9 > cliques.tsv
-                # | tr ' ' '\t'
-                ls -laht; tree
-                java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-inttr.tsv
-                cat clique-representatives-${SVTYPE}-outttr.tsv clique-representatives-${SVTYPE}-inttr.tsv | sort > clique-representatives-${SVTYPE}.tsv
+                if [ -s ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv ]; then
+                    sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv > intrr.tsv
+                    join -t $'\t' -1 4 -2 1 chr.tsv intrr.tsv | sort --version-sort --key 9 > cliques.tsv
+                    # | tr ' ' '\t'
+                    ls -laht; tree
+                    java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-inttr.tsv
+                    rm -f cliques.tsv intrr.tsv ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv
+                fi
             fi
         }
         
@@ -237,17 +242,17 @@ task SVMerger2VCF {
         bcftools annotate --set-id 'pav-%ID' ~{sample_id}.pav_sv.vcf.gz --output-type z > pav.annotated.vcf.gz
         tabix pav.annotated.vcf.gz
         rm -f ~{sample_id}.pav_sv.vcf.gz*
-        bcftools merge --force-samples --merge none --output-type z pbsv.annotated.vcf.gz sniffles.annotated.vcf.gz pav.annotated.vcf.gz > merged.vcf.gz
-        tabix merged.vcf.gz
+        bcftools concat --allow-overlaps --output-type z pbsv.annotated.vcf.gz sniffles.annotated.vcf.gz pav.annotated.vcf.gz > all_calls.vcf.gz
+        tabix all_calls.vcf.gz
         rm -f pbsv.annotated.vcf.gz sniffles.annotated.vcf.gz pav.annotated.vcf.gz
         
-        # Building a VCF file that contains only representatives
+        # Building a VCF file that contains only clique representatives
         rm -f list.txt
         for CHR in chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY ; do
-            bcftools view --no-header merged.vcf.gz ${CHR} | sort -k 3 > input.vcf
+            bcftools view --no-header all_calls.vcf.gz ${CHR} | sort -k 3 > input.vcf
             gsutil -m cp ~{remote_dir}/~{sample_id}/tsvs/clique-representatives-${CHR}.tsv ./representatives.tsv
-            bcftools view --header-only merged.vcf.gz > ${CHR}.vcf
-            join -t $'\t' -1 3 -2 1 input.vcf representatives.tsv >> ${CHR}.vcf
+            bcftools view --header-only all_calls.vcf.gz > ${CHR}.vcf
+            join -t $'\t' -1 3 -2 1 input.vcf representatives.tsv | cut -f 1-10 >> ${CHR}.vcf
             bcftools sort ${CHR}.vcf --output-type z > ${CHR}.vcf.gz
             tabix ${CHR}.vcf.gz
             rm -f ${CHR}.vcf
