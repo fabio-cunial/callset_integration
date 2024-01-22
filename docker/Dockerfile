@@ -113,3 +113,12 @@ RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py \
     && git clone https://github.com/DecodeGenetics/sv-merger.git
 COPY *.java .
 RUN javac *.java
+
+# SVIMMER
+RUN pip install pysam \
+    && git clone https://github.com/DecodeGenetics/svimmer.git \
+    && chmod +x ./svimmer/svimmer
+# Fixing two bugs in SVIMMER
+#COPY ./svimmer ${work_dir}/svimmer-${svimmer_version}/svimmer
+ENV PATH=${work_dir}/svimmer:${PATH}
+RUN svimmer -h

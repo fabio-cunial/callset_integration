@@ -3,7 +3,9 @@ import java.io.*;
 
 /**
  * Prepares for sv-merger a TRF file downloaded from e.g. 
- * https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/
+ *
+ * hg38: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/
+ * chm13: https://github.com/PacificBiosciences/pbsv/raw/master/annotations/human_chm13v2.0_maskedY_rCRS.trf.bed
  */
 public class TRF2SVMerger {
     /**

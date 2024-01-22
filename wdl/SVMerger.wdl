@@ -158,7 +158,6 @@ task SVMergerImpl {
                 if [ -s ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv ]; then
                     sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv > outtrr.tsv
                     join -t $'\t' -1 4 -2 1 chr.tsv outtrr.tsv | sort --version-sort --key 9 > cliques.tsv
-                    # tr ' ' '\t' | 
                     ls -laht; tree
                     java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-outttr.tsv
                     rm -f cliques.tsv outtrr.tsv ${CHROMOSOME_ID}.${SVTYPE}.tsv.outtrr.merged.csv
@@ -167,7 +166,6 @@ task SVMergerImpl {
                 if [ -s ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv ]; then
                     sort -k 1 ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv > intrr.tsv
                     join -t $'\t' -1 4 -2 1 chr.tsv intrr.tsv | sort --version-sort --key 9 > cliques.tsv
-                    # | tr ' ' '\t'
                     ls -laht; tree
                     java SVMergerGetRepresentative cliques.tsv > clique-representatives-${SVTYPE}-inttr.tsv
                     rm -f cliques.tsv intrr.tsv ${CHROMOSOME_ID}.${SVTYPE}.tsv.intrr.merged.csv
