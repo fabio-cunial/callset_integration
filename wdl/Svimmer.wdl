@@ -62,9 +62,11 @@ task SvimmerImpl {
         echo ~{pbsv_vcf_gz} >> list.txt
         echo ~{sniffles_vcf_gz} >> list.txt
         echo ~{pav_vcf_gz} >> list.txt
+        cat list.txt
         touch ~{pbsv_vcf_gz_tbi} ~{sniffles_vcf_gz_tbi} ~{pav_vcf_gz_tbi}
         ${TIME_COMMAND} svimmer --threads ${N_THREADS} --ids --output ~{sample_id}.svimmer.vcf list.txt chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY
         ls -laht
+        ls -laht /cromwell_root/fc-bb12940d-f7ba-4515-8a98-42de84f63c34/HGSVC2/HG00512/
         bcftools sort ~{sample_id}.svimmer.vcf --output-type z > ~{sample_id}.svimmer.vcf.gz
         tabix ~{sample_id}.svimmer.vcf.gz        
     >>>
