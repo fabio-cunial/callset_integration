@@ -74,7 +74,7 @@ task SvimmerImpl {
         File output_vcf_gz_tbi = work_dir + "/" + sample_id + ".svimmer.vcf.gz.tbi"
     }
     runtime {
-        docker: "fcunial/callset_integration:svimmer"
+        docker: "fcunial/callset_integration"
         cpu: 8
         memory: "16GB"  # Arbitrary
         disks: "local-disk 20 HDD"  # Arbitrary
