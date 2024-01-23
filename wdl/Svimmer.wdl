@@ -65,6 +65,8 @@ task SvimmerImpl {
         ls *.vcf.gz > list.txt
         cat list.txt
         touch *.tbi
+        ls -laht ~{docker_dir}/svimmer/
+        cat ~{docker_dir}/svimmer/svimmer
         python3 ~{docker_dir}/svimmer/svimmer -h || echo 1
         ${TIME_COMMAND} python3 ~{docker_dir}/svimmer/svimmer --ids --output ~{sample_id}.svimmer.vcf list.txt chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY
         python3 ~{docker_dir}/svimmer/svimmer --ids --output ~{sample_id}.svimmer1.vcf list.txt chr1
