@@ -120,5 +120,6 @@ RUN pip install pysam \
     && chmod +x ./svimmer/svimmer
 # Fixing two bugs in SVIMMER
 COPY ./svimmer ${work_dir}/svimmer/svimmer
+COPY ./sv.py ${work_dir}/svimmer/svimmer
 ENV PATH=${work_dir}/svimmer:${PATH}
 RUN svimmer -h
