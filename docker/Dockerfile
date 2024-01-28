@@ -117,6 +117,5 @@ RUN javac *.java
 # SVIMMER
 RUN pip3 install pysam \
     && git clone https://github.com/DecodeGenetics/svimmer.git
-# Fixing two bugs in SVIMMER
-COPY ./svimmer ${work_dir}/svimmer/svimmer
-COPY ./sv.py ${work_dir}/svimmer/svimmer
+# Minor fixes
+COPY ./sv.py ${work_dir}/svimmer/

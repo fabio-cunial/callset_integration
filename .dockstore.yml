@@ -25,3 +25,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/Svimmer.wdl
   testParameterFiles:
+- name: SVMergerIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/SVMergerIntersample.wdl
+  testParameterFiles:
