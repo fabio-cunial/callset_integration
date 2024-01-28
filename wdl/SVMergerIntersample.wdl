@@ -71,7 +71,7 @@ task GetChromosomeTSVs {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         cp ~{docker_dir}/*.class .
-        INPUT_FILES=~(sep="," input_vcf_gz)
+        INPUT_FILES=~(sep=',' input_vcf_gz)
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         
         # 1. Concatenating all VCFs and splitting the concatenation by
@@ -259,7 +259,7 @@ task ConcatChromosomeVCFs {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        INPUT_FILES=~(sep="," chromosome_vcf_gz)
+        INPUT_FILES=~(sep=',' chromosome_vcf_gz)
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
