@@ -71,25 +71,24 @@ task GetChromosomeTSVs {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         cp ~{docker_dir}/*.class .
-        INPUT_FILES=~(sep=',' input_vcf_gz)
+        INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         
-        # 1. Concatenating all VCFs and splitting the concatenation by
-        # chromosome.
+        # 1. Merging all VCFs and splitting the merge by chromosome.
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
             echo ${INPUT_FILE} >> list.txt
         done
-        ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
-        tabix concat.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > merge.vcf.gz
+        tabix merge.vcf.gz
         rm -f output_vcf_gz_list.txt output_tbi_list.txt
         for CHR in $(seq 1 22) X Y; do
-            bcftools view --output-type z concat.vcf.gz chr${CHR} > chr${CHR}.vcf.gz
+            bcftools view --output-type z merge.vcf.gz chr${CHR} > chr${CHR}.vcf.gz
             tabix chr${CHR}.vcf.gz
             echo ~{work_dir}/chr${CHR}.vcf.gz >> output_vcf_gz_list.txt
             echo ~{work_dir}/chr${CHR}.vcf.gz.tbi >> output_tbi_list.txt
         done
-        rm -f concat.vcf.gz
+        rm -f merge.vcf.gz
         
         # 2. Concatenating all TSVs and splitting the concatenation by
         # chromosome.
@@ -123,8 +122,8 @@ task GetChromosomeTSVs {
 }
 
 
-# Given a chromosome TSV and a chromosome VCF, the task runs svmerger and 
-# outputs its result as a VCF.
+# Given a chromosome TSV and a chromosome merged VCF, the task runs svmerger
+# and outputs its result as a VCF.
 #
 task SVMergerImpl {
     input {
@@ -212,7 +211,7 @@ task SVMergerImpl {
         tabix annotated.vcf.gz
         bcftools view --no-header annotated.vcf.gz | sort -k 3 > input.vcf
         bcftools view --header-only annotated.vcf.gz > output.vcf
-        join -t $'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1, $4, $5, $6, $7, $8, $9, $10 }' >> output.vcf
+        join -t $'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1; for (i=4; i<=NF; i++) print $i }' >> output.vcf
         bcftools sort output.vcf --output-type z > output.vcf.gz
         tabix output.vcf.gz
         rm -f output.vcf
@@ -259,7 +258,7 @@ task ConcatChromosomeVCFs {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        INPUT_FILES=~(sep=',' chromosome_vcf_gz)
+        INPUT_FILES=~{sep=',' chromosome_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
