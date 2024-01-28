@@ -104,13 +104,18 @@ task GetChromosomeTSVs {
             grep ^chr${CHR}$'\t' svmerger.tsv > chr${CHR}.tsv
             echo ~{work_dir}/chr${CHR}.tsv >> output_tsv_list.txt
         done
-        rm -f svmerger.tsv
+        rm -f svmerger.tsv        
+        ls -laht; tree
     >>>
     
     output {
-        Array[File] chromosome_vcf_gz = read_lines(work_dir+"/output_vcf_gz_list.txt")
-        Array[File] chromosome_tbi = read_lines(work_dir+"/output_tbi_list.txt")
-        Array[File] chromosome_tsv = read_lines(work_dir+"/output_tsv_list.txt")
+        # Using glob() instead of read_line() since reading files from a list is
+        # not supported. I hope different calls to glob() return files in the
+        # same order.
+        # https://support.terra.bio/hc/en-us/community/posts/21977172563099-Specify-Array-File-output-for-a-task-in-a-WDL
+        Array[File] chromosome_vcf_gz = glob(work_dir+"/chr*.vcf.gz")
+        Array[File] chromosome_tbi = glob(work_dir+"/chr*.vcf.gz.tbi")
+        Array[File] chromosome_tsv = glob(work_dir+"/chr*.tsv")
     }
     runtime {
         docker: "fcunial/callset_integration"
@@ -211,7 +216,7 @@ task SVMergerImpl {
         tabix annotated.vcf.gz
         bcftools view --no-header annotated.vcf.gz | sort -k 3 > input.vcf
         bcftools view --header-only annotated.vcf.gz > output.vcf
-        join -t $'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1; for (i=4; i<=NF; i++) print $i }' >> output.vcf
+        join -t $'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { printf("%s\t%s\t%s\t",$2,$3,$1); for (i=4; i<NF; i++) printf("%s\t",$i); print $NF }' >> output.vcf
         bcftools sort output.vcf --output-type z > output.vcf.gz
         tabix output.vcf.gz
         rm -f output.vcf
@@ -224,8 +229,8 @@ task SVMergerImpl {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: 2
-        memory: "8GB"
+        cpu: 4
+        memory: "16GB"
         disks: "local-disk 100 HDD"
         preemptible: 0
     }
