@@ -52,7 +52,7 @@ task InterSampleMerge {
         for INPUT_FILE in ${INPUT_FILES}; do
             echo ${INPUT_FILE} >> list.txt
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --file-list list.txt --output-type z > merge.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > merge.vcf.gz
         tabix merge.vcf.gz
         ls -laht; tree
     >>>
