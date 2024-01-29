@@ -108,8 +108,22 @@ task ConcatChromosomeVCFs {
         INPUT_FILES=~{sep=',' chromosome_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
+        i="0"
         for INPUT_FILE in ${INPUT_FILES}; do
-            echo ${INPUT_FILE} >> list.txt
+            bcftools view --header-only ${INPUT_FILE} > header1.txt
+            N_ROWS=$(wc -l < header1.txt)
+            head -n $(( ${N_ROWS} - 1 )) header1.txt > fixed${i}.vcf
+            echo "##INFO=<ID=ID,Number=1,Type=String,Description="id">" >> fixed${i}.vcf
+            echo "##INFO=<ID=TIG_REGION,Number=1,Type=String,Description="tig">" >> fixed${i}.vcf
+            echo "##INFO=<ID=QUERY_STRAND,Number=1,Type=String,Description="strand">" >> fixed${i}.vcf
+            echo "##INFO=<ID=HOM_REF,Number=1,Type=String,Description="homref">" >> fixed${i}.vcf
+            echo "##INFO=<ID=HOM_TIG,Number=1,Type=String,Description="homtig">" >> fixed${i}.vcf
+            tail -n 1 header1.txt >> fixed${i}.vcf
+            bcftools view --no-header ${INPUT_FILE} >> fixed${i}.vcf
+            bgzip fixed${i}.vcf
+            tabix fixed${i}.vcf.gz
+            echo fixed${i}.vcf.gz >> list.txt
+            i=$(( ${i} + 1 ))
         done
         ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
         tabix concat.vcf.gz
