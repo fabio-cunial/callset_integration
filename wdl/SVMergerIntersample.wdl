@@ -45,7 +45,7 @@ workflow SVMergerIntersample {
 
 
 # Given all single-sample VCFs from all samples, the task outputs one
-# concatenated TSV and one concatenated VCF per chromosome.
+# concatenated TSV and one bcftools-merged VCF per chromosome.
 #
 task GetChromosomeTSVs {
     input {
@@ -238,7 +238,7 @@ task SVMergerImpl {
 
 
 # Creates a single merged VCF from the concatenation of all single-chromosome
-# VCFs.
+# VCFs produced by svmerger.
 #
 task ConcatChromosomeVCFs {
     input {
