@@ -118,6 +118,17 @@ task ConcatChromosomeVCFs {
             echo "##INFO=<ID=QUERY_STRAND,Number=1,Type=String,Description="strand">" >> fixed${i}.vcf
             echo "##INFO=<ID=HOM_REF,Number=1,Type=String,Description="homref">" >> fixed${i}.vcf
             echo "##INFO=<ID=HOM_TIG,Number=1,Type=String,Description="homtig">" >> fixed${i}.vcf
+            echo "##INFO=<ID=PRECISE,Number=1,Type=String,Description="precise">" >> fixed${i}.vcf
+            echo "##INFO=<ID=SUPPORT,Number=1,Type=Integer,Description="support">" >> fixed${i}.vcf
+            echo "##INFO=<ID=COVERAGE,Number=1,Type=String,Description="coverage">" >> fixed${i}.vcf
+            echo "##INFO=<ID=STRAND,Number=1,Type=String,Description="strand">" >> fixed${i}.vcf
+            echo "##INFO=<ID=AF,Number=1,Type=Float,Description="af">" >> fixed${i}.vcf
+            echo "##INFO=<ID=STDEV_LEN,Number=1,Type=Float,Description="std">" >> fixed${i}.vcf
+            echo "##INFO=<ID=STDEV_POS,Number=1,Type=Float,Description="std">" >> fixed${i}.vcf
+            echo "##INFO=<ID=SUPPORT_LONG,Number=1,Type=Integer,Description="support">" >> fixed${i}.vcf
+            echo "##INFO=<ID=CHR2,Number=1,Type=String,Description="chr2">" >> fixed${i}.vcf
+            echo "##INFO=<ID=INNER_REF,Number=1,Type=String,Description="inner">" >> fixed${i}.vcf
+            echo "##INFO=<ID=INNER_TIG,Number=1,Type=String,Description="inner">" >> fixed${i}.vcf
             tail -n 1 header1.txt >> fixed${i}.vcf
             bcftools view --no-header ${INPUT_FILE} >> fixed${i}.vcf
             bgzip fixed${i}.vcf
