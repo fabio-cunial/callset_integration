@@ -40,3 +40,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMerge.wdl
   testParameterFiles:
+- name: BcftoolsMergeDipcall
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeDipcall.wdl
+  testParameterFiles:
