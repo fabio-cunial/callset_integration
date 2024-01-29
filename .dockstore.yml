@@ -35,3 +35,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/SvimmerIntersample.wdl
   testParameterFiles:
+- name: BcftoolsMerge
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMerge.wdl
+  testParameterFiles:
