@@ -1,17 +1,17 @@
 version 1.0
 
-
 #
-workflow SvimmerIntersample {
+workflow JasmineIntersample {
     input {
         Array[File] input_vcf_gz
         Array[File] input_tbi
     }
     parameter_meta {
     }
+    
     Array[String] chromosomes = ["chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY"]
     scatter(chr in chromosomes) {
-        call SvimmerIntersampleImpl {
+        call JasmineIntersampleImpl {
             input:
                 input_vcf_gz = input_vcf_gz,
                 input_tbi = input_tbi,
@@ -20,18 +20,18 @@ workflow SvimmerIntersample {
     }
     call ConcatChromosomeVCFs {
         input:
-            chromosome_vcf_gz = SvimmerIntersampleImpl.output_vcf_gz,
-            chromosome_tbi = SvimmerIntersampleImpl.output_tbi
+            chromosome_vcf_gz = JasmineIntersampleImpl.output_vcf_gz,
+            chromosome_tbi = JasmineIntersampleImpl.output_tbi
     }
     
     output {
         File output_vcf_gz = ConcatChromosomeVCFs.output_vcf_gz
-        File output_vcf_gz_tbi = ConcatChromosomeVCFs.output_tbi
+        File output_tbi = ConcatChromosomeVCFs.output_tbi
     }
 }
 
 
-task SvimmerIntersampleImpl {
+task JasmineIntersampleImpl {
     input {
         Array[File] input_vcf_gz
         Array[File] input_tbi
@@ -47,7 +47,7 @@ task SvimmerIntersampleImpl {
         set -euxo pipefail
         mkdir -p ~{work_dir}
         cd ~{work_dir}
-        
+    
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
         GSUTIL_DELAY_S="600"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
@@ -59,11 +59,16 @@ task SvimmerIntersampleImpl {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
-            echo ${INPUT_FILE} >> list.txt
+            ID=$(basename ${INPUT_FILE} .vcf.gz)
+            bcftools view ${INPUT_FILE} ~{chromosome} > ${ID}.filtered.vcf
+            echo ${ID}.filtered.vcf >> list.txt
         done
-        ${TIME_COMMAND} python3 ~{docker_dir}/svimmer/svimmer --threads ${N_THREADS} --ids --output ~{chromosome}.vcf list.txt ~{chromosome}
-        bgzip ~{chromosome}.vcf
-        tabix ~{chromosome}.vcf.gz        
+        chmod +x /opt/conda/envs/jasmine/bin/jasmine
+        source activate jasmine
+        ${TIME_COMMAND} jasmine --output_genotypes threads=${N_THREADS} file_list=list.txt out_file=~{chromosome}.vcf
+        conda deactivate
+        bcftools sort --output-type z ~{chromosome}.vcf > ~{chromosome}.vcf.gz
+        tabix ~{chromosome}.vcf.gz
     >>>
     output {
         File output_vcf_gz = work_dir + "/" + chromosome + ".vcf.gz"
@@ -72,15 +77,15 @@ task SvimmerIntersampleImpl {
     runtime {
         docker: "fcunial/callset_integration"
         cpu: 8
-        memory: "32GB"  # Arbitrary
-        disks: "local-disk 50 HDD"  # Arbitrary
+        memory: "16GB"  # Arbitrary
+        disks: "local-disk 20 HDD"  # Arbitrary
         preemptible: 0
     }
 }
 
 
 # Creates a single merged VCF from the concatenation of all single-chromosome
-# VCFs produced by svimmer.
+# VCFs produced by jasmine.
 #
 task ConcatChromosomeVCFs {
     input {
@@ -108,33 +113,8 @@ task ConcatChromosomeVCFs {
         INPUT_FILES=~{sep=',' chromosome_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
-        i="0"
         for INPUT_FILE in ${INPUT_FILES}; do
-            bcftools view --header-only ${INPUT_FILE} > header1.txt
-            N_ROWS=$(wc -l < header1.txt)
-            head -n $(( ${N_ROWS} - 1 )) header1.txt > fixed${i}.vcf
-            echo "##INFO=<ID=ID,Number=1,Type=String,Description="id">" >> fixed${i}.vcf
-            echo "##INFO=<ID=TIG_REGION,Number=1,Type=String,Description="tig">" >> fixed${i}.vcf
-            echo "##INFO=<ID=QUERY_STRAND,Number=1,Type=String,Description="strand">" >> fixed${i}.vcf
-            echo "##INFO=<ID=HOM_REF,Number=1,Type=String,Description="homref">" >> fixed${i}.vcf
-            echo "##INFO=<ID=HOM_TIG,Number=1,Type=String,Description="homtig">" >> fixed${i}.vcf
-            echo "##INFO=<ID=PRECISE,Number=1,Type=String,Description="precise">" >> fixed${i}.vcf
-            echo "##INFO=<ID=SUPPORT,Number=1,Type=Integer,Description="support">" >> fixed${i}.vcf
-            echo "##INFO=<ID=COVERAGE,Number=1,Type=String,Description="coverage">" >> fixed${i}.vcf
-            echo "##INFO=<ID=STRAND,Number=1,Type=String,Description="strand">" >> fixed${i}.vcf
-            echo "##INFO=<ID=AF,Number=1,Type=Float,Description="af">" >> fixed${i}.vcf
-            echo "##INFO=<ID=STDEV_LEN,Number=1,Type=Float,Description="std">" >> fixed${i}.vcf
-            echo "##INFO=<ID=STDEV_POS,Number=1,Type=Float,Description="std">" >> fixed${i}.vcf
-            echo "##INFO=<ID=SUPPORT_LONG,Number=1,Type=Integer,Description="support">" >> fixed${i}.vcf
-            echo "##INFO=<ID=CHR2,Number=1,Type=String,Description="chr2">" >> fixed${i}.vcf
-            echo "##INFO=<ID=INNER_REF,Number=1,Type=String,Description="inner">" >> fixed${i}.vcf
-            echo "##INFO=<ID=INNER_TIG,Number=1,Type=String,Description="inner">" >> fixed${i}.vcf
-            tail -n 1 header1.txt >> fixed${i}.vcf
-            bcftools view --no-header ${INPUT_FILE} >> fixed${i}.vcf
-            bgzip fixed${i}.vcf
-            tabix fixed${i}.vcf.gz
-            echo fixed${i}.vcf.gz >> list.txt
-            i=$(( ${i} + 1 ))
+            echo ${INPUT_FILE} >> list.txt
         done
         ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
         tabix concat.vcf.gz

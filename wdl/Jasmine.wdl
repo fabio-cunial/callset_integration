@@ -26,7 +26,7 @@ workflow Jasmine {
     }
     output {
         File output_vcf_gz = JasmineImpl.output_vcf_gz
-        File output_vcf_gz_tbi = JasmineImpl.output_vcf_gz_tbi
+        File output_tbi = JasmineImpl.output_tbi
     }
 }
 
@@ -84,7 +84,7 @@ task JasmineImpl {
     >>>
     output {
         File output_vcf_gz = work_dir + "/" + sample_id + ".jasmine.vcf.gz"
-        File output_vcf_gz_tbi = work_dir + "/" + sample_id + ".jasmine.vcf.gz.tbi"
+        File output_tbi = work_dir + "/" + sample_id + ".jasmine.vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/callset_integration"
