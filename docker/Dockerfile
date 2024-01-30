@@ -125,3 +125,6 @@ COPY ./jasmine_environment.yml .
 RUN conda env create -f ./jasmine_environment.yml \
     && conda clean --packages --tempfiles --logfiles
 SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
+# Adding #!/bin/bash to the original shell script
+COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine
+SHELL ["chmod", "+x", "/opt/conda/envs/jasmine/bin/jasmine"]

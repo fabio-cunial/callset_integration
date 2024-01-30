@@ -69,6 +69,8 @@ task JasmineImpl {
         echo "pav.vcf" >> list.txt
         
         # Running jasmine with default parameters
+        chmod +x /opt/conda/envs/jasmine/bin/jasmine
+        cat /opt/conda/envs/jasmine/bin/jasmine
         source activate jasmine
         ${TIME_COMMAND} jasmine --output_genotypes threads=${N_THREADS} file_list=list.txt out_file=~{sample_id}.jasmine.vcf
         conda deactivate
