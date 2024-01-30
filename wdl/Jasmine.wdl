@@ -61,18 +61,19 @@ task JasmineImpl {
         
         # Removing BND records, since they seem to be a runtime bottleneck.
         touch ~{pbsv_vcf_gz_tbi} ~{sniffles_vcf_gz_tbi} ~{pav_vcf_gz_tbi}
-        bcftools view --include 'SVTYPE!="BND"' --output-type v ~{pbsv_vcf_gz} > pbsv.vcf
-        bcftools view --include 'SVTYPE!="BND"' --output-type v ~{sniffles_vcf_gz} > sniffles.vcf
-        bcftools view --include 'SVTYPE!="BND"' --output-type v ~{pav_vcf_gz} > pav.vcf
-        echo "pbsv.vcf" >> list.txt
-        echo "sniffles.vcf" >> list.txt
-        echo "pav.vcf" >> list.txt
+        bcftools view --include 'SVTYPE!="BND"' --output-type z ~{pbsv_vcf_gz} > pbsv.vcf.gz
+        bcftools view --include 'SVTYPE!="BND"' --output-type z ~{sniffles_vcf_gz} > sniffles.vcf.gz
+        bcftools view --include 'SVTYPE!="BND"' --output-type z ~{pav_vcf_gz} > pav.vcf.gz
+        echo "pbsv.vcf.gz" >> list.txt
+        echo "sniffles.vcf.gz" >> list.txt
+        echo "pav.vcf.gz" >> list.txt
+        ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type v > concat.vcf
         
         # Running jasmine with default parameters
+        echo "concat.vcf" > list.txt
         chmod +x /opt/conda/envs/jasmine/bin/jasmine
-        cat /opt/conda/envs/jasmine/bin/jasmine
         source activate jasmine
-        ${TIME_COMMAND} jasmine --output_genotypes threads=${N_THREADS} file_list=list.txt out_file=~{sample_id}.jasmine.vcf
+        ${TIME_COMMAND} jasmine --allow_intrasample --output_genotypes threads=${N_THREADS} file_list=list.txt out_file=~{sample_id}.jasmine.vcf
         conda deactivate
         bcftools view --header-only ~{sample_id}.jasmine.vcf
         bcftools sort --output-type z ~{sample_id}.jasmine.vcf > ~{sample_id}.jasmine.vcf.gz
