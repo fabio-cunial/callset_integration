@@ -45,3 +45,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeDipcall.wdl
   testParameterFiles:
+- name: Jasmine
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/Jasmine.wdl
+  testParameterFiles:

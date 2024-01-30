@@ -119,3 +119,9 @@ RUN pip3 install pysam \
     && git clone https://github.com/DecodeGenetics/svimmer.git
 # Minor fixes
 COPY ./sv.py ${work_dir}/svimmer/
+
+# JASMINE
+COPY ./jasmine_environment.yml .
+RUN conda env create -f ./jasmine_environment.yml \
+    && conda clean --packages --tempfiles --logfiles
+SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
