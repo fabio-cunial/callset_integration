@@ -74,6 +74,7 @@ task JasmineImpl {
         source activate jasmine
         ${TIME_COMMAND} jasmine --output_genotypes threads=${N_THREADS} file_list=list.txt out_file=~{sample_id}.jasmine.vcf
         conda deactivate
+        bcftools view --header-only ~{sample_id}.jasmine.vcf
         bcftools sort --output-type z ~{sample_id}.jasmine.vcf > ~{sample_id}.jasmine.vcf.gz
         tabix ~{sample_id}.jasmine.vcf.gz
     >>>
