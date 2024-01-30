@@ -62,8 +62,11 @@ task JasmineImpl {
         # Removing BND records, since they seem to be a runtime bottleneck.
         touch ~{pbsv_vcf_gz_tbi} ~{sniffles_vcf_gz_tbi} ~{pav_vcf_gz_tbi}
         bcftools view --include 'SVTYPE!="BND"' --output-type z ~{pbsv_vcf_gz} > pbsv.vcf.gz
+        tabix pbsv.vcf.gz
         bcftools view --include 'SVTYPE!="BND"' --output-type z ~{sniffles_vcf_gz} > sniffles.vcf.gz
+        tabix sniffles.vcf.gz
         bcftools view --include 'SVTYPE!="BND"' --output-type z ~{pav_vcf_gz} > pav.vcf.gz
+        tabix pav.vcf.gz
         echo "pbsv.vcf.gz" >> list.txt
         echo "sniffles.vcf.gz" >> list.txt
         echo "pav.vcf.gz" >> list.txt
