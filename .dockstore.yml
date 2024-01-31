@@ -55,3 +55,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/JasmineIntersample.wdl
   testParameterFiles:
+- name: SnifflesIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/SnifflesIntersample.wdl
+  testParameterFiles:

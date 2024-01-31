@@ -120,6 +120,10 @@ RUN pip3 install pysam \
 # Minor fixes
 COPY ./sv.py ${work_dir}/svimmer/
 
+# SNIFFLES
+RUN pip3 install sniffles==2.2 \
+    && sniffles -h
+
 # JASMINE
 COPY ./jasmine_environment.yml .
 RUN conda env create -f ./jasmine_environment.yml \
