@@ -274,7 +274,7 @@ task ConcatChromosomeVCFs {
         done
         ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
         tabix concat.vcf.gz
-        ${TIME_COMMAND} bcftools sort --threads ${N_THREADS} --output-type z concat.vcf.gz > concat.sorted.vcf.gz
+        ${TIME_COMMAND} bcftools sort --output-type z concat.vcf.gz > concat.sorted.vcf.gz
         tabix concat.sorted.vcf.gz
     >>>
 
