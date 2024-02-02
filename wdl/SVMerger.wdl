@@ -247,10 +247,10 @@ task SVMerger2VCF {
         # Building a VCF file that contains only clique representatives
         rm -f list.txt
         for CHR in chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY ; do
-            bcftools view --no-header all_calls.vcf.gz ${CHR} | sort -k 3 > input.vcf
+            bcftools view --no-header all_calls.vcf.gz ${CHR} | sort -t$'\t' -k3,3 > input.vcf
             gsutil -m cp ~{remote_dir}/~{sample_id}/tsvs/clique-representatives-${CHR}.tsv ./representatives.tsv
             bcftools view --header-only all_calls.vcf.gz > ${CHR}.vcf
-            join -t $'\t' -1 3 -2 1 input.vcf representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1, $4, $5, $6, $7, $8, $9, $10 }' >> ${CHR}.vcf
+            join -t$'\t' -1 3 -2 1 input.vcf representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { print $2, $3, $1, $4, $5, $6, $7, $8, $9, $10 }' >> ${CHR}.vcf
             bcftools sort ${CHR}.vcf --output-type z > ${CHR}.vcf.gz
             tabix ${CHR}.vcf.gz
             rm -f ${CHR}.vcf

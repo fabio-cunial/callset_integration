@@ -75,9 +75,17 @@ task GetChromosomeTSVs {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         
         # 1. Merging all VCFs and splitting the merge by chromosome.
+        # 1.1 Calls from different samples might have the same ID, which must be
+        # made unique.
+        # 1.2 $bcftools merge$ might merge identical calls from different 
+        # samples: their IDs are concatenated in the merged file.
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
-            echo ${INPUT_FILE} >> list.txt
+            SAMPLE_ID=$(basename ${INPUT_FILE} .vcf.gz)
+            ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id ${SAMPLE_ID}'-%ID' ${INPUT_FILE} --output-type z > ${SAMPLE_ID}-annotated.vcf.gz
+            tabix ${SAMPLE_ID}-annotated.vcf.gz
+            echo ${SAMPLE_ID}-annotated.vcf.gz >> list.txt
+            rm -f ${INPUT_FILE}
         done
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > merge.vcf.gz
         tabix merge.vcf.gz
@@ -90,21 +98,16 @@ task GetChromosomeTSVs {
         done
         rm -f merge.vcf.gz
         
-        # 2. Concatenating all TSVs and splitting the concatenation by
-        # chromosome.
-        rm -f svmerger.tsv
-        for INPUT_FILE in ${INPUT_FILES}; do
-            SAMPLE_ID=$(basename ${INPUT_FILE} .vcf.gz)
-            gunzip --stdout ${INPUT_FILE} > tmp.vcf
-            ${TIME_COMMAND} java VCF2SVMerger tmp.vcf ${SAMPLE_ID} svmerger >> svmerger.tsv
-            rm -f tmp.vcf
-        done
+        # 2. Creating per-chromosome TSVs.
+        # Remark: we must run $VCF2SVMerger$ on the output of bcftools merge, to
+        # make sure the TSV uses the same IDs as the VCF.
         rm -f output_tsv_list.txt
         for CHR in $(seq 1 22) X Y; do
-            grep ^chr${CHR}$'\t' svmerger.tsv > chr${CHR}.tsv
+            gunzip --stdout chr${CHR}.vcf.gz > tmp.vcf
+            ${TIME_COMMAND} java VCF2SVMerger tmp.vcf ${SAMPLE_ID} null > chr${CHR}.tsv
             echo ~{work_dir}/chr${CHR}.tsv >> output_tsv_list.txt
+            rm -f tmp.vcf
         done
-        rm -f svmerger.tsv        
         ls -laht; tree
     >>>
     
@@ -212,11 +215,9 @@ task SVMergerImpl {
         rm -f clique-representatives-*.tsv
         
         # 2. Building a VCF file that contains only clique representatives
-        ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id 'svmerger-%ID' ~{input_vcf_gz} --output-type z > annotated.vcf.gz
-        tabix annotated.vcf.gz
-        bcftools view --no-header annotated.vcf.gz | sort -k 3 > input.vcf
-        bcftools view --header-only annotated.vcf.gz > output.vcf
-        join -t $'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { printf("%s\t%s\t%s\t",$2,$3,$1); for (i=4; i<NF; i++) printf("%s\t",$i); print $NF }' >> output.vcf
+        bcftools view --no-header ~{input_vcf_gz} | sort -t$'\t' -k3,3 > input.vcf
+        bcftools view --header-only ~{input_vcf_gz} > output.vcf
+        join -t$'\t' -1 3 -2 1 input.vcf clique-representatives.tsv | awk 'BEGIN {FS="\t"; OFS="\t"} { printf("%s\t%s\t%s\t",$2,$3,$1); for (i=4; i<NF; i++) printf("%s\t",$i); print $NF }' >> output.vcf
         bcftools sort output.vcf --output-type z > output.vcf.gz
         tabix output.vcf.gz
         rm -f output.vcf

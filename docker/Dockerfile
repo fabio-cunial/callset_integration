@@ -124,10 +124,15 @@ COPY ./sv.py ${work_dir}/svimmer/
 RUN pip3 install sniffles==2.2 \
     && sniffles -h
 
+# SVPOP
+COPY ./svpop_environment.yml .
+RUN conda env create -f ./svpop_environment.yml
+SHELL ["conda", "run", "-n", "svpop", "/bin/bash", "-c"]
+RUN git clone --recursive https://github.com/EichlerLab/svpop.git
+
 # JASMINE
 COPY ./jasmine_environment.yml .
-RUN conda env create -f ./jasmine_environment.yml \
-    && conda clean --packages --tempfiles --logfiles
+RUN conda env create -f ./jasmine_environment.yml
 SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
 # Adding #!/bin/bash to the original shell script
 COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine

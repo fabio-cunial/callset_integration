@@ -8,11 +8,11 @@ import java.io.*;
  *
  */
 public class VCF2SVMerger {
-
+    
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
         final String SAMPLE_ID = args[1];
-        final String CALLER_ID = args[2];
+        final String CALLER_ID = args[2].equalsIgnoreCase("null")?"":args[2];
         
         int type, pos, end, length, nCalls, nDiscarded_chromosome, nDiscarded_type, nDiscarded_length;
         String str, field;
@@ -75,7 +75,7 @@ public class VCF2SVMerger {
                 }
             }
             
-            System.out.println(tokens[0]+"\t"+pos+"\t"+end+"\t"+CALLER_ID+"-"+tokens[2]+"\t"+SAMPLE_ID+"\t"+CALLER_ID+"\t"+VCFconstants.type2str(type)+"\t"+length);
+            System.out.println(tokens[0]+"\t"+pos+"\t"+end+"\t"+(CALLER_ID.length()==0?"":(CALLER_ID+"-"))+tokens[2]+"\t"+SAMPLE_ID+"\t"+(CALLER_ID.length()==0?"caller":CALLER_ID)+"\t"+VCFconstants.type2str(type)+"\t"+length);
             str=br.readLine();
         }
         br.close();
