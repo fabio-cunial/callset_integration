@@ -71,18 +71,22 @@ task GetTSVs {
         cp ~{docker_dir}/*.class .
         rm -f *.tsv
         
+        # Remark: different calls in the same sample might have the same IDs
+        # (e.g. PBSV in different chromosomes): these must be made unique for
+        # the rest of the pipeline to work.
+        
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pbsv.vcf.gz .
-        gunzip --stdout ~{sample_id}.pbsv.vcf.gz > tmp.vcf
+        ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id '%CHROM-%POS-%ID' ~{sample_id}.pbsv.vcf.gz --output-type v > tmp.vcf
         java VCF2SVMerger tmp.vcf ~{sample_id} pbsv >> pbsv.tsv
         rm -f tmp.vcf
         
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.sniffles.vcf.gz .
-        gunzip --stdout ~{sample_id}.sniffles.vcf.gz > tmp.vcf
+        ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id '%CHROM-%POS-%ID' ~{sample_id}.sniffles.vcf.gz --output-type v > tmp.vcf
         java VCF2SVMerger tmp.vcf ~{sample_id} sniffles >> sniffles.tsv
         rm -f tmp.vcf
         
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pav_sv.vcf.gz .
-        gunzip --stdout ~{sample_id}.pav_sv.vcf.gz > tmp.vcf
+        ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id '%CHROM-%POS-%ID' ~{sample_id}.pav_sv.vcf.gz --output-type v > tmp.vcf
         java VCF2SVMerger tmp.vcf ~{sample_id} pav >> pav.tsv
         rm -f tmp.vcf
         
@@ -228,16 +232,19 @@ task SVMerger2VCF {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         # Merging all VCFs
+        # Remark: different calls in the same sample might have the same IDs
+        # (e.g. PBSV in different chromosomes): these must be made distinct for
+        # the rest of the pipeline to work.
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pbsv.vcf.'gz*' .
-        bcftools annotate --set-id 'pbsv-%ID' ~{sample_id}.pbsv.vcf.gz --output-type z > pbsv.annotated.vcf.gz
+        bcftools annotate --set-id 'pbsv-%CHROM-%POS-%ID' ~{sample_id}.pbsv.vcf.gz --output-type z > pbsv.annotated.vcf.gz
         tabix pbsv.annotated.vcf.gz
         rm -f ~{sample_id}.pbsv.vcf.gz*
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.sniffles.vcf.'gz*' .
-        bcftools annotate --set-id 'sniffles-%ID' ~{sample_id}.sniffles.vcf.gz --output-type z > sniffles.annotated.vcf.gz
+        bcftools annotate --set-id 'sniffles-%CHROM-%POS-%ID' ~{sample_id}.sniffles.vcf.gz --output-type z > sniffles.annotated.vcf.gz
         tabix sniffles.annotated.vcf.gz
         rm -f ~{sample_id}.sniffles.vcf.gz*
         gsutil cp ~{remote_dir}/~{sample_id}/~{sample_id}.pav_sv.vcf.'gz*' .
-        bcftools annotate --set-id 'pav-%ID' ~{sample_id}.pav_sv.vcf.gz --output-type z > pav.annotated.vcf.gz
+        bcftools annotate --set-id 'pav-%CHROM-%POS-%ID' ~{sample_id}.pav_sv.vcf.gz --output-type z > pav.annotated.vcf.gz
         tabix pav.annotated.vcf.gz
         rm -f ~{sample_id}.pav_sv.vcf.gz*
         bcftools concat --allow-overlaps --output-type z pbsv.annotated.vcf.gz sniffles.annotated.vcf.gz pav.annotated.vcf.gz > all_calls.vcf.gz

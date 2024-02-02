@@ -75,14 +75,14 @@ task GetChromosomeTSVs {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         
         # 1. Merging all VCFs and splitting the merge by chromosome.
-        # 1.1 Calls in the same sample might have the same ID (e.g. PBSV in
-        # different chromosomes): these must be made unique for the rest of the
-        # pipeline to work.
-        # 1.2 Calls from different samples might have the same ID as well.
+        # 1.1 Different calls in the same sample are assumed to have distinct
+        # IDs, from the intra-sample step upstream.
+        # 1.2 Different calls from different samples might have the same IDs:
+        # these must be made distinct for the rest of the pipeline to work.
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
             SAMPLE_ID=$(basename ${INPUT_FILE} .vcf.gz)
-            ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id ${SAMPLE_ID}'%CHROM-%POS-%ID' ${INPUT_FILE} --output-type z > ${SAMPLE_ID}-annotated.vcf.gz
+            ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id ${SAMPLE_ID}'-%ID' ${INPUT_FILE} --output-type z > ${SAMPLE_ID}-annotated.vcf.gz
             tabix ${SAMPLE_ID}-annotated.vcf.gz
             echo ${SAMPLE_ID}-annotated.vcf.gz >> list.txt
             rm -f ${INPUT_FILE}
@@ -274,11 +274,13 @@ task ConcatChromosomeVCFs {
         done
         ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
         tabix concat.vcf.gz
+        ${TIME_COMMAND} bcftools sort --threads ${N_THREADS} --output-type z concat.vcf.gz > concat.sorted.vcf.gz
+        tabix concat.sorted.vcf.gz
     >>>
 
     output {
-        File output_vcf_gz = work_dir + "/concat.vcf.gz"
-        File output_tbi = work_dir + "/concat.vcf.gz.tbi"
+        File output_vcf_gz = work_dir + "/concat.sorted.vcf.gz"
+        File output_tbi = work_dir + "/concat.sorted.vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/callset_integration"
