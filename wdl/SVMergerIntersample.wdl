@@ -75,14 +75,14 @@ task GetChromosomeTSVs {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         
         # 1. Merging all VCFs and splitting the merge by chromosome.
-        # 1.1 Calls from different samples might have the same ID, which must be
-        # made unique.
-        # 1.2 $bcftools merge$ might merge identical calls from different 
-        # samples: their IDs are concatenated in the merged file.
+        # 1.1 Calls in the same sample might have the same ID (e.g. PBSV in
+        # different chromosomes): these must be made unique for the rest of the
+        # pipeline to work.
+        # 1.2 Calls from different samples might have the same ID as well.
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
             SAMPLE_ID=$(basename ${INPUT_FILE} .vcf.gz)
-            ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id ${SAMPLE_ID}'-%ID' ${INPUT_FILE} --output-type z > ${SAMPLE_ID}-annotated.vcf.gz
+            ${TIME_COMMAND} bcftools annotate --threads ${N_THREADS} --set-id ${SAMPLE_ID}'%CHROM-%POS-%ID' ${INPUT_FILE} --output-type z > ${SAMPLE_ID}-annotated.vcf.gz
             tabix ${SAMPLE_ID}-annotated.vcf.gz
             echo ${SAMPLE_ID}-annotated.vcf.gz >> list.txt
             rm -f ${INPUT_FILE}
@@ -99,8 +99,10 @@ task GetChromosomeTSVs {
         rm -f merge.vcf.gz
         
         # 2. Creating per-chromosome TSVs.
-        # Remark: we must run $VCF2SVMerger$ on the output of bcftools merge, to
-        # make sure the TSV uses the same IDs as the VCF.
+        # 2.1 When $bcftools merge$ merges identical calls from different
+        # samples, their IDs are concatenated, so we must run $VCF2SVMerger$ on
+        # the output of $bcftools merge$ for the TSVs to use the same IDs as the
+        # VCF.
         rm -f output_tsv_list.txt
         for CHR in $(seq 1 22) X Y; do
             gunzip --stdout chr${CHR}.vcf.gz > tmp.vcf
