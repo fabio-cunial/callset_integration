@@ -63,7 +63,7 @@ RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud
 ENV PATH=${work_dir}/google-cloud-sdk/bin:${PATH}
 
 # HTSLIB
-ARG htslib_version=1.16
+ARG htslib_version=1.19.1
 RUN wget https://github.com/samtools/htslib/releases/download/${htslib_version}/htslib-${htslib_version}.tar.bz2 \
     && tar xjf htslib-${htslib_version}.tar.bz2 \
     && rm htslib-${htslib_version}.tar.bz2 \
@@ -76,7 +76,7 @@ RUN wget https://github.com/samtools/htslib/releases/download/${htslib_version}/
     && bgzip --help
 
 # SAMTOOLS
-ARG samtools_version=1.16.1
+ARG samtools_version=1.19.2
 RUN wget https://github.com/samtools/samtools/releases/download/${samtools_version}/samtools-${samtools_version}.tar.bz2 \
     && tar xjf samtools-${samtools_version}.tar.bz2 \
     && rm samtools-${samtools_version}.tar.bz2 \
@@ -89,7 +89,7 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
     && samtools --help
 
 # BCFTOOLS
-ARG bcftools_version=1.16
+ARG bcftools_version=1.19
 RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_version}/bcftools-${bcftools_version}.tar.bz2 \
     && tar xjf bcftools-${bcftools_version}.tar.bz2 \
     && rm bcftools-${bcftools_version}.tar.bz2 \

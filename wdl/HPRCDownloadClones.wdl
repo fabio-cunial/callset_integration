@@ -65,7 +65,7 @@ task HPRCDownloadClonesImpl {
         
         # 1. Randomizing the order of the BAMs
         LIST_FILE=~{write_lines(bam_addresses)}
-        sort --random-sort ${LIST_FILE} > randomized.txt
+        shuf ${LIST_FILE} > randomized.txt
         cat randomized.txt
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
@@ -98,7 +98,7 @@ task HPRCDownloadClonesImpl {
         cp ~{docker_dir}/*.class .
         ${TIME_COMMAND} java FlattenFastq tmp1.fastq "SEPARATOR" tmp2.txt
         rm -f tmp1.fastq
-        ${TIME_COMMAND} sort --random-sort tmp2.txt > tmp3.txt
+        ${TIME_COMMAND} shuf tmp2.txt > tmp3.txt
         rm -f tmp2.txt
         head -c ${TARGET_N_BYTES} tmp3.txt > tmp4.txt
         N_ROWS=$(wc -l < tmp4.txt)
