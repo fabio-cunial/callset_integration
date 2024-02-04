@@ -70,11 +70,15 @@ task HPRCDownloadClonesImpl {
         TARGET_N_BYTES=$(( ~{target_coverage} * 3000000000 * 2 ))
         touch tmp1.fastq
         while read ADDRESS; do
+            SUCCESS="0"
             if [[ ${ADDRESS} == gs://* ]]; then
-                ${TIME_COMMAND} gsutil -u ${BILLING_PROJECT} cp ${ADDRESS} .
+                SUCCESS=$(gsutil -u ${BILLING_PROJECT} cp ${ADDRESS} . && echo 1 || echo 0)
             else
-                ${TIME_COMMAND} wget ${ADDRESS}
+                SUCCESS=$(wget ${ADDRESS} && echo 1 || echo 0)
             fi
+            if [[ ${SUCCESS} -eq 0 ]]; then
+                continue
+            fi 
             FILE_NAME=$(basename ${ADDRESS})
             if [[ ${FILE_NAME} == *.bam ]]; then
                 ${TIME_COMMAND} samtools fastq -@ ${N_THREADS} -n ${FILE_NAME} >> tmp1.fastq 
