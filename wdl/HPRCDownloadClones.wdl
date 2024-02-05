@@ -11,8 +11,6 @@ workflow HPRCDownloadClones {
         Array[String] bam_addresses
         Int target_coverage
         String remote_dir
-        Int n_cpus
-        Int ram_size_gb
     }
     parameter_meta {
         remote_dir: "Root directory in the remote bucket. Every sample is stored in a subdirectory."
@@ -24,9 +22,7 @@ workflow HPRCDownloadClones {
             sample_id_clone = sample_id_clone,
             bam_addresses = bam_addresses,
             target_coverage = target_coverage,
-            remote_dir = remote_dir,
-            n_cpus = n_cpus,
-            ram_size_gb = ram_size_gb
+            remote_dir = remote_dir
     }
     
     output {
@@ -40,8 +36,6 @@ task HPRCDownloadClonesImpl {
         Array[String] bam_addresses
         Int target_coverage
         String remote_dir
-        Int n_cpus
-        Int ram_size_gb
     }
     parameter_meta {
     }
@@ -121,8 +115,8 @@ task HPRCDownloadClonesImpl {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: n_cpus
-        memory: ram_size_gb + "GB"
+        cpu: 32
+        memory: "128GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
