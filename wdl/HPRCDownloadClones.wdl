@@ -40,7 +40,7 @@ task HPRCDownloadClonesImpl {
     parameter_meta {
     }
     
-    Int disk_size_gb = (3*target_coverage)*2 + 512
+    Int disk_size_gb = (3*target_coverage)*8 + 512
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -98,7 +98,7 @@ task HPRCDownloadClonesImpl {
         N_ROWS=$(wc -l < tmp4.txt)
         rm -f tmp4.txt
         N_ROWS=$(( ${N_ROWS}*2 ))
-        head -n ${N_ROWS} tmp3.txt | sed 's/SEPARATOR/\n/g' | gzip > ~{sample_id_clone}.fastq.gz
+        head -n ${N_ROWS} tmp3.txt | sed 's/SEPARATOR/\n/g' | gzip -1 > ~{sample_id_clone}.fastq.gz
         rm -f tmp3.txt
         while : ; do
             TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp ~{sample_id_clone}.fastq.gz ~{remote_dir}/~{sample_id_clone}/ && echo 0 || echo 1)
