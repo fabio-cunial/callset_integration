@@ -34,6 +34,9 @@ workflow BcftoolsMerge {
 }
 
 
+# Remark: $bcftools concat$ does not try to merge any records, so the output
+# of this task contains all the original records.
+#
 task IntraSampleConcat {
     input {
         Array[File] sample_vcf_gz
@@ -82,6 +85,12 @@ task IntraSampleConcat {
 }
 
 
+# Remark: $bcftools merge$ collapses into the same record every record with the
+# same $CHR,POS,REF,ALT$, disregarding the INFO field and in particular 
+# differences in SVLEN, END or STRAND. This may delete information for symbolic
+# ALTs. Our script makes sure that only symbolic records with the same SVLEN,
+# END and STRAND are collapsed into the same record.
+#
 task InterSampleMerge {
     input {
         Array[File] input_vcf_gz
@@ -105,20 +114,64 @@ task InterSampleMerge {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
+        function cleanVCF() {
+            local INPUT_VCF_GZ=$1
+            local OUTPUT_VCF=$2
+            
+            bcftools view --header-only ${INPUT_VCF_GZ} > ${OUTPUT_VCF}
+            ${TIME_COMMAND} bcftools view --no-header ${INPUT_VCF_GZ} | awk '{ \
+                tag="artificial"; \
+                if ($5=="<DEL>" || $5=="<INS>" || $5=="<INV>" || $5=="<DUP>" || $5=="<CNV>") { \
+                    svtype=substr($5,2,3); \
+                    end=""; \
+                    svlen=""; \
+                    strand=""; \
+                    n=split($8,A,";"); \
+                    for (i=1; i<=n; i++) { \
+                        if (substr(A[i],1,4)=="END=") end=substr(A[i],5); \
+                        else if (substr(A[i],1,6)=="SVLEN=") { \
+                            if (substr(A[i],7,1)=="-") svlen=substr(A[i],8); \
+                            else svlen=substr(A[i],7); \
+                        } \
+                        else if (substr(A[i],1,7)=="STRAND=") strand=substr(A[i],8); \
+                    } \
+                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ":" (length(strand)==0?"?":strand) ">" \
+                }; \
+                printf("%s",$1); \
+                for (i=2; i<=NF; i++) printf("\t%s",$i); \
+                printf("\n"); \
+            }' >> ${OUTPUT_VCF}
+            ${TIME_COMMAND} bgzip --threads ${N_THREADS} ${OUTPUT_VCF}
+            tabix ${OUTPUT_VCF}.gz
+        }
+        
         INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
-            echo ${INPUT_FILE} >> list.txt
+            ID=$(basename ${INPUT_FILE} .vcf.gz)
+            cleanVCF ${INPUT_FILE} ${ID}_cleaned.vcf
+            echo ${ID}_cleaned.vcf.gz >> list.txt
+            rm -f ${INPUT_FILE}
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --file-list list.txt --output-type z > merge.vcf.gz
-        tabix merge.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --file-list list.txt --output-type v > tmp.vcf
+        bcftools view --header-only tmp.vcf > merged.vcf
+        ${TIME_COMMAND} bcftools view --no-header tmp.vcf | awk '{ \
+            tag="artificial"; \
+            if (substr($5,6,length(tag))==tag) $5=substr($5,1,4) ">"; \
+            printf("%s",$1); \
+            for (i=2; i<=NF; i++) printf("\t%s",$i); \
+            printf("\n"); \
+        }' >> merged.vcf
+        rm -f tmp.vcf
+        ${TIME_COMMAND} bgzip --threads ${N_THREADS} merged.vcf
+        tabix merged.vcf.gz
         ls -laht; tree
     >>>
     
     output {
-        File output_vcf_gz = work_dir + "/merge.vcf.gz"
-        File output_tbi = work_dir + "/merge.vcf.gz.tbi"
+        File output_vcf_gz = work_dir + "/merged.vcf.gz"
+        File output_tbi = work_dir + "/merged.vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/callset_integration"
