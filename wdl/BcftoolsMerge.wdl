@@ -155,6 +155,7 @@ task InterSampleMerge {
             cleanVCF ${INPUT_FILE} ${ID}_cleaned.vcf
             echo ${ID}_cleaned.vcf.gz >> list.txt
             rm -f ${INPUT_FILE}
+            i=$(( ${i} + 1 ))
         done
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --file-list list.txt --output-type v > tmp.vcf
         bcftools view --header-only tmp.vcf > merged.vcf
