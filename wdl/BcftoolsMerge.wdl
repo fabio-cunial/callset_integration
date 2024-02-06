@@ -99,6 +99,7 @@ task InterSampleMerge {
     parameter_meta {
     }
     
+    Int disk_size_gb = ceil(size(input_vcf_gz, "GB")) + 100
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -148,8 +149,9 @@ task InterSampleMerge {
         INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
+        i="0"
         for INPUT_FILE in ${INPUT_FILES}; do
-            ID=$(basename ${INPUT_FILE} .vcf.gz)
+            ID="$(basename ${INPUT_FILE} .vcf.gz)_${i}"
             cleanVCF ${INPUT_FILE} ${ID}_cleaned.vcf
             echo ${ID}_cleaned.vcf.gz >> list.txt
             rm -f ${INPUT_FILE}
@@ -175,9 +177,9 @@ task InterSampleMerge {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: 8
+        cpu: 4
         memory: "32GB"
-        disks: "local-disk 100 HDD"
+        disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
 }
