@@ -124,7 +124,7 @@ task retrieve_seq {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.14"
+        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -209,7 +209,7 @@ task run_svpop {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.14"
+        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -243,7 +243,7 @@ task svpop_vcf_body {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.14"
+        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
