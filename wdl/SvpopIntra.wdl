@@ -73,7 +73,7 @@ task bcftools_norm_initial {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
-        less ~{sniffles_vcf} | bcftools norm -f ~{ref} -c s - > ~{sample + ".sniffles_norm.vcf"}
+        bcftools norm -f ~{ref} -c s ~{sniffles_vcf} > ~{sample + ".sniffles_norm.vcf"}
     >>>
     output {
         File norm_vcf = "~{sample}.sniffles_norm.vcf"
