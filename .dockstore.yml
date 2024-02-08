@@ -65,3 +65,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/HPRCDownloadClones.wdl
   testParameterFiles:
+- name: SvpopIntra
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/SvpopIntra.wdl
+  testParameterFiles:
