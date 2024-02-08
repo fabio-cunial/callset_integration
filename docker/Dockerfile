@@ -121,8 +121,14 @@ RUN pip3 install pysam \
 COPY ./sv.py ${work_dir}/svimmer/
 
 # SNIFFLES
-RUN pip3 install sniffles==2.2 \
+ARG sniffles_version=2.2
+RUN pip3 install sniffles==${sniffles_version} \
     && sniffles -h
+
+# PBSV
+ARG pbsv_version=2.9.0
+RUN conda install -c bioconda pbsv=${pbsv_version} \
+    && pbsv --help
 
 # SVPOP
 COPY ./svpop_environment.yml .

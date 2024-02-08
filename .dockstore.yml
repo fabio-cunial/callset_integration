@@ -70,3 +70,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/SvpopIntra.wdl
   testParameterFiles:
+- name: PbsvIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/PbsvIntersample.wdl
+  testParameterFiles:
