@@ -4,6 +4,7 @@ version 1.0
 #
 workflow BcftoolsMergeDipcall {
     input {
+        Array[File] sample_id
         Array[File] sample_vcf_gz
         Array[File] sample_tbi
     }
@@ -25,6 +26,7 @@ workflow BcftoolsMergeDipcall {
 
 task InterSampleMerge {
     input {
+        Array[File] sample_id
         Array[File] input_vcf_gz
         Array[File] input_tbi
     }
@@ -50,7 +52,16 @@ task InterSampleMerge {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
-            echo ${INPUT_FILE} >> list.txt
+            # Enforcing the right sample name
+            SAMPLE_ID=$(basename ${INPUT_FILE} .dipcall_sv.vcf.gz)
+            echo ${SAMPLE_ID} > samples.txt
+            bcftools reheader --samples samples.txt ${INPUT_FILE} > ${SAMPLE_ID}.reheaded.vcf.gz
+            tabix ${SAMPLE_ID}.reheaded.vcf.gz
+            # Removing multiallelic records
+            bcftools norm --multiallelics - --output-type z ${SAMPLE_ID}.reheaded.vcf.gz > ${SAMPLE_ID}.fixed.vcf.gz
+            tabix ${SAMPLE_ID}.fixed.vcf.gz
+            rm -f ${SAMPLE_ID}.reheaded.vcf.gz*
+            echo ${SAMPLE_ID}.fixed.vcf.gz >> list.txt
         done
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > merge.vcf.gz
         tabix merge.vcf.gz
