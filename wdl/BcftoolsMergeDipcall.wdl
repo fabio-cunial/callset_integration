@@ -13,6 +13,7 @@ workflow BcftoolsMergeDipcall {
     
     call InterSampleMerge {
         input:
+            sample_id = sample_id,
             input_vcf_gz = sample_vcf_gz,
             input_tbi = sample_tbi
     }
