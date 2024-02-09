@@ -110,8 +110,8 @@ task retrieve_seq {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
-        git clone https://github.com/EichlerLab/AoU_WDL.git
-        python AoU_WDL/svpop/scripts/extract_seq.py -i ~{sniffles_norm} -s ~{sample} -r ~{ref} -o ~{sample + ".sniffles_norm.vcf"}
+        gsutil cp gs://fc-bb12940d-f7ba-4515-8a98-42de84f63c34/svpop/extract_seq.py .
+        python ./extract_seq.py -i ~{sniffles_norm} -s ~{sample} -r ~{ref} -o ~{sample + ".sniffles_norm.vcf"}
     >>>
     output {
         File body = "~{sample}.vcf.body"
@@ -230,8 +230,8 @@ task svpop_vcf_body {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
-        git clone https://github.com/EichlerLab/AoU_WDL.git
-        python AoU_WDL/svpop/scripts/svpop_vcf.py -i ~{callerset} -p ~{pbsv_vcf} -s ~{sample} -o ~{sample + "_svpop.body"}
+        gsutil cp gs://fc-bb12940d-f7ba-4515-8a98-42de84f63c34/svpop/svpop_vcf.py .
+        python ./svpop_vcf.py -i ~{callerset} -p ~{pbsv_vcf} -s ~{sample} -o ~{sample + "_svpop.body"}
     >>>
     output {
         File body = "~{sample}_svpop.body" 
