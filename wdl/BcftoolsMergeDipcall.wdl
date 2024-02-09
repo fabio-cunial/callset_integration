@@ -4,7 +4,7 @@ version 1.0
 #
 workflow BcftoolsMergeDipcall {
     input {
-        Array[File] sample_id
+        Array[String] sample_id
         Array[File] sample_vcf_gz
         Array[File] sample_tbi
     }
@@ -27,7 +27,7 @@ workflow BcftoolsMergeDipcall {
 
 task InterSampleMerge {
     input {
-        Array[File] sample_id
+        Array[String] sample_id
         Array[File] input_vcf_gz
         Array[File] input_tbi
     }
