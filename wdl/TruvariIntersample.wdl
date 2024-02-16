@@ -46,8 +46,7 @@ task TruvariIntersampleImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        INPUT_FILES=~{sep='-' intrasample_merged_vcf}
-        INPUT_FILES=$(echo ${INPUT_FILES} | tr '-' ' ')
+        INPUT_FILES=~{sep=' ' intrasample_merged_vcf}
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none ${INPUT_FILES} --output-type z > bcftools_merged.vcf.gz 
         tabix bcftools_merged.vcf.gz
         ${TIME_COMMAND} truvari collapse -i bcftools_merged.vcf.gz -c removed.vcf.gz \
