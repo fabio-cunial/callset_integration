@@ -73,6 +73,7 @@ task bcftools_norm_initial {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
+        set -euxo pipefail
         bcftools norm -f ~{ref} -c s ~{sniffles_vcf} > ~{sample + ".sniffles_norm.vcf"}
     >>>
     output {
@@ -107,14 +108,15 @@ task retrieve_seq {
         File ref
         File sniffles_norm
         String sample
+        File extract_seq_py
         RuntimeAttr? runtime_attr_override
     }
     command <<<
-        gsutil cp gs://fc-bb12940d-f7ba-4515-8a98-42de84f63c34/svpop/extract_seq.py .
-        python ./extract_seq.py -i ~{sniffles_norm} -s ~{sample} -r ~{ref} -o ~{sample + ".sniffles_norm.vcf"}
+        set -euxo pipefail
+        python ~{extract_seq_py} -i ~{sniffles_norm} -s ~{sample} -r ~{ref} -o ~{sample + ".sniffles_norm.vcf"}
     >>>
     output {
-        File body = "~{sample}.vcf.body"
+        File body = "~{sample}.sniffles_norm.vcf"
     }
     #########################
     RuntimeAttr default_attr = object {
@@ -124,7 +126,7 @@ task retrieve_seq {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
+        docker:             "wtharvey/svpop:3.4.2-edit"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -144,10 +146,11 @@ task concat_norm_sniffles {
         File ref
         File sniffles_norm
         File new_seq
-        File sample
+        String sample
         RuntimeAttr? runtime_attr_override
     }
     command <<<
+        set -euxo pipefail
         cat <( grep "\#" ~{sniffles_norm} ) ~{new_seq} | bcftools norm - -f ~{ref} -c s | awk '$5 !~ /<|>/' | bgzip -c > ~{sample + ".sniffles-filt.vcf.gz"}
     >>>
     output {
@@ -188,6 +191,8 @@ task run_svpop {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
+        set -euxo pipefail
+        
         mkdir -p config
         cp -l ~{svpop_config} config/config.json
         cp -l ~{svpop_tsv} config/samples.tsv
@@ -195,9 +200,10 @@ task run_svpop {
         cp -l ~{sniffles_vcf} ~{"link_data/" + sample + ".sniffles.vcf.gz"}
         cp -l ~{pav_vcf} ~{"link_data/" + sample + ".pav.vcf.gz"}
         cp -l ~{pbsv_vcf} ~{"link_data/" + sample + ".pbsv.vcf.gz"}
-        cp -l ~{ref} link_data/ref/ref.fa
         find link_data -type f | xargs -i tabix -p vcf {}
-        snakemake -s svpop/Snakefile -j ~{threads} -k --restart-times 1 ~{"results/variant/callerset/aou/" + sample + "/all/all/bed/sv_insdel.bed.gz"}
+        cp -l ~{ref} link_data/ref/ref.fa
+        samtools faidx link_data/ref/ref.fa
+        snakemake -s /svpop/Snakefile -j ~{threads} -k --restart-times 1 ~{"results/variant/callerset/aou/" + sample + "/all/all/bed/sv_insdel.bed.gz"}
     >>>
     output {
         File callerset = "results/variant/callerset/aou/~{sample}/all/all/bed/sv_insdel.bed.gz"
@@ -209,7 +215,7 @@ task run_svpop {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
+        docker:             "wtharvey/svpop:3.4.2-edit"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -227,11 +233,12 @@ task svpop_vcf_body {
         String sample
         File callerset
         File pbsv_vcf
+        File svpop_vcf_py
         RuntimeAttr? runtime_attr_override
     }
     command <<<
-        gsutil cp gs://fc-bb12940d-f7ba-4515-8a98-42de84f63c34/svpop/svpop_vcf.py .
-        python ./svpop_vcf.py -i ~{callerset} -p ~{pbsv_vcf} -s ~{sample} -o ~{sample + "_svpop.body"}
+        set -euxo pipefail
+        python ~{svpop_vcf_py} -i ~{callerset} -p ~{pbsv_vcf} -s ~{sample} -o ~{sample + "_svpop.body"}
     >>>
     output {
         File body = "~{sample}_svpop.body" 
@@ -243,7 +250,7 @@ task svpop_vcf_body {
         boot_disk_gb:       10,
         preemptible_tries:  2,
         max_retries:        1,
-        docker:             "us.gcr.io/broad-dsp-lrma/aou-lr/svpop:0.0.15"
+        docker:             "wtharvey/svpop:3.4.2-edit"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -265,6 +272,8 @@ task svpop_vcf_final {
         RuntimeAttr? runtime_attr_override
     }
     command <<<
+        set -euxo pipefail
+        
         cat ~{svpop_vcf_header} ~{svpop_body} | bcftools sort - | bcftools norm -f ~{ref} -c s - | bgzip -c > ~{sample + "_svpop.vcf.gz"}
         tabix -p vcf ~{sample + "_svpop.vcf.gz"}
     >>>

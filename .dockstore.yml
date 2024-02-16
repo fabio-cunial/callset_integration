@@ -75,3 +75,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/PbsvIntersample.wdl
   testParameterFiles:
+- name: TruvariIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TruvariIntersample.wdl
+  testParameterFiles:
