@@ -193,8 +193,16 @@ task ROCImpl {
                 bcftools view regenotyped.vcf.gz > regenotyped.vcf
                 java -cp ~{docker_dir} SupportedByZeroReads DV merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
                 rm -f merged.vcf regenotyped.vcf
-            elif [ ${GENOTYPER} = kanpig -o ${GENOTYPER} = svjedigraph ]; then
+            elif [ ${GENOTYPER} = kanpig ]; then
                 N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+                VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
+                echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
+                bcftools view merged.vcf.gz > merged.vcf
+                bcftools view regenotyped.vcf.gz > regenotyped.vcf
+                java -cp ~{docker_dir} SupportedByZeroReads AD merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
+                rm -f merged.vcf regenotyped.vcf
+            elif [ ${GENOTYPER} = svjedigraph ]; then
+                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz | grep '^[^#]' | wc -l)
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -226,7 +234,7 @@ task ROCImpl {
                 java -cp ~{docker_dir} ROCcurve PL 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 java -cp ~{docker_dir} ROCcurve AD 1 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 java -cp ~{docker_dir} ROCcurve AD 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
-                bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz > ${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
+                bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz > ${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
             fi
         }
 
