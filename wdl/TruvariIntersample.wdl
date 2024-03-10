@@ -48,9 +48,18 @@ task TruvariIntersampleImpl {
         
         INPUT_FILES=~{sep=',' intrasample_merged_vcf}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none ${INPUT_FILES} --output-type z > bcftools_merged.vcf.gz 
+        rm -f list.txt
+        for FILE in ${INPUT_FILES}; do
+            ID=$(basename ${FILE} .vcf.gz)
+            bcftools norm --multiallelics - --output-type z ${FILE} > ${ID}_normed.vcf.gz
+            tabix ${ID}_normed.vcf.gz
+            echo ${ID}_normed.vcf.gz >> list.txt
+        done
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > bcftools_merged.vcf.gz 
         tabix bcftools_merged.vcf.gz
-        ${TIME_COMMAND} truvari collapse -i bcftools_merged.vcf.gz -c removed.vcf.gz \
+        ${TIME_COMMAND} bcftools norm --multiallelics - --output-type z bcftools_merged.vcf.gz > bcftools_merged_normed.vcf.gz 
+        tabix bcftools_merged_normed.vcf.gz
+        ${TIME_COMMAND} truvari collapse -i bcftools_merged_normed.vcf.gz -c removed.vcf.gz \
             --sizemin 0 --sizemax 1000000 -k common --gt all \
             | bcftools sort -m 2G --output-type z > truvari_collapsed.vcf.gz
         tabix truvari_collapsed.vcf.gz
@@ -65,7 +74,7 @@ task TruvariIntersampleImpl {
     runtime {
         docker: "us.gcr.io/broad-dsp-lrma/aou-lr/truvari_intrasample"
         cpu: 1
-        memory: "32GB"
+        memory: "128GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }

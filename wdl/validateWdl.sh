@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l ROC.wdl
 java -jar ${WOMTOOL_PATH} validate -l TruvariIntersample.wdl
 java -jar ${WOMTOOL_PATH} validate -l GraphEvaluationFabio.wdl
 java -jar ${WOMTOOL_PATH} validate -l JasmineIntersample2.wdl

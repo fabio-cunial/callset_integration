@@ -80,3 +80,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TruvariIntersample.wdl
   testParameterFiles:
+- name: ROC
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/ROC.wdl
+  testParameterFiles:

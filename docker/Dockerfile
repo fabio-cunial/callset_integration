@@ -111,8 +111,6 @@ RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py \
     && python2 get-pip.py \
     && pip2 install intervaltree \
     && git clone https://github.com/DecodeGenetics/sv-merger.git
-COPY *.java .
-RUN javac *.java
 
 # SVIMMER
 RUN pip3 install pysam \
@@ -143,3 +141,34 @@ SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
 # Adding #!/bin/bash to the original shell script
 COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine
 SHELL ["chmod", "+x", "/opt/conda/envs/jasmine/bin/jasmine"]
+SHELL ["/bin/bash", "-c"]
+
+# CUTESV
+RUN pip install setuptools==58 scikit-learn \
+    && git clone https://github.com/tjiangHIT/cuteSV.git \
+    && cd cuteSV \
+    && python setup.py install \
+    && cuteSV -h
+
+# KANPIG
+COPY ./kanpig .
+
+# SVJEDI-GRAPH
+RUN conda install -c bioconda scipy svjedi-graph \
+    && svjedi-graph.py -h
+
+# LRCALLER 1.0
+RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \
+    && tar -xzvf lrcaller-1.0_linux-x86-64.tgz \
+    && chmod +x lrcaller-1.0/bin/* \
+    && mv lrcaller-1.0/bin/* /usr/local/bin \
+    && lrcaller --help || echo "LRcaller returns an error code when called"
+
+# TRUVARI
+RUN pip install truvari \
+    && truvari --help
+
+# AD HOC SCRIPTS
+COPY *.java .
+RUN javac *.java
+COPY resolve.py .

@@ -25,6 +25,7 @@ public class ClonesCreateSubsets {
         br = new BufferedReader(new FileReader(INPUT_CSV));
         str=br.readLine();
         for (i=0; i<N_ROWS; i++) rows[i]=br.readLine().split("\t");
+        br.close();
         
         // Creating prefix sets
         bw = new BufferedWriter(new FileWriter(OUTPUT_CSV));
