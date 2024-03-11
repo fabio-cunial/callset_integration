@@ -230,8 +230,8 @@ task ROCImpl {
                 java -cp ~{docker_dir} ROCcurve AD 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz > ${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
             elif [ ${GENOTYPER} = svjedigraph ]; then
-                java -cp ~{docker_dir} ROCcurve PL 1 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
-                java -cp ~{docker_dir} ROCcurve PL 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
+                #java -cp ~{docker_dir} ROCcurve PL 1 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
+                #java -cp ~{docker_dir} ROCcurve PL 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 java -cp ~{docker_dir} ROCcurve AD 1 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 java -cp ~{docker_dir} ROCcurve AD 0 ~{svlen_min} ~{svlen_max} regenotyped.vcf truvari/tp-comp.vcf truth.vcf ~{work_dir} ${TR_STATUS} ${GENOTYPER} ~{svlen_bins}
                 bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz > ${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
