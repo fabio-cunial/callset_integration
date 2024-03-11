@@ -252,9 +252,9 @@ task ROCImpl {
     
             # Formatting truth and merged VCF
             formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0 ${TR_STATUS}
-            truvari anno svinfo --minsize 0 ~{truth_vcf_gz} | bgzip > tmp0.vcf.gz
-            tabix tmp0.vcf.gz
-            formatVcf tmp0.vcf.gz truth.vcf.gz 1 ${TR_STATUS}
+            truvari anno svinfo --minsize 0 ~{truth_vcf_gz} | bgzip > tmp-1.vcf.gz
+            tabix tmp-1.vcf.gz
+            formatVcf tmp-1.vcf.gz truth.vcf.gz 1 ${TR_STATUS}
 
             # Regenotyping
             rm -f regenotyped.vcf.gz
