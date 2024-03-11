@@ -120,8 +120,16 @@ function afterRegenotyping() {
         bcftools view ${ROOT_DIR}/regenotyped.vcf.gz > ${ROOT_DIR}/regenotyped.vcf
         java SupportedByZeroReads DV ${ROOT_DIR}/merged.vcf ${ROOT_DIR}/regenotyped.vcf ${SVLEN_MIN} ${SVLEN_MAX} ${SVLEN_BINS} > ${ROOT_DIR}/${TR_STATUS}_${GENOTYPER}_zeroReads.log
         rm -f ${ROOT_DIR}/merged.vcf ${ROOT_DIR}/regenotyped.vcf
-    elif [ ${GENOTYPER} = kanpig -o ${GENOTYPER} = svjedigraph ]; then
+    elif [ ${GENOTYPER} = kanpig ]; then
         N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]=0' ${ROOT_DIR}/regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+        VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
+        echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
+        bcftools view ${ROOT_DIR}/merged.vcf.gz > ${ROOT_DIR}/merged.vcf
+        bcftools view ${ROOT_DIR}/regenotyped.vcf.gz > ${ROOT_DIR}/regenotyped.vcf
+        java SupportedByZeroReads AD ${ROOT_DIR}/merged.vcf ${ROOT_DIR}/regenotyped.vcf ${SVLEN_MIN} ${SVLEN_MAX} ${SVLEN_BINS} > ${ROOT_DIR}/${TR_STATUS}_${GENOTYPER}_zeroReads.log
+        rm -f ${ROOT_DIR}/merged.vcf ${ROOT_DIR}/regenotyped.vcf
+    elif [ ${GENOTYPER} = svjedigraph ]; then
+        N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]="0"' ${ROOT_DIR}/regenotyped.vcf.gz | grep '^[^#]' | wc -l)
         VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
         echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
         bcftools view ${ROOT_DIR}/merged.vcf.gz > ${ROOT_DIR}/merged.vcf
@@ -149,11 +157,11 @@ function afterRegenotyping() {
         java ROCcurve AD 0 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
         bcftools filter -i 'FORMAT/AD[0:1]=0' ${ROOT_DIR}/regenotyped.vcf.gz > ${ROOT_DIR}/${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
     elif [ ${GENOTYPER} = svjedigraph ]; then
-        java ROCcurve PL 1 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
-        java ROCcurve PL 0 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
+        #java ROCcurve PL 1 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
+        #java ROCcurve PL 0 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
         java ROCcurve AD 1 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
         java ROCcurve AD 0 ${SVLEN_MIN} ${SVLEN_MAX} ${ROOT_DIR}/regenotyped.vcf ${ROOT_DIR}/truvari/tp-comp.vcf ${ROOT_DIR}/truth.vcf ${ROOT_DIR} ${TR_STATUS} ${GENOTYPER} ${SVLEN_BINS}
-        bcftools filter -i 'FORMAT/AD[0:1]=0' ${ROOT_DIR}/regenotyped.vcf.gz > ${ROOT_DIR}/${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
+        bcftools filter -i 'FORMAT/AD[0:1]="0"' ${ROOT_DIR}/regenotyped.vcf.gz > ${ROOT_DIR}/${TR_STATUS}_${GENOTYPER}_zeroReads.vcf
     fi
 }
 

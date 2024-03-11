@@ -105,7 +105,7 @@ public class SupportedByZeroReads {
             if (tokensPrime[tagIndex].charAt(0)==MISSING_CHR) value=0;
             else if (TAG_STR.equals(AD_STR)) {
                 p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
-                value=Integer.parseInt(tokensPrime[tagIndex].substring(p+1));
+                value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
             }
             else value=Integer.parseInt(tokensPrime[tagIndex]);
             if (value!=0) { str1=br1.readLine(); str2=br2.readLine(); continue; }

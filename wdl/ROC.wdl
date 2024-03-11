@@ -124,8 +124,8 @@ task ROCImpl {
             rm -f tmp2.vcf.gz*; bgzip tmp2.vcf
             tabix -f tmp2.vcf.gz
 
-            # If not a truth VCF: keeping only calls in the given TR track (with min.
-            # overlap).
+            # If not a truth VCF: keeping only calls in the given TR track
+            # (with min. overlap).
             if [ ${IS_TRUTH} -eq 1 ]; then
                 cp tmp2.vcf.gz tmp3.vcf.gz
                 cp tmp2.vcf.gz.tbi tmp3.vcf.gz.tbi
@@ -279,22 +279,22 @@ task ROCImpl {
             #
 
             # SVJEDIGRAPH
-            gunzip -c merged.vcf.gz > merged.vcf
-            java -cp ~{docker_dir} CleanVCF merged.vcf . ~{svlen_max} 0 tmp1.vcf
-            rm -f merged.vcf
-            svjedi-graph.py --threads ${N_THREADS} --ref ~{reference_fa} --reads ~{reads_fastq_gz} --vcf tmp1.vcf --prefix test
-            rm -f tmp1.vcf
-            bcftools view --header-only merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > header.txt
-            N_LINES=$(wc -l < header.txt)
-            head -n $(( ${N_LINES} - 1 )) header.txt > tmp1.vcf
-            echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> tmp1.vcf
-            echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> tmp1.vcf
-            echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> tmp1.vcf
-            echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> tmp1.vcf
-            echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> tmp1.vcf
-            grep '^[^#]' test_genotype.vcf >> tmp1.vcf
-            bcftools sort --output-type z tmp1.vcf > regenotyped.vcf.gz
-            afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
+            #gunzip -c merged.vcf.gz > merged.vcf
+            #java -cp ~{docker_dir} CleanVCF merged.vcf . ~{svlen_max} 0 tmp1.vcf
+            #rm -f merged.vcf
+            #svjedi-graph.py --threads ${N_THREADS} --ref ~{reference_fa} --reads ~{reads_fastq_gz} --vcf tmp1.vcf --prefix test
+            #rm -f tmp1.vcf
+            #bcftools view --header-only merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > header.txt
+            #N_LINES=$(wc -l < header.txt)
+            #head -n $(( ${N_LINES} - 1 )) header.txt > tmp1.vcf
+            #echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> tmp1.vcf
+            #echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> tmp1.vcf
+            #echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> tmp1.vcf
+            #echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> tmp1.vcf
+            #echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> tmp1.vcf
+            #grep '^[^#]' test_genotype.vcf >> tmp1.vcf
+            #bcftools sort --output-type z tmp1.vcf > regenotyped.vcf.gz
+            #afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
 
             # Callers supporting a call
             rm -rf truvari/
