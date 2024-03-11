@@ -168,6 +168,14 @@ RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcal
 RUN pip install truvari \
     && truvari --help
 
+# BEDTOOLS
+ARG bedtools_version=2.31.0
+RUN wget https://github.com/arq5x/bedtools2/releases/download/v${bedtools_version}/bedtools.static \
+    && mv bedtools.static bedtools \
+    && chmod +x bedtools \
+    && mv bedtools /usr/local/bin \
+    && bedtools --help
+
 # AD HOC SCRIPTS
 COPY *.java .
 RUN javac *.java

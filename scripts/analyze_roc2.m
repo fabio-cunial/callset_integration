@@ -1,15 +1,23 @@
 ROOT_DIR='/Users/fcunial/Downloads/sniffles-gt';
-TR_STATUS=2;  % 0=no filter; 1=large overlap with the TR track; 2=small overlap with the TR track; 3=large overlap with the non-TR track.
-TR_STATUS_LABELS={'All','TR large','TR small','Non-TR large'};
+TR_STATUS=3;  % 0=no filter; 1=large overlap with the TR track; 2=small overlap with the TR track; 3=large overlap with the non-TR track.
+TR_STATUS_LABELS={'All','TR 0.9','TR 0.1','Non-TR 0.9'};
 
 
 SVLEN_BINS={'100','500','2500','5000','10000','20000','50000'};
+SVLEN_BIN_LABELS={'[50..100)','[100..500)','[500..2500)','[2500..5k)','[5k..10k)','[10k..20k)','[20k..50k)'};
 N_PANELS=7;
+
 TAG_NAME='DV';
 TAG_NAME_SNIFFLES='DV';
 TAG_NAME_CUTESV='DV';
 TAG_NAME_KANPIG='AD';
 TAG_NAME_SVJEDIGRAPH='AD';
+
+% TAG_NAME='GQ';
+% TAG_NAME_SNIFFLES='GQ';
+% TAG_NAME_CUTESV='GQ';
+% TAG_NAME_KANPIG='SQ';
+% TAG_NAME_SVJEDIGRAPH='PL';
 
 FONT_SIZE=18;
 FONT_SIZE_LEGEND=12;
@@ -33,7 +41,7 @@ plot(KANPIG(:,2),KANPIG(:,3),'.-');
 line([0,1],[0,1],'color','black');
 axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
 ylabel('True positive rate','fontsize',FONT_SIZE);
-title(sprintf('%s - %s',TR_STATUS_LABELS{TR_STATUS+1},TAG_NAME),'fontsize',FONT_SIZE);
+title(sprintf('%s, %s',TR_STATUS_LABELS{TR_STATUS+1},TAG_NAME),'fontsize',FONT_SIZE);
 
 % By SVLEN
 for i=[2:N_PANELS] 
@@ -50,7 +58,7 @@ for i=[2:N_PANELS]
     line([0,1],[0,1],'color','black');
     axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
     ylabel('True positive rate','fontsize',FONT_SIZE);
-    title(sprintf('%s - %s - %s',TR_STATUS_LABELS{TR_STATUS+1},TAG_NAME,LENGTH),'fontsize',FONT_SIZE);
+    title(sprintf('%s, %s, %s',TR_STATUS_LABELS{TR_STATUS+1},SVLEN_BIN_LABELS{i-1},TAG_NAME),'fontsize',FONT_SIZE);
 endfor
 
 

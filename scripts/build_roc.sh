@@ -209,23 +209,23 @@ for TR_STATUS in 0 1 2 3; do
     #
     #
 
-    # SVJEDIGRAPH
-    gunzip -c ${ROOT_DIR}/merged.vcf.gz > ${ROOT_DIR}/merged.vcf
-    ${CLEAN_VCF_COMMAND} ${ROOT_DIR}/merged.vcf ${ROOT_DIR} ${SVLEN_MAX} 0 ${ROOT_DIR}/tmp1.vcf
-    rm -f ${ROOT_DIR}/merged.vcf
-    svjedi-graph.py --threads ${N_THREADS} --ref ${REFERENCE_FA} --reads ${READS_FASTQ_GZ} --vcf ${ROOT_DIR}/tmp1.vcf --prefix ${ROOT_DIR}/test
-    rm -f ${ROOT_DIR}/tmp1.vcf
-    bcftools view --header-only ${ROOT_DIR}/merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > ${ROOT_DIR}/header.txt
-    N_LINES=$(wc -l < ${ROOT_DIR}/header.txt)
-    head -n $(( ${N_LINES} - 1 )) ${ROOT_DIR}/header.txt > ${ROOT_DIR}/tmp1.vcf
-    echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> ${ROOT_DIR}/tmp1.vcf
-    echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> ${ROOT_DIR}/tmp1.vcf
-    echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> ${ROOT_DIR}/tmp1.vcf
-    echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> ${ROOT_DIR}/tmp1.vcf
-    echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> ${ROOT_DIR}/tmp1.vcf
-    grep '^[^#]' ${ROOT_DIR}/test_genotype.vcf >> ${ROOT_DIR}/tmp1.vcf
-    bcftools sort --output-type z ${ROOT_DIR}/tmp1.vcf > ${ROOT_DIR}/regenotyped.vcf.gz
-    afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
+    # # SVJEDIGRAPH
+#     gunzip -c ${ROOT_DIR}/merged.vcf.gz > ${ROOT_DIR}/merged.vcf
+#     ${CLEAN_VCF_COMMAND} ${ROOT_DIR}/merged.vcf ${ROOT_DIR} ${SVLEN_MAX} 0 ${ROOT_DIR}/tmp1.vcf
+#     rm -f ${ROOT_DIR}/merged.vcf
+#     svjedi-graph.py --threads ${N_THREADS} --ref ${REFERENCE_FA} --reads ${READS_FASTQ_GZ} --vcf ${ROOT_DIR}/tmp1.vcf --prefix ${ROOT_DIR}/test
+#     rm -f ${ROOT_DIR}/tmp1.vcf
+#     bcftools view --header-only ${ROOT_DIR}/merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > ${ROOT_DIR}/header.txt
+#     N_LINES=$(wc -l < ${ROOT_DIR}/header.txt)
+#     head -n $(( ${N_LINES} - 1 )) ${ROOT_DIR}/header.txt > ${ROOT_DIR}/tmp1.vcf
+#     echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> ${ROOT_DIR}/tmp1.vcf
+#     echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> ${ROOT_DIR}/tmp1.vcf
+#     echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> ${ROOT_DIR}/tmp1.vcf
+#     echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> ${ROOT_DIR}/tmp1.vcf
+#     echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> ${ROOT_DIR}/tmp1.vcf
+#     grep '^[^#]' ${ROOT_DIR}/test_genotype.vcf >> ${ROOT_DIR}/tmp1.vcf
+#     bcftools sort --output-type z ${ROOT_DIR}/tmp1.vcf > ${ROOT_DIR}/regenotyped.vcf.gz
+#     afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
 
     # Callers supporting a call
     rm -rf ${ROOT_DIR}/truvari/

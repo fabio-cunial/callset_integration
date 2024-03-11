@@ -111,10 +111,15 @@ task ROCImpl {
             local OUTPUT_VCF_GZ=$2
             local IS_TRUTH=$3
             local TR_STATUS=$4
-
+            
+            # Removing multiallelic records
+            rm -f tmp0.vcf.gz*
+            bcftools norm --multiallelics - --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
+            tabix -f tmp0.vcf.gz
+            
             # Adding REF and ALT with Adam's script, and removing BNDs.
             rm -f tmp1.vcf*
-            python ~{docker_dir}/resolve.py ${INPUT_VCF_GZ} ~{reference_fa} | bcftools view -i "SVTYPE!='BND'" | bcftools sort -O z -o tmp1.vcf.gz
+            python ~{docker_dir}/resolve.py tmp0.vcf.gz ~{reference_fa} | bcftools view -i "SVTYPE!='BND'" | bcftools sort -O z -o tmp1.vcf.gz
             tabix -f tmp1.vcf.gz
 
             # Keeping only calls in the truth BED (any overlap).
