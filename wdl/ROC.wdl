@@ -186,12 +186,12 @@ task ROCImpl {
             local LOG_FILE=$3
     
             tabix -f regenotyped.vcf.gz
-            N_CALLS_00_AFTER=$(bcftools filter -i "${FILTER_STRING}" regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+            N_CALLS_00_AFTER=$(bcftools filter -i "${FILTER_STRING}" regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
             VALUE_BEFORE="${N_CALLS_00_BEFORE}/${N_CALLS}"; VALUE_BEFORE=$(bc -l <<< ${VALUE_BEFORE})
             VALUE_AFTER="${N_CALLS_00_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
             echo "${TR_STATUS},${GENOTYPER} Fraction of 0/0 calls: Before regenotyping: ${VALUE_BEFORE} -> After regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
             if [ ${GENOTYPER} = sniffles -o ${GENOTYPER} = cutesv ]; then
-                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'DV=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'DV=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -199,7 +199,7 @@ task ROCImpl {
                 java -cp ~{docker_dir} SupportedByZeroReads DV merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
                 rm -f merged.vcf regenotyped.vcf
             elif [ ${GENOTYPER} = kanpig ]; then
-                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -207,7 +207,7 @@ task ROCImpl {
                 java -cp ~{docker_dir} SupportedByZeroReads AD merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
                 rm -f merged.vcf regenotyped.vcf
             elif [ ${GENOTYPER} = svjedigraph ]; then
-                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz | grep '^[^#]' | wc -l)
+                N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -258,9 +258,9 @@ task ROCImpl {
 
             # Regenotyping
             rm -f regenotyped.vcf.gz
-            N_CALLS=$(bcftools view --no-header merged.vcf.gz | wc -l)
+            N_CALLS=$(bcftools view --no-header merged.vcf.gz | wc -l || echo 0)
             FILTER_STRING="GT=\"./.\" || GT=\"./0\" || GT=\"0/.\" || GT=\"0/0\" || GT=\".|.\" || GT=\".|0\" || GT=\"0|.\" || GT=\"0|0\""
-            N_CALLS_00_BEFORE=$(bcftools filter -i "${FILTER_STRING}" merged.vcf.gz | grep '^[^#]' | wc -l)
+            N_CALLS_00_BEFORE=$(bcftools filter -i "${FILTER_STRING}" merged.vcf.gz | grep '^[^#]' | wc -l || echo 0)
 
             # SNIFFLES FORCE
             sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped.vcf.gz
