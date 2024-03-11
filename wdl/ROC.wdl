@@ -167,7 +167,7 @@ task ROCImpl {
                 rm -rf tmp4.vcf*
                 FILTER_STRING="SVLEN>=~{svlen_min} && SVLEN<=~{svlen_max}"
                 bcftools filter -i "${FILTER_STRING}" --output-type z tmp3.vcf.gz > tmp4.vcf.gz
-                tabix tmp4.vcf.gz
+                tabix -f tmp4.vcf.gz
             fi
 
             # Finalizing
@@ -253,7 +253,7 @@ task ROCImpl {
             # Formatting truth and merged VCF
             formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0 ${TR_STATUS}
             truvari anno svinfo --minsize 0 ~{truth_vcf_gz} | bgzip > tmp-1.vcf.gz
-            tabix tmp-1.vcf.gz
+            tabix -f tmp-1.vcf.gz
             formatVcf tmp-1.vcf.gz truth.vcf.gz 1 ${TR_STATUS}
 
             # Regenotyping
