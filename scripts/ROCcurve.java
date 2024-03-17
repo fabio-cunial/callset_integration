@@ -10,6 +10,7 @@ public class ROCcurve {
     private static final char COMMENT = '#';
     private static char MISSING_CHR = '.';
     private static final String GT_SEPARATOR = ":";
+    private static final String SCORE_STR = "SCORE";
     private static final String AD_STR = "AD";
     private static final String AD_SEPARATOR = ",";
     private static String TAG_STR;
@@ -210,7 +211,7 @@ public class ROCcurve {
     private static final int getMaxTAG(String vcfFile) throws IOException {
         int i, p;
         int out, tagIndex, value;
-        String str;
+        String str, field;
         BufferedReader br;
         String[] tokens, tokensPrime;
         
@@ -220,19 +221,26 @@ public class ROCcurve {
         while (str!=null) {
             if (str.charAt(0)==COMMENT) { str=br.readLine(); continue; }
             tokens=str.split("\t");
-            tagIndex=-1;
-            tokensPrime=tokens[8].split(GT_SEPARATOR);
-            for (i=0; i<tokensPrime.length; i++) {
-                if (tokensPrime[i].equalsIgnoreCase(TAG_STR)) { tagIndex=i; break; }
+            if (TAG_STR.equals(SCORE_STR)) {
+                field=VCFconstants.getField(tokens[7],SCORE_STR);
+                if (field==null) { str=br.readLine(); continue; }
+                value=(int)(1000*Double.parseDouble(field));
             }
-            if (tagIndex==-1) { str=br.readLine(); continue; }
-            tokensPrime=tokens[9].split(GT_SEPARATOR);
-            if (tokensPrime[tagIndex].charAt(0)==MISSING_CHR) value=0;
-            else if (TAG_STR.equals(AD_STR)) {
-                p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
-                value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+            else {
+                tagIndex=-1;
+                tokensPrime=tokens[8].split(GT_SEPARATOR);
+                for (i=0; i<tokensPrime.length; i++) {
+                    if (tokensPrime[i].equalsIgnoreCase(TAG_STR)) { tagIndex=i; break; }
+                }
+                if (tagIndex==-1) { str=br.readLine(); continue; }
+                tokensPrime=tokens[9].split(GT_SEPARATOR);
+                if (tokensPrime[tagIndex].charAt(0)==MISSING_CHR) value=0;
+                else if (TAG_STR.equals(AD_STR)) {
+                    p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
+                    value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+                }
+                else value=Integer.parseInt(tokensPrime[tagIndex]);
             }
-            else value=Integer.parseInt(tokensPrime[tagIndex]);
             if (value>out) out=value;
             str=br.readLine();
         }
@@ -268,23 +276,34 @@ public class ROCcurve {
             binID=Arrays.binarySearch(svlengths,length);
             if (binID<0) binID=-1-binID;
             
-            tagIndex=-1;
-            tokensPrime=tokens[8].split(GT_SEPARATOR);
-            for (i=0; i<tokensPrime.length; i++) {
-                if (tokensPrime[i].equalsIgnoreCase(TAG_STR)) { tagIndex=i; break; }
+            if (TAG_STR.equals(SCORE_STR)) {
+                field=VCFconstants.getField(tokens[7],SCORE_STR);
+                if (field==null) { 
+                    System.err.println("This call has no TAG: "+str);
+                    str=br.readLine();
+                    continue;
+                }
+                value=(int)(1000*Double.parseDouble(field));
             }
-            if (tagIndex==-1) { 
-                System.err.println("This call has no TAG: "+str);
-                str=br.readLine();
-                continue;               
+            else {
+                tagIndex=-1;
+                tokensPrime=tokens[8].split(GT_SEPARATOR);
+                for (i=0; i<tokensPrime.length; i++) {
+                    if (tokensPrime[i].equalsIgnoreCase(TAG_STR)) { tagIndex=i; break; }
+                }
+                if (tagIndex==-1) { 
+                    System.err.println("This call has no TAG: "+str);
+                    str=br.readLine();
+                    continue;               
+                }
+                tokensPrime=tokens[9].split(GT_SEPARATOR);
+                if (tokensPrime[tagIndex].charAt(0)==MISSING_CHR) value=0;
+                else if (TAG_STR.equals(AD_STR)) {
+                    p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
+                    value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+                }
+                else value=Integer.parseInt(tokensPrime[tagIndex]);
             }
-            tokensPrime=tokens[9].split(GT_SEPARATOR);
-            if (tokensPrime[tagIndex].charAt(0)==MISSING_CHR) value=0;
-            else if (TAG_STR.equals(AD_STR)) {
-                p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
-                value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
-            }
-            else value=Integer.parseInt(tokensPrime[tagIndex]);
             
             // All calls
             if (nCalls_histogram!=null) { nCalls_histogram[0][value]++; nCalls_histogram[1+binID][value]++; }

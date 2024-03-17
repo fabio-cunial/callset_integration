@@ -186,12 +186,16 @@ task ROCImpl {
             local LOG_FILE=$3
     
             tabix -f regenotyped.vcf.gz
+            set +o pipefail
             N_CALLS_00_AFTER=$(bcftools filter -i "${FILTER_STRING}" regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
+            set -o pipefail
             VALUE_BEFORE="${N_CALLS_00_BEFORE}/${N_CALLS}"; VALUE_BEFORE=$(bc -l <<< ${VALUE_BEFORE})
             VALUE_AFTER="${N_CALLS_00_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
             echo "${TR_STATUS},${GENOTYPER} Fraction of 0/0 calls: Before regenotyping: ${VALUE_BEFORE} -> After regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
             if [ ${GENOTYPER} = sniffles -o ${GENOTYPER} = cutesv ]; then
+                set +o pipefail
                 N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'DV=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
+                set -o pipefail
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -199,7 +203,9 @@ task ROCImpl {
                 java -cp ~{docker_dir} SupportedByZeroReads DV merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
                 rm -f merged.vcf regenotyped.vcf
             elif [ ${GENOTYPER} = kanpig ]; then
+                set +o pipefail
                 N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]=0' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
+                set -o pipefail
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -207,7 +213,9 @@ task ROCImpl {
                 java -cp ~{docker_dir} SupportedByZeroReads AD merged.vcf regenotyped.vcf ~{svlen_min} ~{svlen_max} ~{svlen_bins} > ${TR_STATUS}_${GENOTYPER}_zeroReads.log
                 rm -f merged.vcf regenotyped.vcf
             elif [ ${GENOTYPER} = svjedigraph ]; then
+                set +o pipefail
                 N_CALLS_DV_ZERO_AFTER=$(bcftools filter -i 'FORMAT/AD[0:1]="0"' regenotyped.vcf.gz | grep '^[^#]' | wc -l || echo 0)
+                set -o pipefail
                 VALUE_AFTER="${N_CALLS_DV_ZERO_AFTER}/${N_CALLS}"; VALUE_AFTER=$(bc -l <<< ${VALUE_AFTER})
                 echo "${TR_STATUS},${GENOTYPER} Fraction of calls with 0 supporting reads after regenotyping: ${VALUE_AFTER}" >> ${LOG_FILE}
                 bcftools view merged.vcf.gz > merged.vcf
@@ -260,7 +268,9 @@ task ROCImpl {
             rm -f regenotyped.vcf.gz
             N_CALLS=$(bcftools view --no-header merged.vcf.gz | wc -l || echo 0)
             FILTER_STRING="GT=\"./.\" || GT=\"./0\" || GT=\"0/.\" || GT=\"0/0\" || GT=\".|.\" || GT=\".|0\" || GT=\"0|.\" || GT=\"0|0\""
+            set +o pipefail
             N_CALLS_00_BEFORE=$(bcftools filter -i "${FILTER_STRING}" merged.vcf.gz | grep '^[^#]' | wc -l || echo 0)
+            set -o pipefail
 
             # SNIFFLES FORCE
             sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped.vcf.gz
@@ -284,22 +294,22 @@ task ROCImpl {
             #
 
             # SVJEDIGRAPH
-            #gunzip -c merged.vcf.gz > merged.vcf
-            #java -cp ~{docker_dir} CleanVCF merged.vcf . ~{svlen_max} 0 tmp1.vcf
-            #rm -f merged.vcf
-            #svjedi-graph.py --threads ${N_THREADS} --ref ~{reference_fa} --reads ~{reads_fastq_gz} --vcf tmp1.vcf --prefix test
-            #rm -f tmp1.vcf
-            #bcftools view --header-only merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > header.txt
-            #N_LINES=$(wc -l < header.txt)
-            #head -n $(( ${N_LINES} - 1 )) header.txt > tmp1.vcf
-            #echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> tmp1.vcf
-            #echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> tmp1.vcf
-            #echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> tmp1.vcf
-            #echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> tmp1.vcf
-            #echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> tmp1.vcf
-            #grep '^[^#]' test_genotype.vcf >> tmp1.vcf
-            #bcftools sort --output-type z tmp1.vcf > regenotyped.vcf.gz
-            #afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
+            gunzip -c merged.vcf.gz > merged.vcf
+            java -cp ~{docker_dir} CleanVCF merged.vcf . ~{svlen_max} 0 tmp1.vcf
+            rm -f merged.vcf
+            svjedi-graph.py --threads ${N_THREADS} --ref ~{reference_fa} --reads ~{reads_fastq_gz} --vcf tmp1.vcf --prefix test
+            rm -f tmp1.vcf
+            bcftools view --header-only merged.vcf.gz | grep -vwE "(GT|DP|AD|PL)" > header.txt
+            N_LINES=$(wc -l < header.txt)
+            head -n $(( ${N_LINES} - 1 )) header.txt > tmp1.vcf
+            echo "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> tmp1.vcf
+            echo "##FORMAT=<ID=DP,Number=1,Type=String,Description=\"Total number of informative read alignments across all alleles (after normalization for unbalanced SVs)\">" >> tmp1.vcf
+            echo "##FORMAT=<ID=AD,Number=2,Type=String,Description=\"Number of informative read alignments supporting each allele (after normalization by breakpoint number for unbalanced SVs)\">" >> tmp1.vcf
+            echo "##FORMAT=<ID=PL,Number=G,Type=Float,Description=\"Phred-scaled likelihood for each genotype\">" >> tmp1.vcf
+            echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> tmp1.vcf
+            grep '^[^#]' test_genotype.vcf >> tmp1.vcf
+            bcftools sort --output-type z tmp1.vcf > regenotyped.vcf.gz
+            afterRegenotyping ${TR_STATUS} svjedigraph ${LOG_FILE}
 
             # Callers supporting a call
             rm -rf truvari/

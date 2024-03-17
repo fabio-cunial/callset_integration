@@ -3,9 +3,13 @@ TR_STATUS=1;  % 0=no filter; 1=large overlap with the TR track; 2=small overlap 
 TR_STATUS_LABELS={'All','TR 0.9','TR 0.1','Non-TR 0.9'};
 
 
-SVLEN_BINS={'100','500','2500','5000','10000','20000','50000'};
-SVLEN_BIN_LABELS={'[50..100)','[100..500)','[500..2500)','[2500..5k)','[5k..10k)','[10k..20k)','[20k..50k)'};
-N_PANELS=7;
+% SVLEN_BINS={'100','500','2500','5000','10000','20000','50000'};
+% SVLEN_BIN_LABELS={'[50..100)','[100..500)','[500..2500)','[2500..5k)','[5k..10k)','[10k..20k)','[20k..50k)'};
+
+SVLEN_BINS={'10','20','30','40','50','60','70','80','90','100'};
+SVLEN_BIN_LABELS={'[0..10)','[10..20)','[20..30)','[30..40)','[40..50)','[50..60)','[60..70)','[70..80)','[80..90)','[90..100)'};
+
+N_PANELS=8;
 LINE_WIDTH_SAMS=2;
 PLOT_SVJEDIGRAPH=0;
 
@@ -44,14 +48,14 @@ KANPIG=load(sprintf('%s/%d_kanpig_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_N
 if (PLOT_SVJEDIGRAPH==1)
     SVJEDIGRAPH=load(sprintf('%s/%d_svjedigraph_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SVJEDIGRAPH));
 endif
-SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
+%SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
 plot(SNIFFLES_FORCE(:,2),SNIFFLES_FORCE(:,3),'.-');
 plot(CUTESV_FORCE(:,2),CUTESV_FORCE(:,3),'.-');
 if (PLOT_SVJEDIGRAPH==1)
     plot(SVJEDIGRAPH(:,2),SVJEDIGRAPH(:,3),'.-');
 endif
 plot(KANPIG(:,2),KANPIG(:,3),'.-');
-h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
+%h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
 line([0,1],[0,1],'color','black');
 axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
 ylabel('True positive rate','fontsize',FONT_SIZE);
@@ -140,9 +144,9 @@ FALSE_NEGATIVES=N_TP-TRUE_POSITIVES;
 plot(FALSE_POSITIVES(i)/(FALSE_POSITIVES(i)+TRUE_NEGATIVES(i)),TRUE_POSITIVES(i)/(TRUE_POSITIVES(i)+FALSE_NEGATIVES(i)),'v');
 
 if (PLOT_SVJEDIGRAPH==1)
-    legend('sniffles force','cutesv force','svjedigraph','kanpig','kanpig+XGB','random','\geq2','=3','pbsv+snf','pbsv+pav','snf+pav','pbsv','sniffles','pav','location','southeast','fontsize',FONT_SIZE_LEGEND);
+    legend('sniffles force','cutesv force','svjedigraph','kanpig','random','\geq2','=3','pbsv+snf','pbsv+pav','snf+pav','pbsv','sniffles','pav','location','southeast','fontsize',FONT_SIZE_LEGEND);
 else
-    legend('sniffles force','cutesv force','kanpig','kanpig+XGB','random','\geq2','=3','pbsv+snf','pbsv+pav','snf+pav','pbsv','sniffles','pav','location','southeast','fontsize',FONT_SIZE_LEGEND);
+    legend('sniffles force','cutesv force','kanpig','random','\geq2','=3','pbsv+snf','pbsv+pav','snf+pav','pbsv','sniffles','pav','location','southeast','fontsize',FONT_SIZE_LEGEND);
 endif
 
 
@@ -157,14 +161,14 @@ KANPIG=load(sprintf('%s/%d_kanpig_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_N
 if (PLOT_SVJEDIGRAPH==1)
     SVJEDIGRAPH=load(sprintf('%s/%d_svjedigraph_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SVJEDIGRAPH));
 endif
-SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
+%SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
 plot(SNIFFLES_FORCE(:,2),SNIFFLES_FORCE(:,3),'.-');
 plot(CUTESV_FORCE(:,2),CUTESV_FORCE(:,3),'.-');
 if (PLOT_SVJEDIGRAPH==1)
     plot(SVJEDIGRAPH(:,2),SVJEDIGRAPH(:,3),'.-');
 endif
 plot(KANPIG(:,2),KANPIG(:,3),'.-');
-h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
+%h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
 line([0,1],[0,1],'color','black');
 axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
 ylabel('True positive rate','fontsize',FONT_SIZE);
@@ -268,14 +272,14 @@ KANPIG=load(sprintf('%s/%d_kanpig_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_N
 if (PLOT_SVJEDIGRAPH==1)
     SVJEDIGRAPH=load(sprintf('%s/%d_svjedigraph_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SVJEDIGRAPH));
 endif
-SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
+%SAMS=load(sprintf('%s/%d_sams_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,TAG_NAME_SAMS));
 plot(SNIFFLES_FORCE(:,2),SNIFFLES_FORCE(:,3),'.-');
 plot(CUTESV_FORCE(:,2),CUTESV_FORCE(:,3),'.-');
 if (PLOT_SVJEDIGRAPH==1)
     plot(SVJEDIGRAPH(:,2),SVJEDIGRAPH(:,3),'.-');
 endif
 plot(KANPIG(:,2),KANPIG(:,3),'.-');
-h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
+%h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
 line([0,1],[0,1],'color','black');
 axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
 ylabel('True positive rate','fontsize',FONT_SIZE);
@@ -291,14 +295,14 @@ for i=[2:N_PANELS]
     if (PLOT_SVJEDIGRAPH==1)
         SVJEDIGRAPH=load(sprintf('%s/%d_svjedigraph_%s_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,LENGTH,TAG_NAME_SVJEDIGRAPH));
     endif
-    SAMS=load(sprintf('%s/%d_sams_%s_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,LENGTH,TAG_NAME_SAMS));
+    %SAMS=load(sprintf('%s/%d_sams_%s_roc_calls_%s_geq.log',ROOT_DIR,TR_STATUS,LENGTH,TAG_NAME_SAMS));
     plot(SNIFFLES_FORCE(:,2),SNIFFLES_FORCE(:,3),'.-');
     plot(CUTESV_FORCE(:,2),CUTESV_FORCE(:,3),'.-');
     if (PLOT_SVJEDIGRAPH==1)
         plot(SVJEDIGRAPH(:,2),SVJEDIGRAPH(:,3),'.-');
     endif
     plot(KANPIG(:,2),KANPIG(:,3),'.-');
-    h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
+    %h=plot(SAMS(:,2),SAMS(:,3),'-'); set(h,'linewidth',LINE_WIDTH_SAMS);
     line([0,1],[0,1],'color','black');
     axis square; grid on; xlabel('False positive rate','fontsize',FONT_SIZE); 
     ylabel('True positive rate','fontsize',FONT_SIZE);

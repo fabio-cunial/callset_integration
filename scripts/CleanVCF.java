@@ -13,7 +13,6 @@ import java.io.*;
  *   symbolic DELs might not get a REF sequence.
  * - Ensures that REF and ALT have the same first character, and that such 
  *   character is the same as in the ref.
- * - Removes calls that are too close to the beginning/end of a chromosome.
  */
 public class CleanVCF {
     /**
@@ -94,11 +93,11 @@ public class CleanVCF {
             }
             pos=Integer.parseInt(tokens[1]);
             getChar(tokens[0],0);  // Just for loading the chr
-            if (pos<=SHORT_READ_LENGTH || pos>=sb.length()-SHORT_READ_LENGTH) {
-                nSkipped_chrBoundary++;
-                str=br.readLine();
-                continue;
-            }
+            // if (pos<=SHORT_READ_LENGTH || pos>=sb.length()-SHORT_READ_LENGTH) {
+            //     nSkipped_chrBoundary++;
+            //     str=br.readLine();
+            //     continue;
+            // }
             
             // Ensuring SVLEN
             success=true;
