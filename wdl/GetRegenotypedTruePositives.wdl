@@ -123,6 +123,8 @@ task GetRegenotypedTruePositivesImpl {
 
 
         # Main program
+        rm -f ~{alignments_bai}
+        samtools index -@ ${N_THREADS} ~{alignments_bam}
     
         # Formatting truth and merged VCF
         formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0
