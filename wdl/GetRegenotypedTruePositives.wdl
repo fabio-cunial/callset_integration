@@ -107,7 +107,7 @@ task GetRegenotypedTruePositivesImpl {
             # If not a truth VCF: keeping only calls in the given length range.
             if [ ${IS_TRUTH} -eq 1 ]; then
                 cp tmp2.vcf.gz tmp3.vcf.gz
-                cp tmp2.vcf.gz.tbi tmp43vcf.gz.tbi
+                cp tmp2.vcf.gz.tbi tmp3.vcf.gz.tbi
             else
                 rm -rf tmp3.vcf*
                 FILTER_STRING="SVLEN>=~{svlen_min} && SVLEN<=~{svlen_max}"
