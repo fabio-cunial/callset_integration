@@ -90,3 +90,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedTruePositives.wdl
   testParameterFiles:
+- name: PAV2SVs
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/PAV2SVs.wdl
+  testParameterFiles:
