@@ -77,6 +77,8 @@ task GetRegenotypedTruePositivesImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         TRUVARI_BENCH_SETTINGS="--sizefilt ~{svlen_min} --sizemax ~{svlen_max} --sizemin 0"
+        KANPIG_SIZEMAX="10000"  # From Adam's suggestion:
+        # "I noticed that you used for kanpig --sizemax 1000000 . You're going to get lower recall with that. Currently kanpig is using a very naive clustering strategy to figure out which variants should be considered together. The boundaries of the variant graphs are set to min_start/max_end and pileups are made over the region. Since kanpig is also only looking at pileups of reads that span the region, large variants can preclude smaller variants from getting a chance to have read support. I'm working on better clustering and not needing only spanning reads, but for now sizemax should be set to something like 10k, or maybe even ~75% of the mean insert size."
         chmod +x ~{docker_dir}/kanpig
 
         # Makes sure that the truth and merged VCF are in the right format and
@@ -143,7 +145,7 @@ task GetRegenotypedTruePositivesImpl {
 
         # KANPIG
         export RUST_BACKTRACE=1
-        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ~{svlen_max} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
+        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ${KANPIG_SIZEMAX} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
         bcftools sort --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
         tabix -f regenotyped_kanpig.vcf.gz
         rm -f tmp1.vcf.gz
