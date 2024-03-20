@@ -142,6 +142,7 @@ task GetRegenotypedTruePositivesImpl {
         tabix -f regenotyped_sniffles_tp.vcf.gz
 
         # KANPIG
+        export RUST_BACKTRACE=1
         ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ~{svlen_max} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
         bcftools sort --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
         tabix -f regenotyped_kanpig.vcf.gz
