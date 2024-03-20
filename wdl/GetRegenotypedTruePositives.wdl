@@ -37,12 +37,16 @@ workflow GetRegenotypedTruePositives {
     output {
         File regenotyped_sniffles = GetRegenotypedTruePositivesImpl.regenotyped_sniffles
         File regenotyped_sniffles_tbi = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tbi
-        File regenotyped_sniffles_tp = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp
-        File regenotyped_sniffles_tp_tbi = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp_tbi
+        File regenotyped_sniffles_tp_comp = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp_comp
+        File regenotyped_sniffles_tp_comp_tbi = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp_comp_tbi
+        File regenotyped_sniffles_tp_base = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp_base
+        File regenotyped_sniffles_tp_base_tbi = GetRegenotypedTruePositivesImpl.regenotyped_sniffles_tp_base_tbi
         File regenotyped_kanpig = GetRegenotypedTruePositivesImpl.regenotyped_kanpig
         File regenotyped_kanpig_tbi = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tbi
-        File regenotyped_kanpig_tp = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp
-        File regenotyped_kanpig_tp_tbi = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp_tbi
+        File regenotyped_kanpig_tp_comp = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp_comp
+        File regenotyped_kanpig_tp_comp_tbi = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp_comp_tbi
+        File regenotyped_kanpig_tp_base = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp_base
+        File regenotyped_kanpig_tp_base_tbi = GetRegenotypedTruePositivesImpl.regenotyped_kanpig_tp_base_tbi
     }
 }
 
@@ -140,8 +144,10 @@ task GetRegenotypedTruePositivesImpl {
         tabix -f regenotyped_sniffles.vcf.gz
         rm -rf truvari/
         truvari bench ${TRUVARI_BENCH_SETTINGS} -b truth.vcf.gz -c regenotyped_sniffles.vcf.gz -o truvari/
-        bcftools sort --output-type z truvari/tp-comp.vcf.gz > regenotyped_sniffles_tp.vcf.gz
-        tabix -f regenotyped_sniffles_tp.vcf.gz
+        bcftools sort --output-type z truvari/tp-comp.vcf.gz > regenotyped_sniffles_tp_comp.vcf.gz
+        tabix -f regenotyped_sniffles_tp_comp.vcf.gz
+        bcftools sort --output-type z truvari/tp-base.vcf.gz > regenotyped_sniffles_tp_base.vcf.gz
+        tabix -f regenotyped_sniffles_tp_base.vcf.gz
 
         # KANPIG
         export RUST_BACKTRACE=1
@@ -151,19 +157,25 @@ task GetRegenotypedTruePositivesImpl {
         rm -f tmp1.vcf.gz
         rm -rf truvari/
         truvari bench ${TRUVARI_BENCH_SETTINGS} -b truth.vcf.gz -c regenotyped_kanpig.vcf.gz -o truvari/
-        bcftools sort --output-type z truvari/tp-comp.vcf.gz > regenotyped_kanpig_tp.vcf.gz
-        tabix -f regenotyped_kanpig_tp.vcf.gz
+        bcftools sort --output-type z truvari/tp-comp.vcf.gz > regenotyped_kanpig_tp_comp.vcf.gz
+        tabix -f regenotyped_kanpig_tp_comp.vcf.gz
+        bcftools sort --output-type z truvari/tp-base.vcf.gz > regenotyped_kanpig_tp_base.vcf.gz
+        tabix -f regenotyped_kanpig_tp_base.vcf.gz
     >>>
 
     output {
         File regenotyped_sniffles = work_dir + "/regenotyped_sniffles.vcf.gz"
         File regenotyped_sniffles_tbi = work_dir + "/regenotyped_sniffles.vcf.gz.tbi"
-        File regenotyped_sniffles_tp = work_dir + "/regenotyped_sniffles_tp.vcf.gz"
-        File regenotyped_sniffles_tp_tbi = work_dir + "/regenotyped_sniffles_tp.vcf.gz.tbi"
+        File regenotyped_sniffles_tp_comp = work_dir + "/regenotyped_sniffles_tp_comp.vcf.gz"
+        File regenotyped_sniffles_tp_comp_tbi = work_dir + "/regenotyped_sniffles_tp_comp.vcf.gz.tbi"
+        File regenotyped_sniffles_tp_base = work_dir + "/regenotyped_sniffles_tp_base.vcf.gz"
+        File regenotyped_sniffles_tp_base_tbi = work_dir + "/regenotyped_sniffles_tp_base.vcf.gz.tbi"
         File regenotyped_kanpig = work_dir + "/regenotyped_kanpig.vcf.gz"
         File regenotyped_kanpig_tbi = work_dir + "/regenotyped_kanpig.vcf.gz.tbi"
-        File regenotyped_kanpig_tp = work_dir + "/regenotyped_kanpig_tp.vcf.gz"
-        File regenotyped_kanpig_tp_tbi = work_dir + "/regenotyped_kanpig_tp.vcf.gz.tbi"
+        File regenotyped_kanpig_tp_comp = work_dir + "/regenotyped_kanpig_tp_comp.vcf.gz"
+        File regenotyped_kanpig_tp_comp_tbi = work_dir + "/regenotyped_kanpig_tp_comp.vcf.gz.tbi"
+        File regenotyped_kanpig_tp_base = work_dir + "/regenotyped_kanpig_tp_base.vcf.gz"
+        File regenotyped_kanpig_tp_base_tbi = work_dir + "/regenotyped_kanpig_tp_base.vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/callset_integration"
