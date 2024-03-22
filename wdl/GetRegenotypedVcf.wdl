@@ -106,9 +106,9 @@ task GetRegenotypedVcfImpl {
         formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0
 
         # SNIFFLES FORCE
-        #rm -f regenotyped.vcf.gz
-        #sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
-        #tabix -f regenotyped_sniffles.vcf.gz
+        rm -f regenotyped.vcf.gz
+        sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
+        tabix -f regenotyped_sniffles.vcf.gz
 
         # KANPIG
         export RUST_BACKTRACE=1
