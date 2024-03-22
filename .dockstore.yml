@@ -95,6 +95,11 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcf.wdl
   testParameterFiles:
+- name: GetRegenotypedVcfSniffles
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfSniffles.wdl
+  testParameterFiles:
 - name: PAV2SVs
   subclass: wdl
   publish: True
