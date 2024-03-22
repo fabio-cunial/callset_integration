@@ -106,13 +106,13 @@ task GetRegenotypedVcfImpl {
         formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0
 
         # SNIFFLES FORCE
-        rm -f regenotyped.vcf.gz
-        sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
-        tabix -f regenotyped_sniffles.vcf.gz
+        #rm -f regenotyped.vcf.gz
+        #sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
+        #tabix -f regenotyped_sniffles.vcf.gz
 
         # KANPIG
         export RUST_BACKTRACE=1
-        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ${KANPIG_SIZEMAX} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
+        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ~{svlen_max} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
         bcftools sort --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
         tabix -f regenotyped_kanpig.vcf.gz
         rm -f tmp1.vcf.gz
