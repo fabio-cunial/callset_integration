@@ -85,6 +85,11 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/ROC.wdl
   testParameterFiles:
+- name: PAV2SVs
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/PAV2SVs.wdl
+  testParameterFiles:
 - name: GetRegenotypedTruePositives
   subclass: wdl
   publish: True
@@ -105,8 +110,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpig.wdl
   testParameterFiles:
-- name: PAV2SVs
+- name: TruvariIntrasampleFabio
   subclass: wdl
   publish: True
-  primaryDescriptorPath: /wdl/PAV2SVs.wdl
+  primaryDescriptorPath: /wdl/TruvariIntrasampleFabio.wdl
   testParameterFiles:
