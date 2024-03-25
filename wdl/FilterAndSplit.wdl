@@ -9,7 +9,7 @@ workflow FilterAndSplit {
         String sample_id
         File sample_vcf_gz
         File sample_vcf_gz_tbi
-        String filter_string
+        String filter_string = ""
         Array[String] chromosomes
         String destination_dir
     }
