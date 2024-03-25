@@ -90,8 +90,9 @@ task TruvariIntersampleImpl {
                 bcftools filter ${INCLUDE_STR} --output-type z ${FILE} > ${ID}_filtered.vcf.gz
                 tabix -f ${ID}_filtered.vcf.gz
                 echo ${ID}_filtered.vcf.gz >> list_filtered.txt
+                rm -f ${FILE}*
             done < list.txt
-            mv list.txt list_unfiltered.txt
+            rm -f list.txt
             mv list_filtered.txt list.txt
         fi
         
