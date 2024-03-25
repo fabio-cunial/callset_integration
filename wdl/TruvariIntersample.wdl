@@ -6,6 +6,7 @@ version 1.0
 workflow TruvariIntersample {
     input {
         String source_dir
+        String filter_string
         Array[String] chromosomes
         File reference_fai
         File density_counter_py
@@ -15,6 +16,7 @@ workflow TruvariIntersample {
     }
     parameter_meta {
         source_dir: "Contains per-chromosome files built by workflow $FilterAndSplit$."
+        filter_string: "Apply this filter to every VCF before merging."
         destination_dir: "The merged VCFs (one per chromosome) are stored in this remote directory."
         max_records_per_chunk: "Discards chunks that contain more than this many records. Setting it to 10k keeps 99.9% of all chunks in AoU Phase 1 (1027 samples) on CHM13."
         monitor_every_seconds: "Print progress every X seconds"
@@ -41,6 +43,7 @@ workflow TruvariIntersample {
 task TruvariIntersampleImpl {
     input {
         String source_dir
+        String filter_string
         String chromosome
         File reference_fai
         File density_counter_py
@@ -77,6 +80,20 @@ task TruvariIntersampleImpl {
             fi
         done
         find . -maxdepth 1 -name '*.vcf.gz' > list.txt
+        
+        # Filtering, if needed.
+        if [ -n ~{filter_string} ]; then
+            INCLUDE_STR="--include ~{filter_string}"
+            rm -f list_filtered.txt
+            while read FILE; do
+                ID=$(basename ${FILE .vcf.gz})
+                bcftools filter ${INCLUDE_STR} --output-type z ${FILE} > ${ID}_filtered.vcf.gz
+                tabix -f ${ID}_filtered.vcf.gz
+                echo ${ID}_filtered.vcf.gz >> list_filtered.txt
+            done < list.txt
+            mv list.txt list_unfiltered.txt
+            mv list_filtered.txt list.txt
+        fi
         
         # BCFTOOLS
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --force-samples --merge none --file-list list.txt --output-type z > ~{chromosome}.merged.vcf.gz
