@@ -11,11 +11,13 @@ workflow TruvariIntersample {
         File density_counter_py
         Int max_records_per_chunk = 10000
         String destination_dir
+        Int monitor_every_seconds = 300
     }
     parameter_meta {
         source_dir: "Contains per-chromosome files built by workflow $FilterAndSplit$."
         destination_dir: "The merged VCFs (one per chromosome) are stored in this remote directory."
         max_records_per_chunk: "Discards chunks that contain more than this many records. Setting it to 10k keeps 99.9% of all chunks in AoU Phase 1 (1027 samples) on CHM13."
+        monitor_every_seconds: "Print progress every X seconds"
     }
 
     scatter (chr in chromosomes) {
@@ -26,7 +28,8 @@ workflow TruvariIntersample {
                 reference_fai = reference_fai,
                 density_counter_py = density_counter_py,
                 max_records_per_chunk = max_records_per_chunk,
-                destination_dir = destination_dir
+                destination_dir = destination_dir,
+                monitor_every_seconds = monitor_every_seconds
         }
     }
     
@@ -41,8 +44,9 @@ task TruvariIntersampleImpl {
         String chromosome
         File reference_fai
         File density_counter_py
-        Int max_records_per_chunk = 10000
+        Int max_records_per_chunk
         String destination_dir
+        Int monitor_every_seconds
     }
     parameter_meta {
     }
@@ -91,7 +95,7 @@ task TruvariIntersampleImpl {
             | bcftools sort --max-mem $(( ~{ram_size_gb} - 4 ))G --output-type z > ~{chromosome}.collapsed.vcf.gz &
         pid=$!
         while ps -p "${pid}" > /dev/null ; do 
-            sleep 1800
+            sleep ~{monitor_every_seconds}
             date
             ls
             bcftools query -f "%CHROM\n" removed.vcf.gz | uniq -c 
