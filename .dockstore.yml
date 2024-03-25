@@ -120,3 +120,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/FilterAndSplit.wdl
   testParameterFiles:
+- name: ConcatenateChromosomes
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/ConcatenateChromosomes.wdl
+  testParameterFiles:
