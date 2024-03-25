@@ -6,7 +6,7 @@ version 1.0
 workflow TruvariIntersample {
     input {
         String source_dir
-        String filter_string
+        String filter_string = ""
         Array[String] chromosomes
         File reference_fai
         File density_counter_py
@@ -83,8 +83,9 @@ task TruvariIntersampleImpl {
         find . -maxdepth 1 -name '*.vcf.gz' > list.txt
         
         # Filtering, if needed.
-        if [ -n ~{filter_string} ]; then
-            INCLUDE_STR="--include ~{filter_string}"
+        FILTER_STRING=~{filter_string}
+        if [ -n ${FILTER_STRING} ]; then
+            INCLUDE_STR="--include ${FILTER_STRING}"
             rm -f list_filtered.txt
             while read FILE; do
                 ID=$(basename ${FILE .vcf.gz})

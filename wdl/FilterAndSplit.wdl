@@ -76,10 +76,11 @@ task FilterAndSplitImpl {
         # Splitting
         CHROMOSOMES=~{sep='-' chromosomes}
         CHROMOSOMES=$(echo ${CHROMOSOMES} | tr '-' ' ')
-        if [ -z ~{filter_string} ]; then
+        FILTER_STRING=~{filter_string}
+        if [ -z ${FILTER_STRING} ]; then
             INCLUDE_STR=""
         else
-            INCLUDE_STR="--include ~{filter_string}"
+            INCLUDE_STR="--include ${FILTER_STRING}"
         fi
         for CHROMOSOME in ${CHROMOSOMES}; do
             ${TIME_COMMAND} bcftools filter ${INCLUDE_STR} --regions ${CHROMOSOME} --output-type z formatted.vcf.gz > ~{sample_id}_${CHROMOSOME}_split.vcf.gz
