@@ -72,7 +72,7 @@ task TruvariIntersampleImpl {
                 break
             fi
         done
-        find . -depth 1 -type f -name '*.vcf.gz' > list.txt
+        find . -maxdepth 1 -name '*.vcf.gz' > list.txt
         
         # BCFTOOLS
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --force-samples --merge none --file-list list.txt --output-type z > ~{chromosome}.merged.vcf.gz

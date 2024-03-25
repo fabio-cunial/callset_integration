@@ -56,7 +56,7 @@ task ConcatenateChromosomesImpl {
                 break
             fi
         done
-        find . -depth 1 -type f -name '*.vcf.gz' > list.txt
+        find . -maxdepth 1 -name '*.vcf.gz' > list.txt
         
         ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
         tabix -f concat.vcf.gz
