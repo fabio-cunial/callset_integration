@@ -47,7 +47,7 @@ task TruvariIntersampleImpl {
     parameter_meta {
     }
     
-    Int ram_size_gb = 128
+    Int ram_size_gb = 128  # Arbitrary
     String work_dir = "/cromwell_root/truvari_intrasample"
     
     command <<<
@@ -72,7 +72,7 @@ task TruvariIntersampleImpl {
                 break
             fi
         done
-        find . -depth 1 -type f -name "*.vcf.gz" > list.txt
+        find . -depth 1 -type f -name '*.vcf.gz' > list.txt
         
         # BCFTOOLS
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --force-samples --merge none --file-list list.txt --output-type z > ~{chromosome}.merged.vcf.gz
