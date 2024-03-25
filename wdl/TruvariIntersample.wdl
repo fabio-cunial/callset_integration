@@ -26,6 +26,7 @@ workflow TruvariIntersample {
         call TruvariIntersampleImpl {
             input:
                 source_dir = source_dir,
+                filter_string = filter_string,
                 chromosome = chr,
                 reference_fai = reference_fai,
                 density_counter_py = density_counter_py,
