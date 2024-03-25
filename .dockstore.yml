@@ -115,3 +115,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TruvariIntrasampleFabio.wdl
   testParameterFiles:
+- name: FilterAndSplit
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/FilterAndSplit.wdl
+  testParameterFiles:
