@@ -9,13 +9,13 @@ workflow TruvariIntersample {
         Array[String] chromosomes
         File reference_fai
         File density_counter_py
-        Int max_records_per_chunk = 30000
+        Int max_records_per_chunk = 10000
         String destination_dir
     }
     parameter_meta {
         source_dir: "Contains per-chromosome files built by workflow $FilterAndSplit$."
         destination_dir: "The merged VCFs (one per chromosome) are stored in this remote directory."
-        max_records_per_chunk: "Heuristically discard chunks with more than this many records"
+        max_records_per_chunk: "Discards chunks that contain more than this many records. Setting it to 10k keeps 99.9% of all chunks in AoU Phase 1 (1027 samples) on CHM13."
     }
 
     scatter (chr in chromosomes) {
@@ -41,7 +41,7 @@ task TruvariIntersampleImpl {
         String chromosome
         File reference_fai
         File density_counter_py
-        Int max_records_per_chunk = 30000
+        Int max_records_per_chunk = 10000
         String destination_dir
     }
     parameter_meta {
@@ -64,7 +64,7 @@ task TruvariIntersampleImpl {
         
         # Downloading
         while : ; do
-            TEST=$(gsutil -m cp "~{source_dir}/*_~{chromosome}_split.vcf.gz*" . && echo 0 || echo 1)
+            TEST=$(gsutil -m cp ~{source_dir}'/*_'~{chromosome}_split.vcf.gz'*' . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error downloading files. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
@@ -80,7 +80,7 @@ task TruvariIntersampleImpl {
         ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --do-not-normalize --multiallelics -any --output-type z ~{chromosome}.merged.vcf.gz > ~{chromosome}.normed.vcf.gz
         tabix -f ~{chromosome}.normed.vcf.gz
 
-        # Heuristically discarding chunks with too many records
+        # Discarding chunks with too many records
         python ~{density_counter_py} ~{chromosome}.normed.vcf.gz > chunks.bed
         awk '$4 >= ~{max_records_per_chunk}' chunks.bed > excluded.bed
         bedtools complement -i excluded.bed -g ~{reference_fai} > included.bed
