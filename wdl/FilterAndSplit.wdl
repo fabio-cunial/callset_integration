@@ -48,7 +48,7 @@ task FilterAndSplitImpl {
     
     String docker_dir = "/truvari_intrasample"
     String work_dir = "/cromwell_root/truvari_intrasample"
-    Int disk_size_gb = 10*(ceil(size(sample_vcf_gz,"GB")))
+    Int disk_size_gb = 10*(ceil(size(sample_vcf_gz,"GB")))  # Arbitrary
 
     command <<<
         set -euxo pipefail
@@ -56,11 +56,24 @@ task FilterAndSplitImpl {
         cd ~{work_dir}
         
         GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
-                
+        
+        # Transfering annotations to the GT field, so that they are preserved by
+        # the inter-sample merge later.
+        echo '##FORMAT=<ID=CALIBRATION_SENSITIVITY,Number=1,Type=Float,Description="Calibration sensitivity according to the model applied by ScoreVariantAnnotations">' > header.txt
+        echo '##FORMAT=<ID=SUPP_PBSV,Number=1,Type=Integer,Description="Supported by pbsv">' >> header.txt
+        echo '##FORMAT=<ID=SUPP_SNIFFLES,Number=1,Type=Integer,Description="Supported by sniffles">' >> header.txt
+        echo '##FORMAT=<ID=SUPP_PAV,Number=1,Type=Integer,Description="Supported by pav">' >> header.txt
+        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%CALIBRATION_SENSITIVITY\t%SUPP_PBSV\t%SUPP_SNIFFLES\t%SUPP_PAV\n' ~{sample_vcf_gz} | bgzip -c > annotations.tsv.gz
+        tabix -s1 -b2 -e2 annotations.tsv.gz
+        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,FORMAT/CALIBRATION_SENSITIVITY,FORMAT/SUPP_PBSV,FORMAT/SUPP_SNIFFLES,FORMAT/SUPP_PAV ~{sample_vcf_gz} --output-type z > formatted.vcf.gz
+        tabix -f formatted.vcf.gz
+        
+        # Splitting
         CHROMOSOMES=~{sep='-' chromosomes}
         CHROMOSOMES=$(echo ${CHROMOSOMES} | tr '-' ' ')
         if [ -z ~{filter_string} ]; then
@@ -69,10 +82,20 @@ task FilterAndSplitImpl {
             INCLUDE_STR="--include ~{filter_string}"
         fi
         for CHROMOSOME in ${CHROMOSOMES}; do
-            ${TIME_COMMAND} bcftools filter ${INCLUDE_STR} --regions ${CHROMOSOME} --output-type z ~{sample_vcf_gz} > ~{sample_id}_${CHROMOSOME}_split.vcf.gz
+            ${TIME_COMMAND} bcftools filter ${INCLUDE_STR} --regions ${CHROMOSOME} --output-type z formatted.vcf.gz > ~{sample_id}_${CHROMOSOME}_split.vcf.gz
             tabix -f ~{sample_id}_${CHROMOSOME}_split.vcf.gz
         done
-        gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp '*_split.vcf.gz*' ~{destination_dir}
+        
+        # Uploading
+        while : ; do
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp '*_split.vcf.gz*' ~{destination_dir} && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading files. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
     >>>
 
     output {
