@@ -1,39 +1,53 @@
 version 1.0
 
 
+# Runs a truvari inter-sample merge in parallel on every chromosome.
 #
 workflow TruvariIntersample {
     input {
-        Array[File] intrasample_merged_vcf
-        Array[File] intrasample_merged_vcf_tbi
+        String source_dir
+        Array[String] chromosomes
+        File reference_fai
+        File density_counter_py
+        Int max_records_per_chunk = 30000
+        String destination_dir
     }
     parameter_meta {
+        source_dir: "Contains per-chromosome files built by workflow $FilterAndSplit$."
+        destination_dir: "The merged VCFs (one per chromosome) are stored in this remote directory."
+        max_records_per_chunk: "Heuristically discard chunks with more than this many records"
     }
 
-    call TruvariIntersampleImpl {
-        input:
-            intrasample_merged_vcf = intrasample_merged_vcf,
-            intrasample_merged_vcf_tbi = intrasample_merged_vcf_tbi
+    scatter (chr in chromosomes) {
+        call TruvariIntersampleImpl {
+            input:
+                source_dir = source_dir,
+                chromosome = chr,
+                reference_fai = reference_fai,
+                density_counter_py = density_counter_py,
+                max_records_per_chunk = max_records_per_chunk,
+                destination_dir = destination_dir
+        }
     }
     
     output {
-    	File bcftools_merged = TruvariIntersampleImpl.bcftools_merged
-    	File bcftools_merged_idx = TruvariIntersampleImpl.bcftools_merged_idx
-        File truvari_collapsed = TruvariIntersampleImpl.truvari_collapsed
-    	File truvari_collapsed_idx = TruvariIntersampleImpl.truvari_collapsed_idx
     }
 }
 
 
 task TruvariIntersampleImpl {
     input {
-        Array[File] intrasample_merged_vcf
-        Array[File] intrasample_merged_vcf_tbi
+        String source_dir
+        String chromosome
+        File reference_fai
+        File density_counter_py
+        Int max_records_per_chunk = 30000
+        String destination_dir
     }
     parameter_meta {
     }
     
-    Int disk_size_gb = 10*( ceil(size(intrasample_merged_vcf,"GB"))) + 50
+    Int ram_size_gb = 128
     String work_dir = "/cromwell_root/truvari_intrasample"
     
     command <<<
@@ -41,41 +55,78 @@ task TruvariIntersampleImpl {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
+        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
+        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
-        N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        INPUT_FILES=~{sep=',' intrasample_merged_vcf}
-        INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
-        rm -f list.txt
-        for FILE in ${INPUT_FILES}; do
-            ID=$(basename ${FILE} .vcf.gz)
-            bcftools norm --multiallelics - --output-type z ${FILE} > ${ID}_normed.vcf.gz
-            tabix ${ID}_normed.vcf.gz
-            echo ${ID}_normed.vcf.gz >> list.txt
+        # Downloading
+        while : ; do
+            TEST=$(gsutil -m cp "~{source_dir}/*_~{chromosome}_split.vcf.gz*" . && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error downloading files. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > bcftools_merged.vcf.gz 
-        tabix bcftools_merged.vcf.gz
-        ${TIME_COMMAND} bcftools norm --multiallelics - --output-type z bcftools_merged.vcf.gz > bcftools_merged_normed.vcf.gz 
-        tabix bcftools_merged_normed.vcf.gz
-        ${TIME_COMMAND} truvari collapse -i bcftools_merged_normed.vcf.gz -c removed.vcf.gz \
-            --sizemin 0 --sizemax 1000000 -k common --gt all \
-            | bcftools sort -m 2G --output-type z > truvari_collapsed.vcf.gz
-        tabix truvari_collapsed.vcf.gz
+        find . -depth 1 -type f -name "*.vcf.gz" > list.txt
+        
+        # BCFTOOLS
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --force-samples --merge none --file-list list.txt --output-type z > ~{chromosome}.merged.vcf.gz
+        tabix -f ~{chromosome}.merged.vcf.gz
+        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --do-not-normalize --multiallelics -any --output-type z ~{chromosome}.merged.vcf.gz > ~{chromosome}.normed.vcf.gz
+        tabix -f ~{chromosome}.normed.vcf.gz
+
+        # Heuristically discarding chunks with too many records
+        python ~{density_counter_py} ~{chromosome}.normed.vcf.gz > chunks.bed
+        awk '$4 >= ~{max_records_per_chunk}' chunks.bed > excluded.bed
+        bedtools complement -i excluded.bed -g ~{reference_fai} > included.bed
+        bedtools sort -faidx ~{reference_fai} -i included.bed > included.sorted.bed
+        
+        # TRUVARI
+        truvari collapse --input ~{chromosome}.normed.vcf.gz --collapsed-output removed.vcf.gz --sizemin 0 --sizemax 1000000 --keep common --bed included.sorted.bed --gt all \
+            | bcftools sort --max-mem $(( ~{ram_size_gb} - 4 ))G --output-type z > ~{chromosome}.collapsed.vcf.gz &
+        pid=$!
+        while ps -p "${pid}" > /dev/null ; do 
+            sleep 1800
+            date
+            ls
+            bcftools query -f "%CHROM\n" removed.vcf.gz | uniq -c 
+        done
+        wait
+        tabix -f ~{chromosome}.collapsed.vcf.gz
+        
+        # Uploading
+        while : ; do
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp ~{chromosome}.collapsed.vcf.'gz*' ~{destination_dir} && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading files. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
+        while : ; do
+            TEST=$(gsutil ${GSUTIL_UPLOAD_THRESHOLD} -m cp chunks.bed ~{destination_dir}/~{chromosome}.chunks.bed && echo 0 || echo 1)
+            if [ ${TEST} -eq 1 ]; then
+                echo "Error uploading files. Trying again..."
+                sleep ${GSUTIL_DELAY_S}
+            else
+                break
+            fi
+        done
     >>>
     
     output {
-        File bcftools_merged = "~{work_dir}/bcftools_merged.vcf.gz"
-        File bcftools_merged_idx = "~{work_dir}/bcftools_merged.vcf.gz.tbi"
-        File truvari_collapsed = "~{work_dir}/truvari_collapsed.vcf.gz"
-        File truvari_collapsed_idx = "~{work_dir}/truvari_collapsed.vcf.gz.tbi"
     }
     runtime {
         docker: "us.gcr.io/broad-dsp-lrma/aou-lr/truvari_intrasample"
-        cpu: 1
-        memory: "128GB"
-        disks: "local-disk " + disk_size_gb + " HDD"
+        cpu: 8
+        memory: ram_size_gb + "GB"
+        disks: "local-disk 256 HDD"
         preemptible: 0
     }
 }
