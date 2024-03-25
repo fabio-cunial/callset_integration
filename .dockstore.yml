@@ -120,8 +120,3 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/FilterAndSplit.wdl
   testParameterFiles:
-- name: TruvariIntersample
-  subclass: wdl
-  publish: True
-  primaryDescriptorPath: /wdl/TruvariIntersample.wdl
-  testParameterFiles:
