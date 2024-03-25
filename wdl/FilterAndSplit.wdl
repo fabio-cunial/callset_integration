@@ -4,7 +4,7 @@ version 1.0
 # Applies a filter to a VCF and sequentially splits it into a given set of 
 # chromosomes.
 #
-task FilterAndSplit {
+workflow FilterAndSplit {
     input {
         String sample_id
         File sample_vcf_gz
@@ -17,6 +17,33 @@ task FilterAndSplit {
         sample_vcf_gz: "Assumed to be already sorted"
         filter_string: "String to be used in $bcftools filter --include$. Empty = no filtering."
         destination_dir: "The filtered and split files are stored in this remote directory."
+    }
+
+    call FilterAndSplitImpl {
+        input:
+            sample_id = sample_id,
+            sample_vcf_gz = sample_vcf_gz,
+            sample_vcf_gz_tbi = sample_vcf_gz_tbi,
+            filter_string = filter_string,
+            chromosomes = chromosomes,
+            destination_dir = destination_dir
+    }
+    
+    output {
+    }
+}
+
+
+task FilterAndSplitImpl {
+    input {
+        String sample_id
+        File sample_vcf_gz
+        File sample_vcf_gz_tbi
+        String filter_string
+        Array[String] chromosomes
+        String destination_dir
+    }
+    parameter_meta {
     }
     
     String docker_dir = "/truvari_intrasample"
