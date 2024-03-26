@@ -83,7 +83,7 @@ task TruvariIntersampleImpl {
         find . -maxdepth 1 -name '*.vcf.gz' > list.txt
         
         # Filtering, if needed.
-        FILTER_STRING=~{filter_string}
+        FILTER_STRING="~{filter_string}"
         if [ -n ${FILTER_STRING} ]; then
             INCLUDE_STR="--include ${FILTER_STRING}"
             rm -f list_filtered.txt

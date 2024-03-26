@@ -76,7 +76,7 @@ task FilterAndSplitImpl {
         # Splitting
         CHROMOSOMES=~{sep='-' chromosomes}
         CHROMOSOMES=$(echo ${CHROMOSOMES} | tr '-' ' ')
-        FILTER_STRING=~{filter_string}
+        FILTER_STRING="~{filter_string}"
         if [ -z ${FILTER_STRING} ]; then
             INCLUDE_STR=""
         else
