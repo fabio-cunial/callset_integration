@@ -9,13 +9,13 @@ workflow FilterAndSplit {
         String sample_id
         File sample_vcf_gz
         File sample_vcf_gz_tbi
-        String filter_string = ""
+        String filter_string = "none"
         Array[String] chromosomes
         String destination_dir
     }
     parameter_meta {
         sample_vcf_gz: "Assumed to be already sorted"
-        filter_string: "String to be used in $bcftools filter --include$. Empty = no filtering."
+        filter_string: "String to be used in $bcftools filter --include$. 'none'=no filter."
         destination_dir: "The filtered and split files are stored in this remote directory."
     }
 
@@ -77,7 +77,7 @@ task FilterAndSplitImpl {
         CHROMOSOMES=~{sep='-' chromosomes}
         CHROMOSOMES=$(echo ${CHROMOSOMES} | tr '-' ' ')
         FILTER_STRING="~{filter_string}"
-        if [ -z ${FILTER_STRING} ]; then
+        if [ ${FILTER_STRING} = none ]; then
             INCLUDE_STR=""
         else
             INCLUDE_STR="--include ${FILTER_STRING}"

@@ -6,7 +6,7 @@ version 1.0
 workflow TruvariIntersample {
     input {
         String source_dir
-        String filter_string = ""
+        String filter_string = "none"
         Array[String] chromosomes
         File reference_fai
         File density_counter_py
@@ -16,7 +16,7 @@ workflow TruvariIntersample {
     }
     parameter_meta {
         source_dir: "Contains per-chromosome files built by workflow $FilterAndSplit$."
-        filter_string: "Apply this filter to every VCF before merging."
+        filter_string: "Apply this filter to every VCF before merging. 'none'=no filter."
         destination_dir: "The merged VCFs (one per chromosome) are stored in this remote directory."
         max_records_per_chunk: "Discards chunks that contain more than this many records. Setting it to 10k keeps 99.9% of all chunks in AoU Phase 1 (1027 samples) on CHM13."
         monitor_every_seconds: "Print progress every X seconds"
@@ -84,7 +84,7 @@ task TruvariIntersampleImpl {
         
         # Filtering, if needed.
         FILTER_STRING="~{filter_string}"
-        if [ -n ${FILTER_STRING} ]; then
+        if [ ${FILTER_STRING} != none ]; then
             INCLUDE_STR="--include ${FILTER_STRING}"
             rm -f list_filtered.txt
             while read FILE; do
