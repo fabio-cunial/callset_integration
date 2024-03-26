@@ -6,14 +6,17 @@ version 1.0
 workflow ConcatenateChromosomes {
     input {
         String source_dir
+        File samples_file
     }
     parameter_meta {
         source_dir: "The output dir of workflow $TruvariIntersample$, containing sorted per-chromosome VCFs."
+        samples_file: "One sample per line. This is the order of the samples in the output VCF."
     }
 
     call ConcatenateChromosomesImpl {
         input:
-            source_dir = source_dir
+            source_dir = source_dir,
+            samples_file = samples_file
     }
     
     output {
@@ -26,6 +29,7 @@ workflow ConcatenateChromosomes {
 task ConcatenateChromosomesImpl {
     input {
         String source_dir
+        File samples_file
     }
     parameter_meta {
     }
@@ -58,7 +62,18 @@ task ConcatenateChromosomesImpl {
         done
         find . -maxdepth 1 -name '*.vcf.gz' > list.txt
         
-        ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list.txt --output-type z > concat.vcf.gz
+        # Ensuring that samples have the same order in all files
+        rm -f list_filtered.txt
+        while read FILE; do
+            ID=$(basename ${FILE} .vcf.gz)
+            bcftools view --samples-file ~{samples_file} --output-type z ${FILE} > ${ID}.vcf.gz
+            tabix -f ${ID}.vcf.gz
+            echo ${ID}.vcf.gz >> list_filtered.txt
+            rm -f ${FILE}
+        done < list.txt
+        
+        # Concatenating
+        ${TIME_COMMAND} bcftools concat --threads ${N_THREADS} --allow-overlaps --file-list list_filtered.txt --output-type z > concat.vcf.gz
         tabix -f concat.vcf.gz
     >>>
 
