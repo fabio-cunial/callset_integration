@@ -60,7 +60,7 @@ task ConcatenateChromosomesImpl {
                 break
             fi
         done
-        find . -maxdepth 1 -name '*.vcf.gz' > list.txt
+        find . -maxdepth 1 -name '*.vcf.gz' | sort -V > list.txt
         
         # Ensuring that samples have the same order in all files
         rm -f list_filtered.txt
