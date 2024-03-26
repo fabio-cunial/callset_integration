@@ -66,9 +66,9 @@ task ConcatenateChromosomesImpl {
         rm -f list_filtered.txt
         while read FILE; do
             ID=$(basename ${FILE} .vcf.gz)
-            bcftools view --samples-file ~{samples_file} --output-type z ${FILE} > ${ID}.vcf.gz
-            tabix -f ${ID}.vcf.gz
-            echo ${ID}.vcf.gz >> list_filtered.txt
+            bcftools view --samples-file ~{samples_file} --output-type z ${FILE} > ${ID}_filtered.vcf.gz
+            tabix -f ${ID}_filtered.vcf.gz
+            echo ${ID}_filtered.vcf.gz >> list_filtered.txt
             rm -f ${FILE}
         done < list.txt
         
