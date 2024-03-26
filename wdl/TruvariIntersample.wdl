@@ -88,7 +88,7 @@ task TruvariIntersampleImpl {
             INCLUDE_STR="--include ${FILTER_STRING}"
             rm -f list_filtered.txt
             while read FILE; do
-                ID=$(basename ${FILE .vcf.gz})
+                ID=$(basename ${FILE} .vcf.gz)
                 bcftools filter ${INCLUDE_STR} --output-type z ${FILE} > ${ID}_filtered.vcf.gz
                 tabix -f ${ID}_filtered.vcf.gz
                 echo ${ID}_filtered.vcf.gz >> list_filtered.txt
