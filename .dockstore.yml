@@ -125,3 +125,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/ConcatenateChromosomes.wdl
   testParameterFiles:
+- name: ToBed
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/ToBed.wdl
+  testParameterFiles:
