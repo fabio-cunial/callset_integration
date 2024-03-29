@@ -65,7 +65,7 @@ task GetRegenotypedVcfImpl {
         samtools index -@ ${N_THREADS} ~{alignments_bam}
         export RUST_BACKTRACE=1
         ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin 0 --sizemax ${KANPIG_SIZEMAX} --input ~{merged_vcf_gz} --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
-        bcftools sort --max-mem $(( ~{mem_gb} - 4 )) --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
+        bcftools sort --max-mem $(( ~{mem_gb} / 2 )) --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
         tabix -f regenotyped_kanpig.vcf.gz
         rm -f tmp1.vcf.gz
     >>>
