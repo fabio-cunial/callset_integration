@@ -48,11 +48,12 @@ task MergeImpl {
         
         # Downloading
         rm -f list.txt
+        i="0"
         while read ADDRESS; do
-            FILE=$(basename ${ADDRESS})
-            gsutil -m cp ${ADDRESS} .
-            tabix -f ${FILE}
-            echo ${FILE} >> list.txt
+            i=$(( ${i} + 1 ))
+            gsutil -m cp ${ADDRESS} ./${i}.vcf.gz
+            tabix -f ${i}.vcf.gz
+            echo ${i}.vcf.gz >> list.txt
         done < ~{regenotyped_vcfs_list}
         
         # Merging
