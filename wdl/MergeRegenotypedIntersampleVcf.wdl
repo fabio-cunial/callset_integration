@@ -86,7 +86,6 @@ task MergeImpl {
         rm -f *.txt
         ${TIME_COMMAND} bgzip -@ ${N_THREADS} merged.vcf
         tabix -f merged.vcf.gz
-        bcftools view merged.vcf.gz | head -n 1000
     >>>
 
     output {
