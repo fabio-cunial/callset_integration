@@ -49,7 +49,7 @@ task GetRegenotypedVcfImpl {
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     Int mem_gb = 32
-    Int mem_gb_sort = 10
+    Int mem_gb_sort = 20
     
     command <<<
         set -euxo pipefail
@@ -79,7 +79,7 @@ task GetRegenotypedVcfImpl {
         samtools index -@ ${N_THREADS} ~{alignments_bam}
         export RUST_BACKTRACE=1
         ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin 0 --sizemax ${KANPIG_SIZEMAX} --input cleaned.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
-        bcftools sort --max-mem ~{mem_gb_sort} --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
+        bcftools sort --max-mem ~{mem_gb_sort}G --output-type z tmp1.vcf.gz > regenotyped_kanpig.vcf.gz
         tabix -f regenotyped_kanpig.vcf.gz
         rm -f tmp1.vcf.gz
     >>>
