@@ -135,3 +135,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpigMerged.wdl
   testParameterFiles:
+- name: MergeRegenotypedIntersampleVcf
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/MergeRegenotypedIntersampleVcf.wdl
+  testParameterFiles:
