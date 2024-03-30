@@ -62,7 +62,7 @@ task MergeImpl {
         rm -f first.vcf.gz
         
         # Appending all remaining files
-        N_FILES=$(wc -l ~{regenotyped_vcfs_list})
+        N_FILES=$(wc -l < ~{regenotyped_vcfs_list})
         tail -n $(( ${N_FILES} - 1 )) > list.txt
         while read ADDRESS; do
             # Adding the new sample to the set of columns
