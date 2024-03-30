@@ -63,7 +63,7 @@ task MergeImpl {
         
         # Appending all remaining files
         N_FILES=$(wc -l < ~{regenotyped_vcfs_list})
-        tail -n $(( ${N_FILES} - 1 )) > list.txt
+        tail -n $(( ${N_FILES} - 1 )) ~{regenotyped_vcfs_list} > list.txt
         while read ADDRESS; do
             # Adding the new sample to the set of columns
             gsutil -m cp ${ADDRESS} ./tmp.vcf.gz
@@ -81,11 +81,12 @@ task MergeImpl {
         done < list.txt
         
         # Merging
-        echo ${FIELDS} > fields.txt
+        echo -e "${FIELDS}" > fields.txt
         cat header.txt fields.txt body.txt > merged.vcf
         rm -f *.txt
-        ${TIME_COMMAND} bgzip -@ ${N_THREADS} --compress-level 0 merged.vcf
+        ${TIME_COMMAND} bgzip -@ ${N_THREADS} merged.vcf
         tabix -f merged.vcf.gz
+        bcftools view merged.vcf.gz | head -n 1000
     >>>
 
     output {
