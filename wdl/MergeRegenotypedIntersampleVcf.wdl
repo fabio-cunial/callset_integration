@@ -58,7 +58,8 @@ task MergeImpl {
         N_ROWS=$(wc -l < tmp.txt)
         head -n $(( ${N_ROWS} - 1 )) tmp.txt > header.txt
         FIELDS=$(tail -n 1 tmp.txt)
-        bcftools view --no-header first.vcf.gz > body.txt
+        bcftools view --no-header first.vcf.gz | cut -f 1,2,3,4,5,6,7,8,9 > calls.txt
+        bcftools view --no-header first.vcf.gz | cut -f 10 > columns.txt
         rm -f first.vcf.gz
         
         # Appending all remaining files
@@ -74,14 +75,15 @@ task MergeImpl {
             echo "Current columns: ${FIELDS}"
             rm -f tmp.txt
             # Adding the new column to the body
-            bcftools view --no-header tmp.vcf.gz | cut -f 10 > column.txt
-            paste body.txt column.txt > body_new.txt
-            rm -f body.txt; mv body_new.txt body.txt
+            bcftools view --no-header tmp.vcf.gz | cut -f 10 > new_column.txt
+            paste columns.txt new_column.txt > columns_prime.txt
+            rm -f columns.txt; mv columns_prime.txt columns.txt
             rm -f tmp.vcf.gz
         done < list.txt
         
         # Merging
         echo -e "${FIELDS}" > fields.txt
+        paste calls.txt columns.txt > body.txt
         cat header.txt fields.txt body.txt > merged.vcf
         rm -f *.txt
         ${TIME_COMMAND} bgzip -@ ${N_THREADS} merged.vcf
