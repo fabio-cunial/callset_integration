@@ -98,7 +98,9 @@ task MergeImpl {
         rm -f first.vcf.gz
         
         # Appending all remaining files
-        split -d -n ${N_THREADS} ~{regenotyped_vcfs_list} list_
+        N_ROWS=$(wc -l < ~{regenotyped_vcfs_list})
+        N_ROWS=$(( ${N_ROWS} / ${N_THREADS} ))
+        split -d -l ${N_ROWS} ~{regenotyped_vcfs_list} list_
         COLUMNS_FILES=""; FIELDS_FILES=""
         for LIST_FILE in $(find . -maxdepth 1 -name 'list_*' | sort); do
             ID=${LIST_FILE#./list_}
