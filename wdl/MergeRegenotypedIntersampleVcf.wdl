@@ -56,6 +56,7 @@ task MergeImpl {
             local THREAD_ID=$1
             
             OUTPUT_FILE="columns_${THREAD_ID}.txt"
+            touch ${OUTPUT_FILE}
             TMP_PREFIX="tmp_${THREAD_ID}"
             FIELDS=""; i="0";
             while read ADDRESS; do
