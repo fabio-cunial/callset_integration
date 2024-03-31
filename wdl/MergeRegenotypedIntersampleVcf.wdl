@@ -55,29 +55,33 @@ task MergeImpl {
         function pasteThread() {
             local THREAD_ID=$1
             
-            OUTPUT_FILE="columns_${THREAD_ID}.txt"
-            touch ${OUTPUT_FILE}
+            OUTPUT_FILE="columns_${THREAD_ID}.txt"; touch ${OUTPUT_FILE}
+            FIELDS_FILE="fields_${THREAD_ID}.txt"; touch ${FIELDS_FILE}
             TMP_PREFIX="tmp_${THREAD_ID}"
-            FIELDS=""; i="0";
+            i="0";
             while read ADDRESS; do
+                i=$(( $i + 1 ))
                 # Adding the new sample to the set of columns
                 gsutil -m cp ${ADDRESS} ${TMP_PREFIX}.vcf.gz
                 bcftools view --header-only ${TMP_PREFIX}.vcf.gz > ${TMP_PREFIX}.txt
                 N_ROWS=$(wc -l < ${TMP_PREFIX}.txt)
-                SAMPLE_ID=$(tail -n 1 ${TMP_PREFIX}.txt | cut -f 10)
-                i=$(( $i + 1 ))
+                tail -n 1 ${TMP_PREFIX}.txt | cut -f 10 > sample_${THREAD_ID}.txt
                 if [ $i = "1" ]; then
-                    FIELDS=${SAMPLE_ID}
+                    mv sample_${THREAD_ID}.txt ${FIELDS_FILE}
                 else
-                    FIELDS=$(echo -e "${FIELDS}\t${SAMPLE_ID}")
+                    paste ${FIELDS_FILE} sample_${THREAD_ID}.txt > ${FIELDS_FILE}.prime
+                    mv ${FIELDS_FILE}.prime ${FIELDS_FILE}
                 fi
-                echo "Current fields of thread ${THREAD_ID}: ${FIELDS}"
+                echo "Current fields of thread ${THREAD_ID}:"; cat ${FIELDS_FILE}
                 # Adding the new column to the body
                 bcftools view --no-header ${TMP_PREFIX}.vcf.gz | cut -f 10 > ${TMP_PREFIX}.txt
-                paste ${OUTPUT_FILE} ${TMP_PREFIX}.txt > pasted_${THREAD_ID}.txt
-                rm -f ${OUTPUT_FILE}; mv pasted_${THREAD_ID}.txt ${OUTPUT_FILE}
+                if [ $i = "1" ]; then
+                    mv ${TMP_PREFIX}.txt ${OUTPUT_FILE}
+                else
+                    paste ${OUTPUT_FILE} ${TMP_PREFIX}.txt > ${OUTPUT_FILE}.prime
+                    mv ${OUTPUT_FILE}.prime ${OUTPUT_FILE}
+                fi
             done < list_${THREAD_ID}
-            echo -e ${FIELDS} > fields_${THREAD_ID}.txt
         }
         
         
