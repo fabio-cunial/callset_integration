@@ -35,6 +35,7 @@ workflow MergeRegenotypedIntersampleVcf {
 task MergeImpl {
     input {
         File regenotyped_vcfs_list
+        Int n_cpus
     }
     parameter_meta {
     }
@@ -49,7 +50,31 @@ task MergeImpl {
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
-        N_THREADS=$((2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        
+        function pasteThread() {
+            local THREAD_ID=$1
+            
+            OUTPUT_FILE="columns_${THREAD_ID}.txt"
+            TMP_PREFIX="tmp_${THREAD_ID}"
+            while read ADDRESS; do
+                # Adding the new sample to the set of columns
+                gsutil -m cp ${ADDRESS} ${TMP_PREFIX}.vcf.gz
+                bcftools view --header-only ${TMP_PREFIX}.vcf.gz > ${TMP_PREFIX}.txt
+                N_ROWS=$(wc -l < ${TMP_PREFIX}.txt)
+                SAMPLE_ID=$(tail -n 1 ${TMP_PREFIX}.txt | cut -f 10)
+                FIELDS=$(echo -e "${FIELDS}\t${SAMPLE_ID}")
+                echo "Current fields of thread ${THREAD_ID}: ${FIELDS}"
+                # Adding the new column to the body
+                bcftools view --no-header ${TMP_PREFIX}.vcf.gz | cut -f 10 > ${TMP_PREFIX}.txt
+                paste ${OUTPUT_FILE} ${TMP_PREFIX}.txt > pasted_${THREAD_ID}.txt
+                rm -f ${OUTPUT_FILE}; mv pasted_${THREAD_ID}.txt ${OUTPUT_FILE}
+            done < list_${THREAD_ID}
+            echo -e ${FIELDS} > fields_${THREAD_ID}.txt
+        }
+        
+        
+        # Main program
         
         # Initializing the inter-sample VCF with the first file
         ADDRESS=$(head -n 1 ~{regenotyped_vcfs_list})
@@ -57,34 +82,24 @@ task MergeImpl {
         bcftools view --header-only first.vcf.gz > tmp.txt
         N_ROWS=$(wc -l < tmp.txt)
         head -n $(( ${N_ROWS} - 1 )) tmp.txt > header.txt
-        FIELDS=$(tail -n 1 tmp.txt)
+        tail -n 1 tmp.txt | cut -f 1,2,3,4,5,6,7,8,9 > fields.txt
         bcftools view --no-header first.vcf.gz | cut -f 1,2,3,4,5,6,7,8,9 > calls.txt
-        bcftools view --no-header first.vcf.gz | cut -f 10 > columns.txt
         rm -f first.vcf.gz
         
         # Appending all remaining files
-        N_FILES=$(wc -l < ~{regenotyped_vcfs_list})
-        tail -n $(( ${N_FILES} - 1 )) ~{regenotyped_vcfs_list} > list.txt
-        while read ADDRESS; do
-            # Adding the new sample to the set of columns
-            gsutil -m cp ${ADDRESS} ./tmp.vcf.gz
-            bcftools view --header-only tmp.vcf.gz > tmp.txt
-            N_ROWS=$(wc -l < tmp.txt)
-            SAMPLE_ID=$(tail -n 1 tmp.txt | cut -f 10)
-            FIELDS=$(echo -e "${FIELDS}\t${SAMPLE_ID}")
-            echo "Current columns: ${FIELDS}"
-            rm -f tmp.txt
-            # Adding the new column to the body
-            bcftools view --no-header tmp.vcf.gz | cut -f 10 > new_column.txt
-            paste columns.txt new_column.txt > columns_prime.txt
-            rm -f columns.txt; mv columns_prime.txt columns.txt
-            rm -f tmp.vcf.gz
-        done < list.txt
-        
-        # Merging
-        echo -e "${FIELDS}" > fields.txt
-        paste calls.txt columns.txt > body.txt
-        cat header.txt fields.txt body.txt > merged.vcf
+        split -d -n ${N_THREADS} ~{regenotyped_vcfs_list} list_
+        COLUMNS_FILES=""; FIELDS_FILES=""
+        for ID in $(seq 1 ${N_THREADS}); do
+            if [ -e list_${ID} ]; then
+                pasteThread ${ID} &
+                COLUMNS_FILES="${COLUMNS_FILES} columns_${ID}.txt"
+                FIELDS_FILES="${FIELDS_FILES} fields_${ID}.txt"
+            fi
+        done
+        wait
+        paste fields.txt ${FIELDS_FILES} > fields_all.txt
+        paste calls.txt ${COLUMNS_FILES} > body.txt
+        cat header.txt fields_all.txt body.txt > merged.vcf
         rm -f *.txt
         ${TIME_COMMAND} bgzip -@ ${N_THREADS} merged.vcf
         tabix -f merged.vcf.gz
@@ -96,8 +111,8 @@ task MergeImpl {
     }
     runtime {
         docker: "us.gcr.io/broad-dsp-lrma/aou-lr/truvari_intrasample"
-        cpu: 8
-        memory: "32GB"
+        cpu: n_cpus
+        memory: n_cpus + "GB"
         disks: "local-disk 256 HDD"
         preemptible: 0
     }
