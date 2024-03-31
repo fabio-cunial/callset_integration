@@ -89,12 +89,11 @@ task MergeImpl {
         # Appending all remaining files
         split -d -n ${N_THREADS} ~{regenotyped_vcfs_list} list_
         COLUMNS_FILES=""; FIELDS_FILES=""
-        for ID in $(seq 1 ${N_THREADS}); do
-            if [ -e list_${ID} ]; then
-                pasteThread ${ID} &
-                COLUMNS_FILES="${COLUMNS_FILES} columns_${ID}.txt"
-                FIELDS_FILES="${FIELDS_FILES} fields_${ID}.txt"
-            fi
+        for LIST_FILE in $(find . -maxdepth 1 -name 'list_*' | sort); do
+            ID=${LIST_FILE#./list_}
+            pasteThread ${ID} &
+            COLUMNS_FILES="${COLUMNS_FILES} columns_${ID}.txt"
+            FIELDS_FILES="${FIELDS_FILES} fields_${ID}.txt"
         done
         wait
         paste fields.txt ${FIELDS_FILES} > fields_all.txt
