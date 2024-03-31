@@ -57,13 +57,19 @@ task MergeImpl {
             
             OUTPUT_FILE="columns_${THREAD_ID}.txt"
             TMP_PREFIX="tmp_${THREAD_ID}"
+            FIELDS=""; i="0";
             while read ADDRESS; do
                 # Adding the new sample to the set of columns
                 gsutil -m cp ${ADDRESS} ${TMP_PREFIX}.vcf.gz
                 bcftools view --header-only ${TMP_PREFIX}.vcf.gz > ${TMP_PREFIX}.txt
                 N_ROWS=$(wc -l < ${TMP_PREFIX}.txt)
                 SAMPLE_ID=$(tail -n 1 ${TMP_PREFIX}.txt | cut -f 10)
-                FIELDS=$(echo -e "${FIELDS}\t${SAMPLE_ID}")
+                i=$(( $i + 1 ))
+                if [ $i = "1" ]; then
+                    FIELDS=${SAMPLE_ID}
+                else
+                    FIELDS=$(echo -e "${FIELDS}\t${SAMPLE_ID}")
+                fi
                 echo "Current fields of thread ${THREAD_ID}: ${FIELDS}"
                 # Adding the new column to the body
                 bcftools view --no-header ${TMP_PREFIX}.vcf.gz | cut -f 10 > ${TMP_PREFIX}.txt
