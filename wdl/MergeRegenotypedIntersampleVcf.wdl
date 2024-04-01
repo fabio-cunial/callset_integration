@@ -124,7 +124,6 @@ task MergeImpl {
     runtime {
         docker: "us.gcr.io/broad-dsp-lrma/aou-lr/truvari_intrasample"
         cpu: n_cpus
-        memory: n_cpus + "GB"
         disks: "local-disk 256 HDD"
         preemptible: 0
     }
