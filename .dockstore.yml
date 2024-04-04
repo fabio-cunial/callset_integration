@@ -140,3 +140,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/MergeRegenotypedIntersampleVcf.wdl
   testParameterFiles:
+- name: AddTruvariAnnotations
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/AddTruvariAnnotations.wdl
+  testParameterFiles:
