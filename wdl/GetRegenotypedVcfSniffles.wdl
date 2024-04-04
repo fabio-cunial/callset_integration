@@ -129,7 +129,7 @@ task GetRegenotypedVcfImpl {
     
         # Formatting the merged VCF
         transferSupp ~{truvari_collapsed_vcf_gz} tmp.vcf.gz
-        formatVcf tmp.vf.gz merged.vcf.gz
+        formatVcf tmp.vcf.gz merged.vcf.gz
 
         # SNIFFLES FORCE
         sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
