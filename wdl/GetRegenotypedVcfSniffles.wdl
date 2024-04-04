@@ -132,13 +132,13 @@ task GetRegenotypedVcfImpl {
         formatVcf tmp.vcf.gz merged.vcf.gz
 
         # SNIFFLES FORCE
-        sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf regenotyped_sniffles.vcf.gz
-        tabix -f regenotyped_sniffles.vcf.gz
+        sniffles --threads ${N_THREADS} --reference ~{reference_fa} --input ~{alignments_bam} --genotype-vcf merged.vcf.gz --vcf ~{output_prefix}.vcf.gz
+        tabix -f ~{output_prefix}.vcf.gz
     >>>
 
     output {
-        File regenotyped_sniffles = work_dir + "/" + output_prefix + ".preprocessed.vcf.gz"
-        File regenotyped_sniffles_tbi = work_dir + "/" + output_prefix + ".preprocessed.vcf.gz.tbi"
+        File regenotyped_sniffles = work_dir + "/" + output_prefix + ".vcf.gz"
+        File regenotyped_sniffles_tbi = work_dir + "/" + output_prefix + ".vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/callset_integration"
