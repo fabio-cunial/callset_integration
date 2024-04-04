@@ -62,7 +62,7 @@ task AddTruvariAnnotationsImpl {
         ${TIME_COMMAND} truvari bench ~{truvari_bench_flags} --base ~{truth_vcf_gz} --comp ~{input_vcf_gz} --output ./truvari/
         
         # Marking TPs
-        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ./truvari/tp-comp.vcf.gz > tmp.tsv
+        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%INFO/TruScore\t%INFO/PctSeqSimilarity\t%INFO/PctSizeSimilarity\t%INFO/PctRecOverlap\t%INFO/StartDistance\t%INFO/EndDistance\t%INFO/SizeDiff\t%INFO/GTMatch\t%INFO/MatchId\n' ./truvari/tp-comp.vcf.gz > tmp.tsv
         N_ROWS=$(wc -l < tmp.tsv)
         rm -f bits.txt
         for i in $(seq 1 ${N_ROWS}); do
@@ -71,7 +71,7 @@ task AddTruvariAnnotationsImpl {
         paste tmp.tsv bits.txt > tps.tsv
         
         # Marking FPs
-        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ./truvari/fp.vcf.gz > tmp.tsv
+        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%INFO/TruScore\t%INFO/PctSeqSimilarity\t%INFO/PctSizeSimilarity\t%INFO/PctRecOverlap\t%INFO/StartDistance\t%INFO/EndDistance\t%INFO/SizeDiff\t%INFO/GTMatch\t%INFO/MatchId\t%INFO/Multi\n' ./truvari/fp.vcf.gz > tmp.tsv
         N_ROWS=$(wc -l < tmp.tsv)
         rm -f bits.txt
         for i in $(seq 1 ${N_ROWS}); do
@@ -80,10 +80,25 @@ task AddTruvariAnnotationsImpl {
         paste tmp.tsv bits.txt > fps.tsv
         
         # Annotating
-        echo '##INFO=<ID=TRUVARI_TRUE,Number=1,Type=Integer,Description="True according to truvari bench">' > header.txt
-        cat tps.tsv fps.tsv | sort -k 1V -k 2n | bgzip -c > annotations.tsv.gz
-        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/TRUVARI_TRUE ~{input_vcf_gz} --output-type z > ~{sample_id}_annotated.vcf.gz
-        tabix -f ~{sample_id}_annotated.vcf.gz
+        echo '##INFO=<ID=TruvariBench_TruScore,Number=1,Type=Integer,Description="Truvari score for similarity of match">' > header.txt
+        echo '##INFO=<ID=TruvariBench_PctSeqSimilarity,Number=1,Type=Float,Description="Pct sequence similarity between this variant and its closest match">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_PctSizeSimilarity,Number=1,Type=Float,Description="Pct size similarity between this variant and its closest match">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_PctRecOverlap,Number=1,Type=Float,Description="Percent reciprocal overlap percent of the two calls coordinates">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_StartDistance,Number=1,Type=Integer,Description="Distance of the base call end from comparison call start">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_EndDistance,Number=1,Type=Integer,Description="Distance of the base call end from comparison call end">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_SizeDiff,Number=1,Type=Float,Description="Difference in size of base and comp calls">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_GTMatch,Number=1,Type=Integer,Description="Base/Comparison genotypes AC difference">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_MatchId,Number=.,Type=String,Description="Tuple of base and comparison call ids which were matched">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_Multi,Number=0,Type=Flag,Description="Call is false due to non-multimatching">' >> header.txt
+        echo '##INFO=<ID=TruvariBench_TP,Number=1,Type=Integer,Description="TP according to truvari bench">' >> header.txt
+        sort -k 1V -k 2n tps.tsv | bgzip -c > annotations.tsv.gz
+        tabix -f -s1 -b2 -e2 annotations.tsv.gz
+        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/TruvariBench_TruScore,INFO/TruvariBench_PctSeqSimilarity,INFO/TruvariBench_PctSizeSimilarity,INFO/TruvariBench_PctRecOverlap,INFO/TruvariBench_StartDistance,INFO/TruvariBench_EndDistance,INFO/TruvariBench_SizeDiff,INFO/TruvariBench_GTMatch,INFO/TruvariBench_MatchId,INFO/TruvariBench_TP ~{input_vcf_gz} --output-type z > tmp.vcf.gz
+        tabix -f tmp.vcf.gz
+        sort -k 1V -k 2n fps.tsv | bgzip -c > annotations.tsv.gz
+        tabix -f -s1 -b2 -e2 annotations.tsv.gz
+        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/TruvariBench_TruScore,INFO/TruvariBench_PctSeqSimilarity,INFO/TruvariBench_PctSizeSimilarity,INFO/TruvariBench_PctRecOverlap,INFO/TruvariBench_StartDistance,INFO/TruvariBench_EndDistance,INFO/TruvariBench_SizeDiff,INFO/TruvariBench_GTMatch,INFO/TruvariBench_MatchId,INFO/TruvariBench_Multi,INFO/TruvariBench_TP tmp.vcf.gz --output-type z > annotated.vcf.gz
+        tabix -f annotated.vcf.gz
     >>>
 
     output {
