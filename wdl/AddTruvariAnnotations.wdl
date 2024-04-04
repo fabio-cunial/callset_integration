@@ -1,8 +1,9 @@
 version 1.0
 
 
-# Marks every call as true or false according to $truvari bench$ against a
-# truth VCF.
+# Annotates every call in a VCF as true or false according to $truvari bench$
+# against a truth VCF. Copies every annotation from $truvari bench$ to the 
+# output.
 #
 workflow AddTruvariAnnotations {
     input {
@@ -97,8 +98,8 @@ task AddTruvariAnnotationsImpl {
         tabix -f tmp.vcf.gz
         sort -k 1V -k 2n fps.tsv | bgzip -c > annotations.tsv.gz
         tabix -f -s1 -b2 -e2 annotations.tsv.gz
-        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/TruvariBench_TruScore,INFO/TruvariBench_PctSeqSimilarity,INFO/TruvariBench_PctSizeSimilarity,INFO/TruvariBench_PctRecOverlap,INFO/TruvariBench_StartDistance,INFO/TruvariBench_EndDistance,INFO/TruvariBench_SizeDiff,INFO/TruvariBench_GTMatch,INFO/TruvariBench_MatchId,INFO/TruvariBench_Multi,INFO/TruvariBench_TP tmp.vcf.gz --output-type z > annotated.vcf.gz
-        tabix -f annotated.vcf.gz
+        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/TruvariBench_TruScore,INFO/TruvariBench_PctSeqSimilarity,INFO/TruvariBench_PctSizeSimilarity,INFO/TruvariBench_PctRecOverlap,INFO/TruvariBench_StartDistance,INFO/TruvariBench_EndDistance,INFO/TruvariBench_SizeDiff,INFO/TruvariBench_GTMatch,INFO/TruvariBench_MatchId,INFO/TruvariBench_Multi,INFO/TruvariBench_TP tmp.vcf.gz --output-type z > ~{sample_id}_annotated.vcf.gz
+        tabix -f ~{sample_id}_annotated.vcf.gz
     >>>
 
     output {
