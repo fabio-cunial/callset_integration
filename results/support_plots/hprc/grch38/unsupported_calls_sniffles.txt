@@ -1,0 +1,11 @@
+unfiltered:
+nCalls=367298 nIns=238767 nDel=127281 other types=1250
+nCalls_unsupported=107536 nIns_unsupported=60787 nDel_unsupported=45849 otherTypes_unsupported=900
+
+0.9
+nCalls=220271 nIns=150669 nDel=69534 other types=68
+nCalls_unsupported=7073 nIns_unsupported=5008 nDel_unsupported=2058 otherTypes_unsupported=7
+
+0.7
+nCalls=152970 nIns=102141 nDel=50813 other types=16
+nCalls_unsupported=1314 nIns_unsupported=924 nDel_unsupported=390 otherTypes_unsupported=0
