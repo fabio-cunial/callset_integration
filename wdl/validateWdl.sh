@@ -3,6 +3,9 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSniffles.wdl
+java -jar ${WOMTOOL_PATH} validate -l AddTruvariAnnotations.wdl
+java -jar ${WOMTOOL_PATH} validate -l MergeRegenotypedIntersampleVcf.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigMerged.wdl
 java -jar ${WOMTOOL_PATH} validate -l ToBed.wdl
 java -jar ${WOMTOOL_PATH} validate -l ConcatenateChromosomes.wdl
@@ -10,7 +13,6 @@ java -jar ${WOMTOOL_PATH} validate -l TruvariIntersample.wdl
 java -jar ${WOMTOOL_PATH} validate -l FilterAndSplit.wdl
 java -jar ${WOMTOOL_PATH} validate -l TruvariIntrasampleFabio.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpig.wdl
-java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSniffles.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcf.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedTruePositives.wdl
 java -jar ${WOMTOOL_PATH} validate -l ROC.wdl

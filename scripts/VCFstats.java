@@ -18,10 +18,11 @@ public class VCFstats {
         final String VCF_HEADER = "#CHROM";
         final String GT_SEPARATOR = ":";
         final int N_CALLERS = 3;
+        final int RARE_MAX_NSAMPLES = 5;
         
         int i, j, n;
-        int type, length, frequency, sampleFrequency;
-        int nCalls, nIns, nDel;
+        int type, length, frequency, sampleFrequency, caller;
+        int nCalls, nIns, nDel, nCalls_unsupported, nIns_unsupported, nDel_unsupported;
         String str, field;
         BufferedReader br;
         BufferedWriter bw;
@@ -29,12 +30,14 @@ public class VCFstats {
         int[] insHistogram, delHistogram;
         int[] insPerIndividual, delPerIndividual;  // Sites
         int[] af, sf;
+        int[][] rareCalls;  // By sample freq.
         String[] tokens, tokensPrime;
         
         insHistogram = new int[1+MAX_LENGTH/LENGTH_QUANTUM];
         delHistogram = new int[1+MAX_LENGTH/LENGTH_QUANTUM];
         insPerIndividual = new int[0]; delPerIndividual = new int[0]; af = new int[0]; sf = new int[0];
-        nCalls=0; nIns=0; nDel=0;
+        rareCalls = new int[1+RARE_MAX_NSAMPLES][N_CALLERS+1];
+        nCalls=0; nIns=0; nDel=0; nCalls_unsupported=0; nIns_unsupported=0; nDel_unsupported=0;
         bw = new BufferedWriter(new FileWriter("support.txt"));
         br = new BufferedReader(new FileReader(INPUT_VCF));
         str=br.readLine();
@@ -97,6 +100,29 @@ public class VCFstats {
             }
             af[frequency]++; sf[sampleFrequency]++;
             for (i=0; i<N_CALLERS; i++) bw.write(supp[i]+",");
+            
+            // Rare calls supported by a single caller
+            if (sampleFrequency==0) {
+                nCalls_unsupported++;
+                if (type==VCFconstants.TYPE_INSERTION) nIns_unsupported++;
+                else if (type==VCFconstants.TYPE_DELETION) nDel_unsupported++;
+            }
+            if (sampleFrequency<=RARE_MAX_NSAMPLES) {
+                rareCalls[sampleFrequency][N_CALLERS]++;
+                caller=-1;
+                for (i=9; i<tokens.length; i++) {
+                    tokensPrime=tokens[i].split(GT_SEPARATOR);
+                    n=tokensPrime.length;
+                    for (j=0; j<N_CALLERS; j++) {
+                        if (tokensPrime[n-N_CALLERS+j].charAt(0)=='1') {
+                            if (caller==-1) caller=j;
+                            else if (caller!=j) { caller=-2; break; }
+                        }
+                    }
+                    if (caller==-2) break;
+                }
+                if (caller>=0) rareCalls[sampleFrequency][caller]++;
+            }
             bw.newLine();
             
             // Next iteration
@@ -106,6 +132,7 @@ public class VCFstats {
         
         // Outputting
         System.out.println("nCalls="+nCalls+" nIns="+nIns+" nDel="+nDel+" other types="+(nCalls-nIns-nDel));
+        System.out.println("nCalls_unsupported="+nCalls_unsupported+" nIns_unsupported="+nIns_unsupported+" nDel_unsupported="+nDel_unsupported+" otherTypes_unsupported="+(nCalls_unsupported-nIns_unsupported-nDel_unsupported));
         bw = new BufferedWriter(new FileWriter("lengthHistogram.txt"));
         for (i=0; i<insHistogram.length; i++) bw.write(insHistogram[i]+","+delHistogram[i]+"\n");
         bw.close();
@@ -117,6 +144,13 @@ public class VCFstats {
         bw.close();
         bw = new BufferedWriter(new FileWriter("sf.txt"));
         for (i=0; i<sf.length; i++) bw.write(sf[i]+"\n");
+        bw.close();
+        bw = new BufferedWriter(new FileWriter("rareCalls.txt"));
+        for (i=0; i<rareCalls.length; i++) {
+            bw.write(i+"");
+            for (j=0; j<rareCalls[i].length; j++) bw.write(","+rareCalls[i][j]);
+            bw.newLine();
+        }
         bw.close();
     }
     
