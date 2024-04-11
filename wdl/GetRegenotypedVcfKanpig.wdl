@@ -14,6 +14,7 @@ workflow GetRegenotypedVcfKanpig {
         Int svlen_max
     }
     parameter_meta {
+        svlen_max: "<=10k in order for kanpig to work properly."
     }
     
     call GetRegenotypedVcfImpl {
@@ -47,11 +48,12 @@ task GetRegenotypedVcfImpl {
         Int svlen_max
     }
     parameter_meta {
+        svlen_max: "<=10k in order for kanpig to work properly."
     }
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int mem_gb = 60
+    Int mem_gb = 16
     
     command <<<
         set -euxo pipefail
@@ -64,11 +66,8 @@ task GetRegenotypedVcfImpl {
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_MEM_GB=~{mem_gb}
         EFFECTIVE_MEM_GB=$(( ${EFFECTIVE_MEM_GB} - 4 ))
-        # "I noticed that you used for kanpig --sizemax 1000000 . You're going to get lower recall with that. Currently kanpig is using a very naive clustering strategy to figure out which variants should be considered together. The boundaries of the variant graphs are set to min_start/max_end and pileups are made over the region. Since kanpig is also only looking at pileups of reads that span the region, large variants can preclude smaller variants from getting a chance to have read support. I'm working on better clustering and not needing only spanning reads, but for now sizemax should be set to something like 10k, or maybe even ~75% of the mean insert size."
         KANPIG_SIZEMAX="10000"  # From Adam's suggestion above
-        # I tried a dozen different conditions and these params still seem to
-        # have the best balance on 8x and a collapsed single-sample vcf:
-        KANPIG_PARAMS="--chunksize 1000 --sizesim 0.90 --seqsim 0.85 --hapsim 0.9999 --no-prune --maxpaths 10000"
+        KANPIG_PARAMS="--chunksize 1000 --sizesim 0.90 --seqsim 0.85 --hapsim 0.9999 --maxpaths 10000"  # Tuned by Adam on a truvari collapsed 8x single-sample VCF
         chmod +x ~{docker_dir}/kanpig
 
         # Makes sure that the merged VCF is in the right format and contains
@@ -102,8 +101,8 @@ task GetRegenotypedVcfImpl {
 
 
         # Main program
-        #rm -f ~{alignments_bai}
-        #samtools index -@ ${N_THREADS} ~{alignments_bam}
+        rm -f ~{alignments_bai}
+        samtools index -@ ${N_THREADS} ~{alignments_bam}
     
         # Formatting the merged VCF
         formatVcf ~{truvari_collapsed_vcf_gz} merged.vcf.gz 0
