@@ -51,7 +51,7 @@ task GetRegenotypedVcfImpl {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int mem_gb = 32
+    Int mem_gb = 60
     
     command <<<
         set -euxo pipefail
