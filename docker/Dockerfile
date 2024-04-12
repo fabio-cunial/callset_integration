@@ -98,7 +98,6 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
     && make \
     && make install \
     && cd ${work_dir} \
-    && rm -rf bcftools-${bcftools_version} \
     && bcftools --help
 
 # PBMM2
@@ -154,8 +153,8 @@ RUN pip install setuptools==58 scikit-learn \
 COPY ./kanpig .
 
 # SVJEDI-GRAPH
-RUN conda install -c bioconda scipy svjedi-graph \
-    && svjedi-graph.py -h
+# RUN conda install -c bioconda scipy svjedi-graph \
+#     && svjedi-graph.py -h
 
 # LRCALLER 1.0
 RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \

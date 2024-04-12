@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l AnnotateJointVcf.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpig.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSniffles.wdl
 java -jar ${WOMTOOL_PATH} validate -l AddTruvariAnnotations.wdl
