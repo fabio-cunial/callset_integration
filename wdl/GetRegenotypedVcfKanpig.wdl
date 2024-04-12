@@ -53,7 +53,8 @@ task GetRegenotypedVcfImpl {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int mem_gb = 16
+    Int n_cpu = 16
+    Int mem_gb = 32  # 2*n_cpu suggested by Adam
     
     command <<<
         set -euxo pipefail
@@ -121,7 +122,7 @@ task GetRegenotypedVcfImpl {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: 16
+        cpu: n_cpu
         memory: mem_gb + "GB"
         disks: "local-disk 100 HDD"
         preemptible: 0
