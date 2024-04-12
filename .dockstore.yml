@@ -145,3 +145,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/AddTruvariAnnotations.wdl
   testParameterFiles:
+- name: AnnotateJointVcf
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/AnnotateJointVcf.wdl
+  testParameterFiles:      
