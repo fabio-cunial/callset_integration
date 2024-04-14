@@ -38,7 +38,7 @@ task AnnotateJointVcfImpl {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int disk_size_gb = 5*( ceil(size(input_vcf_gz,"GB")) )
+    Int disk_size_gb = 100*( ceil(size(input_vcf_gz,"GB")) )
 
     command <<<
         set -euxo pipefail
