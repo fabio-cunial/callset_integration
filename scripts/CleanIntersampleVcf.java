@@ -2,7 +2,7 @@ import java.io.*;
 
 
 /**
- * Removes all INFO fields except few selected ones. Sets FILTER and QUAL to 
+ * Removes all INFO fields except for few selected ones. Sets FILTER and QUAL to 
  * '.'. Moves the original ID to INFO and assigns a new unique ID.
  */
 public class CleanIntersampleVcf {
@@ -22,6 +22,8 @@ public class CleanIntersampleVcf {
         final String MISSING = ".";
         final String ORIGINAL_ID_FIELD = "TRUVARI_ID";
         final String VCF_HEADER = "#CHROM";
+        final char ID_SEPARATOR_OLD = ';';
+        final char ID_SEPARATOR_NEW = '_';
         
         int i;
         int nCalls;
@@ -47,11 +49,12 @@ public class CleanIntersampleVcf {
             tokens=str.split("\t");
             
             // INFO
-            sb.delete(0,sb.length()); sb.append(ORIGINAL_ID_FIELD+"="+tokens[2]+";");
+            sb.delete(0,sb.length()); sb.append(ORIGINAL_ID_FIELD+"="+tokens[2].replace(ID_SEPARATOR_OLD,ID_SEPARATOR_NEW)+";");
             for (i=2; i<args.length; i++) {
                 field=VCFconstants.getField(tokens[7],args[i]);
                 if (field!=null) sb.append(args[i]+"="+field+";");
             }
+            tokens[7]=sb.toString();
             
             // ID, QUAL, FILTER
             tokens[2]=""+(nCalls-1);
@@ -60,7 +63,7 @@ public class CleanIntersampleVcf {
             
             // Outputting
             bw.write(tokens[0]);
-            for (i=0; i<tokens.length; i++) bw.write("\t"+tokens[i]);
+            for (i=1; i<tokens.length; i++) bw.write("\t"+tokens[i]);
             bw.newLine();
             
             // Next iteration

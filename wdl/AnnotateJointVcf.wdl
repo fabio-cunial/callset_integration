@@ -1,7 +1,7 @@
 version 1.0
 
 
-# 
+# Ensures that the final inter-sample VCF has a simple but consistent format.
 #
 workflow AnnotateJointVcf {
     input {
@@ -57,7 +57,7 @@ task AnnotateJointVcfImpl {
         cat ~{new_header} body.txt > tmp1.vcf
         rm -f body.txt
         bgzip tmp1.vcf
-        tabix -f tmp1.vcf
+        tabix -f tmp1.vcf.gz
         
         # Adding SVTYPE, SVLEN.
         ${TIME_COMMAND} truvari anno svinfo --minsize 0 --output tmp2.vcf.gz tmp1.vcf.gz
@@ -80,7 +80,7 @@ task AnnotateJointVcfImpl {
         File annotated_tbi = work_dir + "/annotated.vcf.gz.tbi"
     }
     runtime {
-        docker: "us.gcr.io/broad-dsp-lrma/aou-lr/truvari_intrasample"
+        docker: "fcunial/callset_integration"
         cpu: 1
         memory: "8GB"
         disks: "local-disk " + disk_size_gb + " HDD"

@@ -127,11 +127,11 @@ ARG pbsv_version=2.9.0
 RUN conda install -c bioconda pbsv=${pbsv_version} \
     && pbsv --help
 
-# SVPOP
-COPY ./svpop_environment.yml .
-RUN conda env create -f ./svpop_environment.yml
-SHELL ["conda", "run", "-n", "svpop", "/bin/bash", "-c"]
-RUN git clone --recursive https://github.com/EichlerLab/svpop.git
+# # SVPOP
+# COPY ./svpop_environment.yml .
+# RUN conda env create -f ./svpop_environment.yml
+# SHELL ["conda", "run", "-n", "svpop", "/bin/bash", "-c"]
+# RUN git clone --recursive https://github.com/EichlerLab/svpop.git
 
 # JASMINE
 COPY ./jasmine_environment.yml .
