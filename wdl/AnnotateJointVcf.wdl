@@ -56,6 +56,7 @@ task AnnotateJointVcfImpl {
         ${TIME_COMMAND} java -cp ~{docker_dir} CleanIntersampleVcf original.vcf body.txt CollapseId NumCollapsed NumConsolidated
         cat ~{new_header} body.txt > tmp1.vcf
         rm -f body.txt
+        head -n 500 tmp1.vcf
         bgzip tmp1.vcf
         tabix -f tmp1.vcf.gz
         
