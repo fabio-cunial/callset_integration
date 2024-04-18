@@ -149,4 +149,9 @@ workflows:
   subclass: wdl
   publish: True
   primaryDescriptorPath: /wdl/AnnotateJointVcf.wdl
+  testParameterFiles:    
+- name: Hapdiff
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/Hapdiff.wdl
   testParameterFiles:      
