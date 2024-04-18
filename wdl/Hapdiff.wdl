@@ -32,7 +32,7 @@ workflow Hapdiff {
     output {
         File phased_vcf = HapdiffImpl.phased_vcf
         File phased_tbi = HapdiffImpl.phased_tbi
-        File unphased_vcf = HapdiffImpl.unphased_vcf
+        File confident_bed = HapdiffImpl.confident_bed
     }
 }
 
@@ -89,7 +89,7 @@ task HapdiffImpl {
     output {
         File phased_vcf = output_dir + "/hapdiff_phased.vcf.gz"
         File phased_tbi = output_dir + "/hapdiff_phased.vcf.gz.tbi"
-        File unphased_vcf = output_dir + "/confident_regions.bed"
+        File confident_bed = output_dir + "/confident_regions.bed"
     }
     runtime {
         docker: "mkolmogo/hapdiff:0.9"
