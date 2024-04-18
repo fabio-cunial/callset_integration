@@ -41,6 +41,7 @@ task HPRCDownloadClonesImpl {
     }
     
     Int disk_size_gb = (3*target_coverage)*8 + 512
+    Int mem_gb = 128
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -92,8 +93,11 @@ task HPRCDownloadClonesImpl {
         cp ~{docker_dir}/*.class .
         ${TIME_COMMAND} java FlattenFastq tmp1.fastq "SEPARATOR" tmp2.txt
         rm -f tmp1.fastq
-        ${TIME_COMMAND} shuf tmp2.txt > tmp3.txt
-        rm -f tmp2.txt
+        export TMPDIR="./terashuf_tmp"; mkdir ${TMPDIR}
+        export MEMORY=~{mem_gb}
+        ulimit -n 100000
+        ${TIME_COMMAND} ~{docker_dir}/terashuf/terashuf < tmp2.txt > tmp3.txt
+        rm -f tmp2.txt; rm -rf ${TMPDIR}
         head -c ${TARGET_N_BYTES} tmp3.txt > tmp4.txt
         N_ROWS=$(wc -l < tmp4.txt)
         rm -f tmp4.txt
@@ -116,7 +120,7 @@ task HPRCDownloadClonesImpl {
     runtime {
         docker: "fcunial/callset_integration"
         cpu: 32
-        memory: "128GB"
+        memory: mem_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
