@@ -94,7 +94,7 @@ task HPRCDownloadClonesImpl {
         ${TIME_COMMAND} java FlattenFastq tmp1.fastq "SEPARATOR" tmp2.txt
         rm -f tmp1.fastq
         export TMPDIR="./terashuf_tmp"; mkdir ${TMPDIR}
-        export MEMORY=~{mem_gb}
+        export MEMORY=$(( ~{mem_gb} - 10 ))
         ulimit -n 100000
         ${TIME_COMMAND} ~{docker_dir}/terashuf/terashuf < tmp2.txt > tmp3.txt
         rm -f tmp2.txt; rm -rf ${TMPDIR}
