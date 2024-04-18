@@ -49,7 +49,7 @@ task HapdiffImpl {
         Int mem_gb
     }
     
-    String docker_dir = "/hapdiff"
+    String docker_dir = "/opt/hapdiff"
     String work_dir = "/cromwell_root/truvari_intrasample"
     String output_dir = "/cromwell_root/truvari_intrasample/output"
     Int disk_size_gb = 20*( ceil(size(ref_fa,"GB")) + ceil(size(pat_fa,"GB")) + ceil(size(mat_fa,"GB")) )
