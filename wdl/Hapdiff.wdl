@@ -83,7 +83,7 @@ task HapdiffImpl {
             --sv-size ~{min_sv_length} \
             ${FRAGMENT_FLAG} \
             --threads ${N_THREADS}
-        tabix -f ${OUTPUT_DIR}/hapdiff_phased.vcf.gz
+        tabix -f ~{output_dir}/hapdiff_phased.vcf.gz
     >>>
     
     output {
