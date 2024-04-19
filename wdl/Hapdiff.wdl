@@ -13,6 +13,8 @@ workflow Hapdiff {
         Int mem_gb = 128
     }
     parameter_meta {
+        pat_fa: "Can be either .fa or .fa.gz"
+        mat_fa: "Can be either .fa or .fa.gz"
         fragment_size_mb: "0: do not fragment"
         tandems_bed: "null: do not use"
     }
@@ -50,8 +52,8 @@ task HapdiffImpl {
     }
     
     String docker_dir = "/opt/hapdiff"
-    String work_dir = "/cromwell_root/truvari_intrasample"
-    String output_dir = "/cromwell_root/truvari_intrasample/output"
+    String work_dir = "/cromwell_root/hapdiff"
+    String output_dir = "/cromwell_root/hapdiff/output"
     Int disk_size_gb = 20*( ceil(size(ref_fa,"GB")) + ceil(size(pat_fa,"GB")) + ceil(size(mat_fa,"GB")) )
 
     command <<<
@@ -74,10 +76,20 @@ task HapdiffImpl {
         else
              FRAGMENT_FLAG="--fragment ~{fragment_size_mb}"
         fi
+        if [[ ~{pat_fa} == *.gz ]]; then
+            gunzip -c ~{pat_fa} > pat.fa
+        else 
+            mv ~{pat_fa} pat.fa
+        fi
+        if [[ ~{mat_fa} == *.gz ]]; then
+            gunzip -c ~{mat_fa} > mat.fa
+        else 
+            mv ~{mat_fa} mat.fa
+        fi
         ${TIME_COMMAND} python3 ~{docker_dir}/hapdiff.py \
             --reference ~{ref_fa} \
-            --pat ~{pat_fa} \
-            --mat ~{mat_fa} \
+            --pat pat.fa \
+            --mat mat.fa \
             --out-dir ~{output_dir} \
             ${TANDEMS_FLAG} \
             --sv-size ~{min_sv_length} \
