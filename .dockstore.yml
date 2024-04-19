@@ -155,8 +155,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/Hapdiff.wdl
   testParameterFiles:      
-- name: CallVariantsReadBased
+- name: Dipcall2SVs
   subclass: wdl
   publish: True
-  primaryDescriptorPath: /Users/fcunial/git/CallVariantsReadBased/long-read-pipelines/wdl/pipelines/TechAgnostic/VariantCalling/CallVariantsReadBased.wdl
-  testParameterFiles:    
+  primaryDescriptorPath: /wdl/Dipcall2SVs.wdl
+  testParameterFiles:      
