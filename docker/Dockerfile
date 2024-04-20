@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:24.1.2-0
 MAINTAINER Fabio Cunial
 ARG work_dir=/hgsvc2
 WORKDIR ${work_dir}
@@ -101,22 +101,22 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
     && cd ${work_dir} \
     && bcftools --help
 
-# # PBMM2
-# ARG pbmm2_version=1.13.0
-# RUN conda install -c bioconda pbmm2=${pbmm2_version} \
-#     && pbmm2 --help
+# PBMM2
+ARG pbmm2_version=1.13.0
+RUN conda install -c bioconda pbmm2=${pbmm2_version} \
+    && pbmm2 --help
 
-# # SV-MERGER
-# RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py \
-#     && python2 get-pip.py \
-#     && pip2 install intervaltree \
-#     && git clone https://github.com/DecodeGenetics/sv-merger.git
+# SV-MERGER
+RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py \
+    && python2 get-pip.py \
+    && pip2 install intervaltree \
+    && git clone https://github.com/DecodeGenetics/sv-merger.git
 
-# # SVIMMER
-# RUN pip3 install pysam \
-#     && git clone https://github.com/DecodeGenetics/svimmer.git
-# # Minor fixes
-# COPY ./sv.py ${work_dir}/svimmer/
+# SVIMMER
+RUN pip3 install pysam \
+    && git clone https://github.com/DecodeGenetics/svimmer.git
+# Minor fixes
+COPY ./sv.py ${work_dir}/svimmer/
 
 # SNIFFLES
 ARG sniffles_version=2.2
@@ -128,45 +128,47 @@ ARG pbsv_version=2.9.0
 RUN conda install -c bioconda pbsv=${pbsv_version} \
     && pbsv --help
 
-# # SVPOP
-# COPY ./svpop_environment.yml .
-# RUN conda env create -f ./svpop_environment.yml
-# SHELL ["conda", "run", "-n", "svpop", "/bin/bash", "-c"]
-# RUN git clone --recursive https://github.com/EichlerLab/svpop.git
+# SVPOP
+COPY ./svpop_environment.yml .
+RUN conda env create -f ./svpop_environment.yml
+SHELL ["conda", "run", "-n", "svpop", "/bin/bash", "-c"]
+RUN git clone --recursive https://github.com/EichlerLab/svpop.git
+SHELL ["/bin/bash", "-c"]
 
-# # JASMINE
-# COPY ./jasmine_environment.yml .
-# RUN conda env create -f ./jasmine_environment.yml
-# SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
-# # Adding #!/bin/bash to the original shell script
-# COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine
-# SHELL ["chmod", "+x", "/opt/conda/envs/jasmine/bin/jasmine"]
-# SHELL ["/bin/bash", "-c"]
+# JASMINE  Some dependency fails now...
+COPY ./jasmine_environment.yml .
+RUN conda env create -f ./jasmine_environment.yml
+SHELL ["conda", "run", "-n", "jasmine", "/bin/bash", "-c"]
+# Adding #!/bin/bash to the original shell script
+COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine
+SHELL ["chmod", "+x", "/opt/conda/envs/jasmine/bin/jasmine"]
+SHELL ["/bin/bash", "-c"]
 
-# # CUTESV
-# RUN pip install setuptools==58 scikit-learn \
-#     && git clone https://github.com/tjiangHIT/cuteSV.git \
-#     && cd cuteSV \
-#     && python setup.py install \
-#     && cuteSV -h
+# CUTESV  Some dependency fails now...
+RUN pip install setuptools==58 scikit-learn \
+    && git clone https://github.com/tjiangHIT/cuteSV.git \
+    && cd cuteSV \
+    && python setup.py install \
+    && cuteSV -h
 
 # KANPIG
 COPY ./kanpig .
 
 # SVJEDI-GRAPH
-# RUN conda install -c bioconda scipy svjedi-graph \
-#     && svjedi-graph.py -h
+RUN conda install -c bioconda scipy svjedi-graph \
+    && svjedi-graph.py -h
 
-# # LRCALLER 1.0
-# RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \
-#     && tar -xzvf lrcaller-1.0_linux-x86-64.tgz \
-#     && chmod +x lrcaller-1.0/bin/* \
-#     && mv lrcaller-1.0/bin/* /usr/local/bin \
-#     && lrcaller --help || echo "LRcaller returns an error code when called"
+# LRCALLER 1.0
+RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \
+    && tar -xzvf lrcaller-1.0_linux-x86-64.tgz \
+    && chmod +x lrcaller-1.0/bin/* \
+    && mv lrcaller-1.0/bin/* /usr/local/bin \
+    && lrcaller --help || echo "LRcaller returns an error code when called"
 
-# # TRUVARI
-# RUN pip install truvari \
-#     && truvari --help
+# TRUVARI
+ARG truvari_version=4.2.2
+RUN pip3 install truvari==${truvari_version} \
+    && truvari --help
 
 # BEDTOOLS
 ARG bedtools_version=2.31.0

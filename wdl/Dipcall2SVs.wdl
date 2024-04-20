@@ -34,8 +34,8 @@ task Dipcall2SVsImpl {
     
     Int disk_size_gb = 10*ceil(size(input_vcf_gz,"GB"))
     Int ram_size_gb = 4
-    String docker_dir = "/infogain"
-    String work_dir = "/cromwell_root/infogain"
+    String docker_dir = "/hgsvc2"
+    String work_dir = "/cromwell_root/hgsvc2"
     
     command <<<
         set -euxo pipefail
