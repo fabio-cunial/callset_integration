@@ -160,3 +160,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/Dipcall2SVs.wdl
   testParameterFiles:      
+- name: HGSVC2Align2
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/HGSVC2Align2.wdl
+  testParameterFiles:      
