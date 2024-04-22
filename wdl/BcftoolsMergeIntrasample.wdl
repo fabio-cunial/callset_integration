@@ -53,8 +53,8 @@ task BcftoolsMergeIntrasampleImpl {
     
     Int disk_size_gb = 10*( ceil(size(pbsv_vcf_gz,"GB")) + ceil(size(sniffles_vcf_gz,"GB")) + ceil(size(pav_vcf_gz,"GB")) + ceil(size(reference_fa,"GB")) ) + 50
     Int mem_gb = 128
-    String docker_dir = "/callset_integration"
-    String work_dir = "/cromwell_root/callset_integration"
+    String docker_dir = "/hgsvc2"
+    String work_dir = "/cromwell_root/hgsvc2"
     
     command <<<
         set -euxo pipefail
