@@ -165,3 +165,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/HGSVC2Align2.wdl
   testParameterFiles:      
+- name: BcftoolsMergeIntrasample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeIntrasample.wdl
+  testParameterFiles:      

@@ -186,4 +186,4 @@ RUN git clone https://github.com/alexandres/terashuf.git \
 # AD HOC SCRIPTS
 COPY *.java .
 RUN javac *.java
-COPY resolve.py .
+COPY *.py .
