@@ -69,13 +69,21 @@ task BcftoolsMergeIntrasampleImpl {
         EFFECTIVE_MEM_GB=$(( ${EFFECTIVE_MEM_GB} - 4 ))
         
         # Removing multiallelic records from the input, if any.
-        bcftools norm --multiallelics - --output-type z ~{pbsv_vcf_gz} > pbsv_new.vcf.gz
-        tabix pbsv_new.vcf.gz
-        bcftools norm --multiallelics - --output-type z ~{sniffles_vcf_gz} > sniffles_new.vcf.gz
-        tabix sniffles_new.vcf.gz
-        bcftools norm --multiallelics - --output-type z ~{pav_vcf_gz} > pav_new.vcf.gz
-        tabix pav_new.vcf.gz
-        rm -f tmp.vcf.gz*
+        bcftools norm --multiallelics - --output-type z ~{pbsv_vcf_gz} > pbsv_1.vcf.gz
+        tabix pbsv_1.vcf.gz
+        bcftools norm --multiallelics - --output-type z ~{sniffles_vcf_gz} > sniffles_1.vcf.gz
+        tabix sniffles_1.vcf.gz
+        bcftools norm --multiallelics - --output-type z ~{pav_vcf_gz} > pav_1.vcf.gz
+        tabix pav_1.vcf.gz
+        
+        # Fixing REF=N (caused e.g. by sniffles).
+        bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z pbsv_1.vcf.gz > pbsv_new.vcf.gz
+        tabix -f pbsv_new.vcf.gz
+        bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z sniffles_1.vcf.gz > sniffles_new.vcf.gz
+        tabix -f sniffles_new.vcf.gz
+        bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z pav_1.vcf.gz > pav_new.vcf.gz
+        tabix -f pav_new.vcf.gz
+        rm -f *_1.vcf.gz*
         
         # Putting every file in a consistent format
         mkdir -p preprocessed
@@ -87,14 +95,11 @@ task BcftoolsMergeIntrasampleImpl {
         done
 
         # Removing exact duplicates
-        bcftools merge --threads ${N_THREADS} --force-samples --merge none --output-type z -o tmp.vcf.gz \
-            preprocessed/pbsv_new.vcf.gz \
-            preprocessed/sniffles_new.vcf.gz \
-            preprocessed/pav_new.vcf.gz 
+        bcftools merge --threads ${N_THREADS} --force-samples --merge none --output-type z --output tmp.vcf.gz preprocessed/pbsv_new.vcf.gz preprocessed/sniffles_new.vcf.gz preprocessed/pav_new.vcf.gz
         tabix -f tmp.vcf.gz
         
         # Removing multiallelic records again, since we observed that they
-        # might get created by $bcftools merge --merge none$ sometimes.
+        # might sometimes get created by $bcftools merge --merge none$.
         bcftools norm --multiallelics - --output-type z tmp.vcf.gz > ~{sample_id}.bcftools_merged.vcf.gz
         tabix -f ~{sample_id}.bcftools_merged.vcf.gz
         rm -f tmp.vcf.gz*
