@@ -129,7 +129,7 @@ task GetRegenotypedVcfImpl {
         samtools index -@ ${N_THREADS} ~{alignments_bam}
     
         # Formatting the merged VCF
-        HAS_SUPP=$(bcftools view --header-only ~{truvari_collapsed_vcf_gz} | grep '##FORMAT=<ID=SUPP,' | wc -l)
+        HAS_SUPP=$(bcftools view --header-only ~{truvari_collapsed_vcf_gz} | grep '##FORMAT=<ID=SUPP,' && echo 1 || echo 0)
         if [ ${HAS_SUPP} -eq 0 ]; then
             mv ~{truvari_collapsed_vcf_gz} tmp.vcf.gz
             mv ~{truvari_collapsed_tbi} tmp.vcf.gz.tbi
