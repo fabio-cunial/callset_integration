@@ -94,6 +94,7 @@ task GetRegenotypedVcfImpl {
             rm -f tmp*.vcf*
         }
         
+        
         # Unpacks truvari's SUPP field into 3 INFO tags.
         #
         function transferSupp() {
@@ -128,7 +129,13 @@ task GetRegenotypedVcfImpl {
         samtools index -@ ${N_THREADS} ~{alignments_bam}
     
         # Formatting the merged VCF
-        transferSupp ~{truvari_collapsed_vcf_gz} tmp.vcf.gz
+        HAS_SUPP=$(bcftools view --header-only ~{truvari_collapsed_vcf_gz} | grep '##FORMAT=<ID=SUPP,' | wc -l)
+        if [ ${HAS_SUPP} -eq 0 ]; then
+            mv ~{truvari_collapsed_vcf_gz} tmp.vcf.gz
+            mv ~{truvari_collapsed_tbi} tmp.vcf.gz.tbi
+        else
+            transferSupp ~{truvari_collapsed_vcf_gz} tmp.vcf.gz
+        fi    
         formatVcf tmp.vcf.gz merged.vcf.gz
 
         # SNIFFLES FORCE
