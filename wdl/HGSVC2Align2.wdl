@@ -11,6 +11,7 @@ workflow HGSVC2Align2 {
         File reads_fastq_gz
         Int n_cpus
         Int ram_size_gb
+        Int disk_gb
     }
     parameter_meta {
     }
@@ -22,7 +23,8 @@ workflow HGSVC2Align2 {
             reference_fai = reference_fai,
             reads_fastq_gz = reads_fastq_gz,
             n_cpus = n_cpus,
-            ram_size_gb = ram_size_gb
+            ram_size_gb = ram_size_gb,
+            disk_gb = disk_gb
     }
     
     output {
@@ -40,11 +42,12 @@ task HGSVC2AlignImpl {
         File reads_fastq_gz
         Int n_cpus
         Int ram_size_gb
+        Int disk_gb
     }
     parameter_meta {
     }
     
-    Int disk_size_gb = ceil(size(reads_fastq_gz, "GB")) + ceil(size(reference_fa, "GB")) + 100
+    Int disk_size_gb = ceil(size(reads_fastq_gz, "GB")) + ceil(size(reference_fa, "GB")) + disk_gb
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
