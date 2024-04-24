@@ -4,12 +4,12 @@ set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeIntrasample.wdl
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSniffles.wdl
 java -jar ${WOMTOOL_PATH} validate -l HGSVC2Align2.wdl
 java -jar ${WOMTOOL_PATH} validate -l Dipcall2SVs.wdl
 java -jar ${WOMTOOL_PATH} validate -l Hapdiff.wdl
 java -jar ${WOMTOOL_PATH} validate -l AnnotateJointVcf.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpig.wdl
-java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSniffles.wdl
 java -jar ${WOMTOOL_PATH} validate -l AddTruvariAnnotations.wdl
 java -jar ${WOMTOOL_PATH} validate -l MergeRegenotypedIntersampleVcf.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigMerged.wdl

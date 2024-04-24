@@ -95,7 +95,7 @@ task BcftoolsMergeIntrasampleImpl {
         done
 
         # Removing exact duplicates
-        bcftools merge --threads ${N_THREADS} --force-samples --merge none --output-type z --output tmp.vcf.gz preprocessed/pbsv_new.vcf.gz preprocessed/sniffles_new.vcf.gz preprocessed/pav_new.vcf.gz
+        bcftools concat --threads ${N_THREADS} --allow-overlaps --remove-duplicates --output-type z --output tmp.vcf.gz preprocessed/pbsv_new.vcf.gz preprocessed/sniffles_new.vcf.gz preprocessed/pav_new.vcf.gz
         tabix -f tmp.vcf.gz
         
         # Removing multiallelic records again, since we observed that they
