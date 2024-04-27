@@ -42,9 +42,11 @@ def resolve(entry, ref):
         entry.ref = seq
         entry.alts = [do_rc(seq)]
     elif entry.alts[0] == '<DUP>' or entry.alts[0] == '<CNV>':  
-        # Left intact (i.e. not converted to INS).
-        pass
-
+        entry.info['SVTYPE'] = 'INS'
+        entry.ref = seq[0]
+        entry.alts = [seq]
+        entry.stop = entry.start + 1
+    
     return entry
 
 

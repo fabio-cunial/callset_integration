@@ -10,7 +10,7 @@ public class ROCcurve {
     private static final char COMMENT = '#';
     private static char MISSING_CHR = '.';
     private static final String GT_SEPARATOR = ":";
-    private static final String SCORE_STR = "SCORE";
+    private static final String SCORE_STR = "HAPESTRY_READS_MAX";
     private static final String AD_STR = "AD";
     private static final String AD_SEPARATOR = ",";
     private static String TAG_STR;
