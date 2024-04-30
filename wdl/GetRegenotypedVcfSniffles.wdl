@@ -51,8 +51,6 @@ task GetRegenotypedVcfImpl {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-
-    String truvari_collapsed_prefix = basename(truvari_collapsed_vcf_gz, ".vcf.gz")
     String output_prefix = "sniffles_regenotyped"
 
     command <<<
@@ -64,6 +62,7 @@ task GetRegenotypedVcfImpl {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+
 
         # Makes sure that the merged VCF is in the right format and contains
         # only a specific set of calls.
