@@ -1,0 +1,140 @@
+diff --git a/construct-graph.py b/construct-graph.py
+index e0f650a..f5dbccf 100644
+--- a/construct-graph.py
++++ b/construct-graph.py
+@@ -22,6 +22,7 @@
+ import sys
+ import argparse
+ import json
++import truvari
+ 
+ def parse_arguments(arguments):
+ 
+@@ -77,7 +78,8 @@ def construct_gfa(inVCF, inFA, outGFA, outPrefix):
+     #================================================================================
+ 
+     d_chrom = {}
+-    with open(inFA, "r") as sequenceFile:
++    sequenceFile = truvari.opt_gz_open(inFA)
++    with open(inFA, "r") as sequenceFile2:
+         sequence = ""
+         for line in sequenceFile:
+             if line.startswith(">"):
+@@ -98,8 +100,8 @@ def construct_gfa(inVCF, inFA, outGFA, outPrefix):
+     #================================================================================
+     # 2. Process data
+     #================================================================================
+-
+-    with open(inVCF, "r") as file:
++    file = truvari.opt_gz_open(inVCF)
++    with open(inVCF, "r") as file2:
+ 
+         l_discarded = []
+         dict_ins_seq = {}
+@@ -127,7 +129,8 @@ def construct_gfa(inVCF, inFA, outGFA, outPrefix):
+                     sys.exit(f"Error: sequence '{chrom}' from input VCF is missing in reference genome, chromosomes must have the same names in input VCF and reference genome files")
+ 
+                 if sv_type == "DEL":
+-                    end_on_chr = int(get_info(info, "END"))
++                    #end_on_chr = int(get_info(info, "END"))
++                    end_on_chr = start_on_chr + len(ref)
+                     sv_id = format_DEL_id(pos, end_on_chr)
+                 
+                 elif sv_type == "INS":
+@@ -166,7 +169,7 @@ def construct_gfa(inVCF, inFA, outGFA, outPrefix):
+                         dict_ins_seq[sv_id] = alt.upper()
+                     
+                 elif sv_type == "INV":
+-                    end_on_chr = int(get_info(info, "END"))
++                    end_on_chr = start_on_chr + len(ref)
+                     sv_id = format_INV_id(pos, end_on_chr)
+                 
+                 elif sv_type == "BND":
+@@ -806,4 +809,4 @@ if __name__ == "__main__":
+ 
+     else:
+         inVCF, inFA, outGFA, outPrefix = parse_arguments(sys.argv[1:])
+-        construct_gfa(inVCF, inFA, outGFA, outPrefix)
+\ No newline at end of file
++        construct_gfa(inVCF, inFA, outGFA, outPrefix)
+diff --git a/predict-genotype.py b/predict-genotype.py
+index f4c1a92..5aabcfd 100755
+--- a/predict-genotype.py
++++ b/predict-genotype.py
+@@ -25,6 +25,7 @@ import argparse
+ import math
+ from decimal import *
+ import json
++import truvari
+ 
+ def main(args):
+     """ Parsing arguments """
+@@ -96,8 +97,8 @@ def decision_vcf(dictReadAtJunction, inputVCF, outputDecision, minNbAln, e, miss
+     genotype_format = "GT:DP:AD:PL"
+     genotyped_svs = 0
+     ungenotyped_svs = [0, []]
+-
+-    with open(inputVCF) as inputFile:
++    inputFile = truvari.opt_gz_open(inputVCF)
++    with open(inputVCF) as inputFile2:
+         for line in inputFile:
+             if line.startswith("##FORMAT"):
+                 continue
+@@ -115,7 +116,7 @@ def decision_vcf(dictReadAtJunction, inputVCF, outputDecision, minNbAln, e, miss
+                 outDecision.write("#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE\n")
+                 
+             else:
+-                in_chrom, in_start, _, __, in_type, ___, ____, in_info, *_ = line.rstrip("\n").split("\t")
++                in_chrom, in_start, _, mref, in_type, ___, ____, in_info, *_ = line.rstrip("\n").split("\t")
+ 
+                 #=========================================================
+                 # 1. Get SVTYPE
+@@ -132,7 +133,8 @@ def decision_vcf(dictReadAtJunction, inputVCF, outputDecision, minNbAln, e, miss
+                 # 2. Get END
+                 #=========================================================
+                 if svtype != "BND":
+-                    end = get_info(in_info, "END")
++                    end = int(in_start) + len(mref)
++                    #end = get_info(in_info, "END")
+ 
+                 #=========================================================
+                 # 3. Define sv_id
+@@ -349,4 +351,4 @@ if __name__ == "__main__":
+     if sys.argv == 1:
+         sys.exit("Error: missing arguments")
+     else:
+-        main(sys.argv[1:])
+\ No newline at end of file
++        main(sys.argv[1:])
+diff --git a/svjedi-graph.py b/svjedi-graph.py
+index d9124d9..5746913 100644
+--- a/svjedi-graph.py
++++ b/svjedi-graph.py
+@@ -79,14 +79,16 @@ def main(svjg_dir, args):
+     min_support = args.minsupport
+ 
+     #### Create variant graph
+-    print("Constructing variation graph...")
+ 
+     outGFA = outPrefix + ".gfa"
++    #""" print("NOT CONSTRUCTING VARIATION GRAPH!")
++    print("Constructing variation graph...")
+     c1 = "python3 {}/construct-graph.py -v {} -r {} -o {}".format(svjg_dir, inVCF, inREF, outGFA)
+     proc1 = subprocess.run(c1, shell=True)
+ 
+     if proc1.returncode == 1:
+         sys.exit("Failed to contruct the variation graph.\nExiting SVJedi-graph.")
++    #""" 
+ 
+     #### Map reads on graph
+     print("Mapping reads on graph...")
+@@ -101,7 +103,8 @@ def main(svjg_dir, args):
+     subprocess.run(f"touch {outGAF}", shell=True)
+ 
+     for inFQ in list_inFQ:
+-        c2 = "minigraph -x lr -t{} {} {} >> {}".format(threads, outGFA, inFQ, outGAF)
++        path="/users/u233287/scratch/misc_software/minigraph-0.20_x64-linux/minigraph"
++        c2 = path + " -x lr -t{} {} {} >> {}".format(threads, outGFA, inFQ, outGAF)
+         proc2 = subprocess.run(c2, shell=True)
+ 
+     if proc2.returncode == 1:

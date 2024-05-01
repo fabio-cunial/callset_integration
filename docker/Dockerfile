@@ -154,10 +154,6 @@ RUN pip install setuptools==58 scikit-learn \
 # KANPIG
 COPY ./kanpig .
 
-# SVJEDI-GRAPH
-RUN conda install -c bioconda scipy svjedi-graph \
-    && svjedi-graph.py -h
-
 # LRCALLER 1.0
 RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \
     && tar -xzvf lrcaller-1.0_linux-x86-64.tgz \
@@ -182,6 +178,17 @@ RUN wget https://github.com/arq5x/bedtools2/releases/download/v${bedtools_versio
 RUN git clone https://github.com/alexandres/terashuf.git \
     && cd terashuf \
     && make
+
+# MINIGRAPH
+ARG minigraph_version=0.21
+RUN wget https://github.com/lh3/minigraph/releases/download/v0.21/minigraph-${minigraph_version}_x64-linux.tar.bz2 \
+    && tar xjf minigraph-${minigraph_version}_x64-linux.tar.bz2 \
+    && chmod +x minigraph-${minigraph_version}_x64-linux/minigraph
+ENV PATH=${work_dir}/minigraph-${minigraph_version}_x64-linux:${PATH}
+RUN minigraph && echo 0 || echo 1
+
+# SVJEDI-GRAPH 1.2.1 with Adam's patches to work around the need for END
+ADD svjedigraph_patched ${work_dir}/svjedigraph
 
 # AD HOC SCRIPTS
 COPY *.java .

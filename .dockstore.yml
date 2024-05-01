@@ -170,3 +170,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeIntrasample.wdl
   testParameterFiles:      
+- name: GetRegenotypedVcfSvjedigraph
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfSvjedigraph.wdl
+  testParameterFiles:
