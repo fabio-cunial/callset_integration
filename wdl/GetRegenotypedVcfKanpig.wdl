@@ -148,8 +148,9 @@ task GetRegenotypedVcfImpl {
         fi    
         formatVcf tmp.vcf.gz merged.vcf.gz
 
-        # Making sure there is just one occurrence of '##fileformat='
-        rm -f claned.vcf*
+        # Making sure there is just one occurrence of '##fileformat=' in the
+        # header (otherwise kanpig complains).
+        rm -f cleaned.vcf*
         echo '##fileformat=VCFv4.2' > cleaned.vcf
         bcftools view --header-only merged.vcf.gz | grep -v '##fileformat=' >> cleaned.vcf
         bcftools view --no-header merged.vcf.gz >> cleaned.vcf
