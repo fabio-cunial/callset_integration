@@ -148,13 +148,22 @@ task GetRegenotypedVcfImpl {
         fi    
         formatVcf tmp.vcf.gz merged.vcf.gz
 
+        # Making sure there is just one occurrence of '##fileformat='
+        rm -f claned.vcf*
+        echo '##fileformat=VCFv4.2' > cleaned.vcf
+        bcftools view --header-only merged.vcf.gz | grep -v '##fileformat=' >> cleaned.vcf
+        bcftools view --no-header merged.vcf.gz >> cleaned.vcf
+        bgzip cleaned.vcf
+        tabix -f cleaned.vcf.gz
+        rm -f merged.vcf.gz*
+
         # KANPIG
         SIZEMAX=${KANPIG_SIZEMAX}
         if [ ~{svlen_max} -lt ${KANPIG_SIZEMAX} ]; then
             SIZEMAX=~{svlen_max}
         fi
         export RUST_BACKTRACE="full"
-        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ${SIZEMAX} ${KANPIG_PARAMS} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
+        ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ${SIZEMAX} ${KANPIG_PARAMS} --input cleaned.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
         bcftools sort --max-mem ${EFFECTIVE_MEM_GB}G --output-type z tmp1.vcf.gz > ~{output_prefix}.vcf.gz
         tabix -f ~{output_prefix}.vcf.gz
         rm -f tmp1.vcf.gz
