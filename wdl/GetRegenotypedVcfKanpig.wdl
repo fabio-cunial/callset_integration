@@ -54,6 +54,7 @@ task GetRegenotypedVcfImpl {
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     String output_prefix = "kanpig_regenotyped"
+    Int disk_size_gb = 100 + ceil(size(reference_fa,"GB")) + 10*ceil(size(truvari_collapsed_vcf_gz,"GB")) + ceil(size(alignments_bam,"GB"))
     
     Int n_cpu = 16
     Int mem_gb = 32  # 2*n_cpu suggested by Adam
@@ -69,7 +70,7 @@ task GetRegenotypedVcfImpl {
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_MEM_GB=~{mem_gb}
         EFFECTIVE_MEM_GB=$(( ${EFFECTIVE_MEM_GB} - 4 ))
-        KANPIG_SIZEMAX="10000"  # From Adam's suggestion above
+        KANPIG_SIZEMAX="10000"  # From Adam's suggestion
         KANPIG_PARAMS="--chunksize 1000 --sizesim 0.90 --seqsim 0.85 --hapsim 0.9999 --maxpaths 10000"  # Tuned by Adam on a truvari collapsed 8x single-sample VCF
         chmod +x ~{docker_dir}/kanpig
 
@@ -148,10 +149,8 @@ task GetRegenotypedVcfImpl {
         formatVcf tmp.vcf.gz merged.vcf.gz
 
         # KANPIG
-        SIZEMAX="0"
-        if [ ~{svlen_max} -gt ${KANPIG_SIZEMAX} ]; then
-            SIZEMAX=${KANPIG_SIZEMAX}
-        else
+        SIZEMAX=${KANPIG_SIZEMAX}
+        if [ ~{svlen_max} -lt ${KANPIG_SIZEMAX} ]; then
             SIZEMAX=~{svlen_max}
         fi
         export RUST_BACKTRACE=1
@@ -169,7 +168,7 @@ task GetRegenotypedVcfImpl {
         docker: "fcunial/callset_integration"
         cpu: n_cpu
         memory: mem_gb + "GB"
-        disks: "local-disk 100 HDD"
+        disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
 }

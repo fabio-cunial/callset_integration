@@ -52,6 +52,7 @@ task GetRegenotypedVcfImpl {
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     String output_prefix = "sniffles_regenotyped"
+    Int disk_size_gb = 100 + ceil(size(reference_fa,"GB")) + 10*ceil(size(truvari_collapsed_vcf_gz,"GB")) + ceil(size(alignments_bam,"GB"))
 
     command <<<
         set -euxo pipefail
@@ -150,7 +151,7 @@ task GetRegenotypedVcfImpl {
         docker: "fcunial/callset_integration"
         cpu: 16
         memory: "32GB"
-        disks: "local-disk 100 HDD"
+        disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
 }
