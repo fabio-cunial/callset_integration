@@ -153,7 +153,7 @@ task GetRegenotypedVcfImpl {
         if [ ~{svlen_max} -lt ${KANPIG_SIZEMAX} ]; then
             SIZEMAX=~{svlen_max}
         fi
-        export RUST_BACKTRACE=1
+        export RUST_BACKTRACE="full"
         ~{docker_dir}/kanpig --threads ${N_THREADS} --sizemin ~{svlen_min} --sizemax ${SIZEMAX} ${KANPIG_PARAMS} --input merged.vcf.gz --bam ~{alignments_bam} --reference ~{reference_fa} --out tmp1.vcf.gz
         bcftools sort --max-mem ${EFFECTIVE_MEM_GB}G --output-type z tmp1.vcf.gz > ~{output_prefix}.vcf.gz
         tabix -f ~{output_prefix}.vcf.gz
