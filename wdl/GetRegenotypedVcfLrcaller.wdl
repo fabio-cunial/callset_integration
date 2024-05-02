@@ -145,7 +145,7 @@ task GetRegenotypedVcfImpl {
         gunzip -c merged.vcf.gz | cut -f 1-8 > merged_cleaned.vcf
         bgzip merged_cleaned.vcf
         tabix -f merged_cleaned.vcf.gz
-        ${TIME_COMMAND} lrcaller --number_of_threads ${N_THREADS} --dyn-w-size --fa ~{reference_fa} ~{alignments_bam} merged_cleaned.vcf.gz tmp.vcf
+        ${TIME_COMMAND} lrcaller --number_of_threads ${N_THREADS} --dyn-w-size --fa ~{reference_fa} ~{alignments_bam} merged_cleaned.vcf.gz tmp.vcf 2> /dev/null
         grep '^[#]' tmp.vcf > tmp.txt
         N_ROWS=$(wc -l < tmp.txt)
         head -n $(( ${N_ROWS} - 1 )) tmp.txt > ~{output_prefix}.vcf
