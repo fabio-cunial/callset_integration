@@ -144,7 +144,7 @@ COPY ./jasmine /opt/conda/envs/jasmine/bin/jasmine
 SHELL ["chmod", "+x", "/opt/conda/envs/jasmine/bin/jasmine"]
 SHELL ["/bin/bash", "-c"]
 
-# CUTESV  Some dependency fails now...
+# CUTESV
 RUN pip install setuptools==58 scikit-learn \
     && git clone https://github.com/tjiangHIT/cuteSV.git \
     && cd cuteSV \
