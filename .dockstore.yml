@@ -185,3 +185,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcfCutesv.wdl
   testParameterFiles:
+- name: RepeatAnnotation
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/RepeatAnnotation.wdl
+  testParameterFiles:
