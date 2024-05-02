@@ -143,7 +143,7 @@ task GetRegenotypedVcfImpl {
         formatVcf tmp.vcf.gz merged.vcf.gz
 
         # SVJEDIGRAPH
-        gunzip -c merged.vcf.gz
+        gunzip merged.vcf.gz
         ${TIME_COMMAND} python ~{docker_dir}/svjedigraph/svjedi-graph.py --threads ${N_THREADS} --minsupport ~{min_support} --vcf merged.vcf --ref ~{reference_fa} --reads ~{reads_fastq} --prefix ~{output_prefix}
         bgzip -c ~{output_prefix}_genotype.vcf > ~{output_prefix}.vcf.gz
         tabix -f ~{output_prefix}.vcf.gz
