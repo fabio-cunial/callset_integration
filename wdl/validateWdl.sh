@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfCutesv.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfLrcaller.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfSvjedigraph.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpig.wdl

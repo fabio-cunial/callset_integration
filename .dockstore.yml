@@ -180,3 +180,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcfLrcaller.wdl
   testParameterFiles:
+- name: GetRegenotypedVcfCutesv
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfCutesv.wdl
+  testParameterFiles:
