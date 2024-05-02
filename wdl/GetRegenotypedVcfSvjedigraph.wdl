@@ -11,8 +11,10 @@ workflow GetRegenotypedVcfSvjedigraph {
         File reference_fai
         Int svlen_min
         Int svlen_max
+        Int min_support = 3
     }
     parameter_meta {
+        min_support: "Set it to one if the purpose is just annotating every call with features. Default=3."
     }
     
     call GetRegenotypedVcfImpl {
@@ -23,7 +25,8 @@ workflow GetRegenotypedVcfSvjedigraph {
             reference_fa = reference_fa,
             reference_fai = reference_fai,
             svlen_min = svlen_min,
-            svlen_max = svlen_max
+            svlen_max = svlen_max,
+            min_support = min_support
     }
     
     output {
@@ -42,6 +45,7 @@ task GetRegenotypedVcfImpl {
         File reference_fai
         Int svlen_min
         Int svlen_max
+        Int min_support
     }
     parameter_meta {
     }
@@ -49,7 +53,7 @@ task GetRegenotypedVcfImpl {
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     String output_prefix = "svjedigraph_regenotyped"
-    Int disk_size_gb = 500 + 2*ceil(size(reference_fa,"GB")) + 10*ceil(size(truvari_collapsed_vcf_gz,"GB")) + ceil(size(reads_fastq,"GB"))
+    Int disk_size_gb = 250 + 2*ceil(size(reference_fa,"GB")) + 20*ceil(size(truvari_collapsed_vcf_gz,"GB")) + ceil(size(reads_fastq,"GB"))
 
     command <<<
         set -euxo pipefail
@@ -139,8 +143,8 @@ task GetRegenotypedVcfImpl {
         formatVcf tmp.vcf.gz merged.vcf.gz
 
         # SVJEDIGRAPH
-        gunzip merged.vcf.gz
-        ${TIME_COMMAND} python ~{docker_dir}/svjedigraph/svjedi-graph.py --threads ${N_THREADS} --vcf merged.vcf --ref ~{reference_fa} --reads ~{reads_fastq} --prefix ~{output_prefix}
+        gunzip -c merged.vcf.gz
+        ${TIME_COMMAND} python ~{docker_dir}/svjedigraph/svjedi-graph.py --threads ${N_THREADS} --minsupport ~{min_support} --vcf merged.vcf --ref ~{reference_fa} --reads ~{reads_fastq} --prefix ~{output_prefix}
         bgzip -c ~{output_prefix}_genotype.vcf > ~{output_prefix}.vcf.gz
         tabix -f ~{output_prefix}.vcf.gz
     >>>

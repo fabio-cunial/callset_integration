@@ -478,25 +478,27 @@ def construct_gfa(inVCF, inFA, outGFA, outPrefix):
                         elif coords.startswith(str(pos+1)):
                             right_node = node
 
-                    # if any([left_node is None, right_node is None]):
+                    if any([left_node is None, right_node is None]):
+                        print("left_node: ",left_node)
+                        print("right_node: ",right_node)
                         # print(sv, all_nodes[chrom])
+                    else:
+                        # Create alternative links and add to graph (gfa)
+                        graph_file.write(format_gfa_link_pp(left_node, ins_node, 1))
+                        graph_file.write(format_gfa_link_pp(ins_node, right_node, 1))
 
-                    # Create alternative links and add to graph (gfa)
-                    graph_file.write(format_gfa_link_pp(left_node, ins_node, 1))
-                    graph_file.write(format_gfa_link_pp(ins_node, right_node, 1))
+                        # Associate alternative links to sv_id (INS)
+                        link_id_1 = (left_node, "+", ins_node, "+")
+                        link_id_2 = (ins_node, "+", right_node, "+")
 
-                    # Associate alternative links to sv_id (INS)
-                    link_id_1 = (left_node, "+", ins_node, "+")
-                    link_id_2 = (ins_node, "+", right_node, "+")
+                        for link_id in [link_id_1, link_id_2]:
 
-                    for link_id in [link_id_1, link_id_2]:
+                            link_key = get_link_key(link_id)
 
-                        link_key = get_link_key(link_id)
-
-                        if link_key not in d_link_sv.keys():
-                            d_link_sv[link_key] = []
+                            if link_key not in d_link_sv.keys():
+                                d_link_sv[link_key] = []
                         
-                        d_link_sv[link_key].append((":".join([chrom, sv_id]), 1))
+                            d_link_sv[link_key].append((":".join([chrom, sv_id]), 1))
 
             elif sv_type == "INV":
 
