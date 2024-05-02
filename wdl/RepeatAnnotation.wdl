@@ -1,6 +1,8 @@
 version 1.0
 
 
+# Adds a new field INFO/tr_coverage that contains the fraction of a call covered
+# by intervals in a given BED.
 #
 workflow RepeatAnnotation {
     input {
@@ -50,7 +52,7 @@ task RepeatAnnotationImpl {
         
         echo '##INFO=<ID=tr_coverage,Number=1,Type=Float,Description="Fraction of a call that is covered by intervals in a TR BED.">' > header.txt
         bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ~{vcf_gz_file} > tmp1.tsv
-        bedtools annotate -i ~{vcf_gz_file} -files ~{bed_file} | cut -f 1,2,3,4,5,11 | bgzip -c > annotations.tsv.gz
+        bedtools annotate -i ~{vcf_gz_file} -files ~{bed_file} | cut -f 1,2,3,4,5,11 | sort -k 1V -k 2n | bgzip -c > annotations.tsv.gz
         tabix -f -s1 -b2 -e2 annotations.tsv.gz
         bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/tr_coverage ~{vcf_gz_file} --output-type z > out.vcf.gz
         tabix -f out.vcf.gz
