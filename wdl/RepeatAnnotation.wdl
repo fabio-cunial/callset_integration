@@ -6,39 +6,48 @@ version 1.0
 #
 workflow RepeatAnnotation {
     input {
-        File vcf_gz_file
-        File tbi_file
-        File bed_file
+        File vcf_gz
+        File vcf_gz_tbi
+        File tr_bed
+        File segdup_bed
+        File telomere_bed
+        File centromere_bed
     }
     parameter_meta {
     }
 
     call RepeatAnnotationImpl {
         input:
-            vcf_gz_file = vcf_gz_file,
-            tbi_file = tbi_file,
-            bed_file = bed_file
+            vcf_gz = vcf_gz,
+            vcf_gz_tbi = vcf_gz_tbi,
+            tr_bed = tr_bed,
+            segdup_bed = segdup_bed,
+            telomere_bed = telomere_bed,
+            centromere_bed = centromere_bed
     }
     
     output {
-        File vcf_gz = RepeatAnnotationImpl.annotated_vcf
-        File vcf_gz_tbi = RepeatAnnotationImpl.annotated_tbi
+        File annotated_vcf = RepeatAnnotationImpl.annotated_vcf
+        File annotated_tbi = RepeatAnnotationImpl.annotated_tbi
     }
 }
 
 
 task RepeatAnnotationImpl {
     input {
-        File vcf_gz_file
-        File tbi_file
-        File bed_file
+        File vcf_gz
+        File vcf_gz_tbi
+        File tr_bed
+        File segdup_bed
+        File telomere_bed
+        File centromere_bed
     }
     parameter_meta {
     }
     
     String docker_dir = "/callset_integration"
     String work_dir = "/cromwell_root/callset_integration"
-    Int disk_size_gb = 10*ceil(size(vcf_gz_file,"GB")) + ceil(size(bed_file,"GB"))
+    Int disk_size_gb = 10*ceil(size(vcf_gz,"GB"))
 
     command <<<
         set -euxo pipefail
@@ -50,12 +59,29 @@ task RepeatAnnotationImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        echo '##INFO=<ID=tr_coverage,Number=1,Type=Float,Description="Fraction of a call that is covered by intervals in a TR BED.">' > header.txt
-        bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ~{vcf_gz_file} > tmp1.tsv
-        bedtools annotate -i ~{vcf_gz_file} -files ~{bed_file} | cut -f 1,2,3,4,5,11 | sort -k 1V -k 2n | bgzip -c > annotations.tsv.gz
-        tabix -f -s1 -b2 -e2 annotations.tsv.gz
-        bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/tr_coverage ~{vcf_gz_file} --output-type z > out.vcf.gz
-        tabix -f out.vcf.gz
+        function annotate() {
+            local VCF_GZ_FILE=$1
+            local BED_FILE=$2
+            local INFO_ID=$3
+            local DESCRIPTION=$4
+            local OUT_FILE=$5
+            
+            echo -e "##INFO=<ID=${INFO_ID},Number=1,Type=Float,Description=\"Fraction of a call that is covered by intervals in a ${DESCRIPTION} BED.\">" > header.txt
+            bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ${VCF_GZ_FILE} > tmp.tsv
+            bedtools annotate -i ${VCF_GZ_FILE} -files ${BED_FILE} | cut -f 1,2,3,4,5,11 | sort -k 1V -k 2n | bgzip -c > annotations.tsv.gz
+            tabix -f -s1 -b2 -e2 annotations.tsv.gz
+            bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/${INFO_ID} ${VCF_GZ_FILE} --output-type z > ${OUT_FILE}
+            tabix -f ${OUT_FILE}
+        }
+        
+        
+        # Main program
+        annotate ~{vcf_gz} ~{tr_bed} tr_coverage TR out1.vcf.gz
+        annotate out1.vcf.gz ~{segdup_bed} segdup_coverage segdup out2.vcf.gz
+        rm -f out1.vcf.gz*
+        annotate out2.vcf.gz ~{telomere_bed} telomere_coverage telomere out1.vcf.gz
+        rm -f out2.vcf.gz*
+        annotate out1.vcf.gz ~{centromere_bed} centromere_coverage centromere out.vcf.gz
     >>>
 
     output {
