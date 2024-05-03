@@ -148,8 +148,22 @@ task GetRegenotypedVcfImpl {
 
         # CUTESV FORCE
         rm -rf ./cutesv_tmp; mkdir ./cutesv_tmp
-        ${TIME_COMMAND} cuteSV --threads ${N_THREADS} -Ivcf merged.vcf.gz ~{cutesv_params} --genotype --min_support ~{cutesv_minsupport} --min_size ~{svlen_min} --max_size ~{svlen_max} ~{alignments_bam} ~{reference_fa} ~{output_prefix}.vcf ./cutesv_tmp
-        bgzip ~{output_prefix}.vcf
+        ${TIME_COMMAND} cuteSV --threads ${N_THREADS} -Ivcf merged.vcf.gz ~{cutesv_params} --genotype --min_support ~{cutesv_minsupport} --min_size ~{svlen_min} --max_size ~{svlen_max} ~{alignments_bam} ~{reference_fa} tmp1.vcf ./cutesv_tmp
+        rm -rf ./cutesv_tmp
+        bgzip tmp1.vcf
+        tabix -f tmp1.vcf.gz
+        
+        # Fixing SAMPLE (set to NULL bu cutesv)
+        bcftools view --header-only merged.vcf.gz | tail -n 1 | cut -f 10 > sample.txt
+        bcftools reheader --threads ${N_THREADS} --samples sample.txt tmp1.vcf.gz > tmp2.vcf.gz
+        tabix -f tmp2.vcf.gz
+        rm -f tmp1.vcf.gz*
+        
+        # Importing cutesv's FORMAT into the original file. This is needed since
+        # cutesv destroys several INFO field annotations.
+        echo -e "##FORMAT=<ID=PL,Number=G,Type=Integer,Description=\"# Phred-scaled genotype likelihoods rounded to the closest integer\">" > header.txt
+        # The other FORMAT fields are assumed to be already in the input VCF
+        bcftools annotate --header-lines header.txt --annotations tmp2.vcf.gz --columns CHROM,POS,ID,REF,ALT,FORMAT/GT,FORMAT/DR,FORMAT/DV,FORMAT/PL,FORMAT/GQ --output-type z merged.vcf.gz > ~{output_prefix}.vcf.gz    
         tabix -f ~{output_prefix}.vcf.gz
     >>>
 

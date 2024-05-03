@@ -67,10 +67,9 @@ task RepeatAnnotationImpl {
             local OUT_FILE=$5
             
             echo -e "##INFO=<ID=${INFO_ID},Number=1,Type=Float,Description=\"Fraction of a call that is covered by intervals in a ${DESCRIPTION} BED.\">" > header.txt
-            bcftools query --format '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' ${VCF_GZ_FILE} > tmp.tsv
             bedtools annotate -i ${VCF_GZ_FILE} -files ${BED_FILE} | cut -f 1,2,3,4,5,11 | sort -k 1V -k 2n | bgzip -c > annotations.tsv.gz
             tabix -f -s1 -b2 -e2 annotations.tsv.gz
-            bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/${INFO_ID} ${VCF_GZ_FILE} --output-type z > ${OUT_FILE}
+            bcftools annotate --annotations annotations.tsv.gz --header-lines header.txt --columns CHROM,POS,ID,REF,ALT,INFO/${INFO_ID} --output-type z ${VCF_GZ_FILE} > ${OUT_FILE}
             tabix -f ${OUT_FILE}
         }
         
