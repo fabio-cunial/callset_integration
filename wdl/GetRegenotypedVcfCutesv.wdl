@@ -153,7 +153,7 @@ task GetRegenotypedVcfImpl {
         bgzip tmp1.vcf
         tabix -f tmp1.vcf.gz
         
-        # Fixing SAMPLE (set to NULL bu cutesv)
+        # Fixing SAMPLE (set to NULL by cutesv)
         bcftools view --header-only merged.vcf.gz | tail -n 1 | cut -f 10 > sample.txt
         bcftools reheader --threads ${N_THREADS} --samples sample.txt tmp1.vcf.gz > tmp2.vcf.gz
         tabix -f tmp2.vcf.gz

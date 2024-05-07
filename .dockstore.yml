@@ -190,3 +190,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/RepeatAnnotation.wdl
   testParameterFiles:
+- name: BcftoolsMergeDipcallSimple
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeDipcallSimple.wdl
+  testParameterFiles:
