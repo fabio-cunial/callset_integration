@@ -58,7 +58,7 @@ task InterSampleMerge {
         tabix -f tmp1.vcf.gz
         
         # Removing multiallelic records, if any have been created.
-        bcftools norm --multiallelics - --output-type z tmp1.vcf.gz > merged.vcf.gz
+        ${TIME_COMMAND} bcftools norm --multiallelics - --output-type z tmp1.vcf.gz > merged.vcf.gz
         tabix -f merged.vcf.gz
         
         ls -laht; tree

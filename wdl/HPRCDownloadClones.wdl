@@ -40,7 +40,7 @@ task HPRCDownloadClonesImpl {
     parameter_meta {
     }
     
-    Int disk_size_gb = (3*target_coverage)*8 + 512
+    Int disk_size_gb = 2048
     Int mem_gb = 128
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
@@ -57,6 +57,7 @@ task HPRCDownloadClonesImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         BILLING_PROJECT="broad-firecloud-dsde-methods"
+        df -h
         
         # 1. Randomizing the order of the BAMs
         LIST_FILE=~{write_lines(bam_addresses)}
@@ -87,6 +88,7 @@ task HPRCDownloadClonesImpl {
             if [ ${N_BYTES} -gt ${TARGET_N_BYTES} ]; then
                 break
             fi
+            df -h
         done < randomized.txt
         
         # 2. Randomizing the order of the reads
