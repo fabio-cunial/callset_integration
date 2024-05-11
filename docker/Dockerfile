@@ -183,12 +183,21 @@ RUN git clone https://github.com/alexandres/terashuf.git \
 ARG minigraph_version=0.21
 RUN wget https://github.com/lh3/minigraph/releases/download/v0.21/minigraph-${minigraph_version}_x64-linux.tar.bz2 \
     && tar xjf minigraph-${minigraph_version}_x64-linux.tar.bz2 \
+    && rm -f minigraph-${minigraph_version}_x64-linux.tar.bz2 \
     && chmod +x minigraph-${minigraph_version}_x64-linux/minigraph
 ENV PATH=${work_dir}/minigraph-${minigraph_version}_x64-linux:${PATH}
 RUN minigraph && echo 0 || echo 1
 
 # SVJEDI-GRAPH 1.2.1 with Adam's patches to work around the need for END
 ADD svjedigraph_patched ${work_dir}/svjedigraph
+
+# MINIMAP2
+ARG minimap2_version=2.28
+RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/minimap2-${minimap2_version}_x64-linux.tar.bz2 \
+    && tar xjf minimap2-${minimap2_version}_x64-linux.tar.bz2 \
+    && rm -f minimap2-${minimap2_version}_x64-linux.tar.bz2 \
+    && mv ./minimap2-${minimap2_version}_x64-linux/ ./minimap2/ \
+    && ./minimap2/minimap2 -h && echo 0 || echo 1
 
 # AD HOC SCRIPTS
 COPY *.java .

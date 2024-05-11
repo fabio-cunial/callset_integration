@@ -195,3 +195,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeDipcallSimple.wdl
   testParameterFiles:
+- name: AlignONT
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/AlignONT.wdl
+  testParameterFiles:
