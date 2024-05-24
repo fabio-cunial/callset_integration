@@ -12,6 +12,8 @@ workflow GetRegenotypedVcfSniffles {
         File reference_fai
         Int svlen_min
         Int svlen_max
+        Int n_cpu = 4
+        Int memory_gb = 64
     }
     parameter_meta {
     }
@@ -25,7 +27,9 @@ workflow GetRegenotypedVcfSniffles {
             reference_fa = reference_fa,
             reference_fai = reference_fai,
             svlen_min = svlen_min,
-            svlen_max = svlen_max
+            svlen_max = svlen_max,
+            n_cpu = n_cpu,
+            memory_gb = memory_gb
     }
     
     output {
@@ -45,6 +49,8 @@ task GetRegenotypedVcfImpl {
         File reference_fai
         Int svlen_min
         Int svlen_max
+        Int n_cpu
+        Int memory_gb
     }
     parameter_meta {
     }
@@ -125,8 +131,7 @@ task GetRegenotypedVcfImpl {
 
 
         # Main program
-        rm -f ~{alignments_bai}
-        samtools index -@ ${N_THREADS} ~{alignments_bam}
+        touch ~{alignments_bai}
     
         # Formatting the merged VCF
         HAS_SUPP=$(bcftools view --header-only ~{truvari_collapsed_vcf_gz} | grep '##FORMAT=<ID=SUPP,' && echo 1 || echo 0)
@@ -149,8 +154,8 @@ task GetRegenotypedVcfImpl {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: 16
-        memory: "32GB"
+        cpu: n_cpu
+        memory: memory_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
