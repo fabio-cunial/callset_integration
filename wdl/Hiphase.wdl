@@ -7,27 +7,28 @@ workflow Hiphase {
     input {
         String samplename
         File unphased_vcf
-        File unphased_tbi
         File? regions_bed
         File bam
         File bai
         File ref_fa
         File ref_fai
+        Int max_sv_length = 99000
     }
     parameter_meta {
         regions_bed: "Subset the VCF to these regions."
+        max_sv_length: "To avoid the following error: 'Encountered WFA error for mapping [...]: Max_edit_distance (100000) reached during WFA solving'."
     }
 
     call HiphaseImpl {
         input:
             samplename = samplename,
             unphased_vcf = unphased_vcf,
-            unphased_tbi = unphased_tbi,
             regions_bed = regions_bed,
             bam = bam,
             bai = bai,
             ref_fa = ref_fa,
-            ref_fai = ref_fai
+            ref_fai = ref_fai,
+            max_sv_length = max_sv_length
     }
     
     output {
@@ -46,12 +47,12 @@ task HiphaseImpl {
     input {
         String samplename
         File unphased_vcf
-        File unphased_tbi
         File? regions_bed
         File bam
         File bai
         File ref_fa
         File ref_fai
+        Int max_sv_length
     }
     
     Int disk_size_gb = 5*ceil( size(unphased_vcf,"GB") + size(bam,"GB") + size(ref_fa,"GB") )
@@ -68,18 +69,54 @@ task HiphaseImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
+        # Keeping only calls in the BED file (if any). 
+        tabix -f ~{unphased_vcf}
         if ~{defined(regions_bed)} ; then
-            bcftools view --regions-file ~{regions_bed} --output-type z ~{unphased_vcf} > filtered.vcf.gz
-            tabix filtered.vcf.gz
+            bcftools view --regions-file ~{regions_bed} --output-type z ~{unphased_vcf} > tmp1.vcf.gz
+            tabix -f tmp1.vcf.gz
         else
-            mv ~{unphased_vcf} filtered.vcf.gz
-            mv ~{unphased_tbi} filtered.vcf.gz.tbi
-        fi    
+            mv ~{unphased_vcf} tmp1.vcf.gz
+            mv ~{unphased_vcf}.tbi tmp1.vcf.gz.tbi
+        fi
+            
+        # Ensuring the right sample name in the VCF.
+        echo ~{samplename} > sample.txt
+        bcftools reheader --threads ${N_THREADS} --samples sample.txt --output tmp2.vcf.gz tmp1.vcf.gz
+        tabix -f tmp2.vcf.gz
+        
+        # Ensuring that the reference characters agree with the FASTA.
+        bcftools norm --threads ${N_THREADS} --check-ref s --fasta-ref ~{ref_fa} --do-not-normalize --output-type z tmp2.vcf.gz > tmp3.vcf.gz
+        tabix -f tmp3.vcf.gz
+        
+        # Ensuring all uppercases in REF, ALT, and reference FASTA.
+        # Keeping only calls up to the given max length.
+        bcftools view --header-only tmp3.vcf.gz > filtered.vcf
+        bcftools view --no-header tmp3.vcf.gz | awk '{ \
+            if (length($4)<=~{max_sv_length} && length($5)<=~{max_sv_length}) { \
+                $4=toupper($4); \
+                if (substr($5,1,1)!="<") $5=toupper($5); \
+                printf("%s",$1); \
+                for (i=2; i<=NF; i++) printf("\t%s",$i); \
+                printf("\n"); \
+            } \
+        }' >> filtered.vcf
+        bgzip filtered.vcf; tabix -f filtered.vcf.gz
+        bcftools view --no-header filtered.vcf.gz | head || echo 1
+        awk '{ \
+            if (substr($0,1,1)!=">") $0=toupper($0); \
+            printf("%s",$0);
+            printf("\n"); \
+        }' ~{ref_fa} > reference.fa
+        rm -f ~{ref_fa}
+        mv ~{ref_fai} reference.fa.fai
+        head reference.fa || echo 1
+        
+        # Phasing
         touch ~{bai}
         ${TIME_COMMAND} hiphase \
             --threads ${N_THREADS} \
             --bam ~{bam} \
-            --reference ~{ref_fa} \
+            --reference reference.fa \
             --global-realignment-cputime 300 \
             --vcf filtered.vcf.gz \
             --output-vcf ~{samplename}_phased.vcf.gz \
@@ -87,10 +124,9 @@ task HiphaseImpl {
             --haplotag-file ~{samplename}.haplotag.tsv \
             --stats-file ~{samplename}.stats.csv \
             --blocks-file ~{samplename}.blocks.tsv \
-            --summary-file ~{samplename}.summary.tsv \
-            --verbose
+            --summary-file ~{samplename}.summary.tsv
         ${TIME_COMMAND} bcftools sort ~{samplename}_phased.vcf.gz -O z -o ~{samplename}_phased.sorted.vcf.gz
-        tabix ~{samplename}_phased.sorted.vcf.gz
+        tabix -f ~{samplename}_phased.sorted.vcf.gz
     >>>
 
     output {
