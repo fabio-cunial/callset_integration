@@ -200,3 +200,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/AlignONT.wdl
   testParameterFiles:
+- name: BcftoolsMergeIntrasampleBND
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeIntrasampleBND.wdl
+  testParameterFiles:

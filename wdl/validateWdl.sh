@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeIntrasampleBND.wdl
 java -jar ${WOMTOOL_PATH} validate -l MapShortReads.wdl
 java -jar ${WOMTOOL_PATH} validate -l BwaIndex.wdl
 java -jar ${WOMTOOL_PATH} validate -l Cram2Fastq.wdl
