@@ -75,15 +75,17 @@ task BcftoolsMergeIntrasampleBNDImpl {
         tabix -f sniffles_2.vcf.gz
         rm -f *_1.vcf.gz*
         
-        # Fixing REF=N (caused e.g. by sniffles).
-        bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z pbsv_2.vcf.gz > pbsv_3.vcf.gz
-        tabix -f pbsv_3.vcf.gz
-        bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z sniffles_2.vcf.gz > sniffles_3.vcf.gz
-        tabix -f sniffles_3.vcf.gz
-        rm -f *_2.vcf.gz*
+        # The following does not work for BNDs, e.g. it changes ALTs as follows:
+        # ]chr2:193700779]N  ->  ccNNNNNNNNNNNNNNN
+        ## Fixing REF=N (caused e.g. by sniffles).
+        #bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z pbsv_2.vcf.gz > pbsv_3.vcf.gz
+        #tabix -f pbsv_3.vcf.gz
+        #bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z sniffles_2.vcf.gz > sniffles_3.vcf.gz
+        #tabix -f sniffles_3.vcf.gz
+        #rm -f *_2.vcf.gz*
 
         # Removing exact duplicates
-        bcftools concat --threads ${N_THREADS} --allow-overlaps --remove-duplicates --output-type z --output tmp.vcf.gz pbsv_3.vcf.gz sniffles_3.vcf.gz
+        bcftools concat --threads ${N_THREADS} --allow-overlaps --remove-duplicates --output-type z --output tmp.vcf.gz pbsv_2.vcf.gz sniffles_2.vcf.gz
         tabix -f tmp.vcf.gz
         
         # Removing multiallelic records again, just to be completely sure they
