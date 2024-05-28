@@ -10,8 +10,6 @@ workflow BcftoolsMergeIntrasampleBND {
         File pbsv_vcf_gz_tbi
         File sniffles_vcf_gz
         File sniffles_vcf_gz_tbi
-        File pav_vcf_gz
-        File pav_vcf_gz_tbi
         File reference_fa
     }
     parameter_meta {
