@@ -26,8 +26,8 @@ workflow BcftoolsMergeIntrasampleBND {
             pbsv_vcf_gz_tbi = pbsv_vcf_gz_tbi,
             sniffles_vcf_gz = sniffles_vcf_gz,
             sniffles_vcf_gz_tbi = sniffles_vcf_gz_tbi,
-            pbsv_vcf_gz = pbsv_vcf_gz,
-            pbsv_vcf_gz_tbi = pbsv_vcf_gz_tbi,
+            pav_vcf_gz = pav_vcf_gz,
+            pav_vcf_gz_tbi = pav_vcf_gz_tbi,
             reference_fa = reference_fa
     }
     
