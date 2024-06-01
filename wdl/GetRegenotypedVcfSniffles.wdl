@@ -98,7 +98,7 @@ task GetRegenotypedVcfImpl {
             # multi-sample VCFs)
             bcftools view --header-only tmp2.vcf.gz > header.txt
             N_ROWS=$(cat header.txt | wc -l)
-            head -n $(( $(N_ROWS) - 1 )) header.txt > tmp3.vcf
+            head -n $(( ${N_ROWS} - 1 )) header.txt > tmp3.vcf
             echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> tmp3.vcf
             bcftools view --no-header tmp2.vcf.gz | cut -f 1-10 >> tmp3.vcf
             bgzip tmp3.vcf
