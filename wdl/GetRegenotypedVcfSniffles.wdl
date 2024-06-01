@@ -94,9 +94,18 @@ task GetRegenotypedVcfImpl {
             bcftools filter -i "${FILTER_STRING}" --output-type z tmp1.vcf.gz > tmp2.vcf.gz
             tabix -f tmp2.vcf.gz
 
+            # Removing all samples (this is necessary for multi-sample VCFs)
+            bcftools view --header-only tmp2.vcf.gz > header.txt
+            N_ROWS=$(cat header.txt | wc -l)
+            head -n $(( $(N_ROWS) - 1 )) header.txt > tmp3.vcf
+            echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO" >> tmp3.vcf
+            bcftools view --no-header tmp2.vcf.gz | cut -f 1-8 >> tmp3.vcf
+            bgzip tmp3.vcf
+            tabix -f tmp3.vcf.gz
+
             # Finalizing
-            cp tmp2.vcf.gz ${OUTPUT_VCF_GZ}
-            cp tmp2.vcf.gz.tbi ${OUTPUT_VCF_GZ}.tbi
+            cp tmp3.vcf.gz ${OUTPUT_VCF_GZ}
+            cp tmp3.vcf.gz.tbi ${OUTPUT_VCF_GZ}.tbi
             rm -f tmp*.vcf*
         }
         

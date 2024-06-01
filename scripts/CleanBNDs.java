@@ -55,6 +55,7 @@ public class CleanBNDs {
         str=br.readLine();
         while (str!=null) {
             if (str.charAt(0)==COMMENT) {
+                if (str.substring(0,6).equals("#CHROM")) bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
                 bw.write(str); bw.newLine();
                 str=br.readLine();
                 continue;
@@ -88,10 +89,10 @@ public class CleanBNDs {
             if (alt.charAt(0)=='N' || alt.charAt(0)=='n') alt=getChar(chromosome,pos-1/*zero-based*/)+alt.substring(1);
             if (alt.charAt(length-1)=='N' || alt.charAt(length-1)=='n') alt=alt.substring(0,length-1)+getChar(chromosome,pos-1/*zero-based*/);
             if (!isSingle && !hasMate) info+=";"+MATEID_STR+"="+NEW_MATE_PREFIX+id;
-            bw.write(chromosome); bw.write("\t"+pos); bw.write("\t"+id); bw.write("\t"+ref); bw.write("\t"+alt); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\t"+info); bw.write("\t"+gt); bw.newLine();
+            bw.write(chromosome); bw.write("\t"+pos); bw.write("\t"+id); bw.write("\t"+ref); bw.write("\t"+alt); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\t"+info); bw.write("\t"+format); bw.write("\t"+gt); bw.newLine();
             
             // Writing the new mate record, if any.
-            if (!isSingle && !hasMate) { bw.write(chromosome2); bw.write("\t"+pos2); bw.write("\t"+NEW_MATE_PREFIX+id); bw.write("\t"+getChar(chromosome2,pos2-1/*zero-based*/)); bw.write("\t"+getMateAlt(alt,chromosome,pos,getChar(chromosome2,pos2-1/*zero-based*/))); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\tSVTYPE=BND;"+MATEID_STR+"="+id); bw.write("\t"+gt); bw.newLine(); }
+            if (!isSingle && !hasMate) { bw.write(chromosome2); bw.write("\t"+pos2); bw.write("\t"+NEW_MATE_PREFIX+id); bw.write("\t"+getChar(chromosome2,pos2-1/*zero-based*/)); bw.write("\t"+getMateAlt(alt,chromosome,pos,getChar(chromosome2,pos2-1/*zero-based*/))); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\tSVTYPE=BND;"+MATEID_STR+"="+id); bw.write("\t"+format); bw.write("\t"+gt); bw.newLine(); }
             
             // Next record
             str=br.readLine();

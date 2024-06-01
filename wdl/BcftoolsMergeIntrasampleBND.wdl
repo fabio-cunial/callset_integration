@@ -12,8 +12,7 @@ workflow BcftoolsMergeIntrasampleBND {
         File sniffles_vcf_gz_tbi
         File pav_vcf_gz
         File pav_vcf_gz_tbi
-        File reference_fa
-        Int min_sv_length = 100000
+        Int min_sv_length = 10000
         Int single_breakend_length = 1000
     }
     parameter_meta {
@@ -28,7 +27,6 @@ workflow BcftoolsMergeIntrasampleBND {
             sniffles_vcf_gz_tbi = sniffles_vcf_gz_tbi,
             pav_vcf_gz = pav_vcf_gz,
             pav_vcf_gz_tbi = pav_vcf_gz_tbi,
-            reference_fa = reference_fa,
             min_sv_length = min_sv_length,
             single_breakend_length = single_breakend_length
     }
@@ -50,7 +48,6 @@ task BcftoolsMergeIntrasampleBNDImpl {
         File sniffles_vcf_gz_tbi
         File pav_vcf_gz
         File pav_vcf_gz_tbi
-        File reference_fa
         String remote_chromosomes_dir
         Int min_sv_length
         Int single_breakend_length
@@ -58,7 +55,7 @@ task BcftoolsMergeIntrasampleBNDImpl {
     parameter_meta {
     }
     
-    Int disk_size_gb = 10*( ceil(size(pbsv_vcf_gz,"GB")) + ceil(size(sniffles_vcf_gz,"GB")) ) + 50
+    Int disk_size_gb = 10*( ceil(size(pbsv_vcf_gz,"GB")) + ceil(size(sniffles_vcf_gz,"GB")) + ceil(size(pav_vcf_gz,"GB")) ) + 50
     Int mem_gb = 16
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
@@ -78,7 +75,7 @@ task BcftoolsMergeIntrasampleBNDImpl {
         # Remark: the following does not work for BNDs, e.g. it changes ALTs as
         # follows: ]chr2:193700779]N  ->  ccNNNNNNNNNNNNNNN
         ## Fixing REF=N (caused e.g. by sniffles).
-        #bcftools norm --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z pbsv_2.vcf.gz > pbsv_3.vcf.gz
+        #bcftools norm --check-ref s --fasta-ref reference_fa --do-not-normalize --output-type z pbsv_2.vcf.gz > pbsv_3.vcf.gz
         
         gsutil -m cp ~{remote_chromosomes_dir}/'*' .
         
@@ -87,30 +84,39 @@ task BcftoolsMergeIntrasampleBNDImpl {
         tabix -f pbsv_1.vcf.gz
         bcftools norm --multiallelics - --output-type z ~{sniffles_vcf_gz} > sniffles_1.vcf.gz
         tabix -f sniffles_1.vcf.gz
-        bcftools norm --multiallelics - --output-type z ~{pav_vcf_gz} > pav_1.vcf.gz
-        tabix -f pav_1.vcf.gz
+        bcftools norm --multiallelics - --output-type v ~{pav_vcf_gz} > pav_1.vcf
         
         # Harvesting the original BNDs from sniffles and pbsv
-        bcftools filter --include 'SVTYPE="BND"' --output-type z pbsv_1.vcf.gz > pbsv_2.vcf
+        bcftools filter --include 'SVTYPE="BND"' --output-type v pbsv_1.vcf.gz > pbsv_2.vcf
         java -cp ~{docker_dir} CleanBNDs pbsv_2.vcf . pbsv_bnds.vcf
-        bgzip pbsv_bnds.vcf; tabix -f pbsv_bnds.vcf.gz
-        bcftools filter --include 'SVTYPE="BND"' --output-type z sniffles_1.vcf.gz > sniffles_2.vcf
+        bcftools sort --output-type z pbsv_bnds.vcf > pbsv_bnds.vcf.gz
+        tabix -f pbsv_bnds.vcf.gz
+        bcftools filter --include 'SVTYPE="BND"' --output-type v sniffles_1.vcf.gz > sniffles_2.vcf
         java -cp ~{docker_dir} CleanBNDs sniffles_2.vcf . sniffles_bnds.vcf
-        bgzip sniffles_bnds.vcf; tabix -f sniffles_bnds.vcf.gz
+        bcftools sort --output-type z sniffles_bnds.vcf > sniffles_bnds.vcf.gz
+        tabix -f sniffles_bnds.vcf.gz
         rm -f *_2.vcf
         
         # Creating new BNDs from the large calls of every caller
-        bcftools filter --include 'SVTYPE!="BND"' --output-type z pbsv_1.vcf.gz > pbsv_2.vcf
+        bcftools filter --include 'SVTYPE!="BND"' --output-type v pbsv_1.vcf.gz > pbsv_2.vcf
         java -cp ~{docker_dir} SV2BND pbsv_2.vcf . ~{min_sv_length} ~{single_breakend_length} pbsv_others.vcf
-        bgzip pbsv_others.vcf; tabix -f pbsv_others.vcf.gz
-        bcftools filter --include 'SVTYPE!="BND"' --output-type z sniffles_1.vcf.gz > sniffles_2.vcf
+        bcftools sort --output-type z pbsv_others.vcf > pbsv_others.vcf.gz
+        tabix -f pbsv_others.vcf.gz
+        bcftools filter --include 'SVTYPE!="BND"' --output-type v sniffles_1.vcf.gz > sniffles_2.vcf
         java -cp ~{docker_dir} SV2BND sniffles_2.vcf . ~{min_sv_length} ~{single_breakend_length} sniffles_others.vcf
-        bgzip sniffles_others.vcf; tabix -f sniffles_others.vcf.gz
+        bcftools sort --output-type z sniffles_others.vcf > sniffles_others.vcf.gz
+        tabix -f sniffles_others.vcf.gz
         java -cp ~{docker_dir} SV2BND pav_1.vcf . ~{min_sv_length} ~{single_breakend_length} pav_others.vcf
-        bgzip pav_others.vcf; tabix -f pav_others.vcf.gz
+        bcftools sort --output-type z pav_others.vcf > pav_others.vcf.gz
+        tabix -f pav_others.vcf.gz
         rm -f *_2.vcf
         
         # Removing exact duplicates
+        N_BNDS_PBSV=$(bcftools view --no-header pbsv_bnds.vcf.gz | wc -l)
+        N_BNDS_SNIFFLES=$(bcftools view --no-header sniffles_bnds.vcf.gz | wc -l)
+        N_OTHERS_PBSV=$(bcftools view --no-header pbsv_others.vcf.gz | wc -l)
+        N_OTHERS_SNIFFLES=$(bcftools view --no-header sniffles_others.vcf.gz | wc -l)
+        N_OTHERS_PAV=$(bcftools view --no-header pav_others.vcf.gz | wc -l)
         bcftools concat --threads ${N_THREADS} --allow-overlaps --remove-duplicates --output-type z --output tmp.vcf.gz pbsv_bnds.vcf.gz sniffles_bnds.vcf.gz pbsv_others.vcf.gz sniffles_others.vcf.gz pav_others.vcf.gz
         tabix -f tmp.vcf.gz
         
@@ -119,6 +125,7 @@ task BcftoolsMergeIntrasampleBNDImpl {
         bcftools norm --multiallelics - --output-type z tmp.vcf.gz > ~{sample_id}.bcftools_merged.vcf.gz
         tabix -f ~{sample_id}.bcftools_merged.vcf.gz
         rm -f tmp.vcf.gz*
+        N_BNDS_FINAL=$(bcftools view --no-header ~{sample_id}.bcftools_merged.vcf.gz | wc -l)
     >>>
     
     output {

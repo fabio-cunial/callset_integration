@@ -49,6 +49,7 @@ public class SV2BND {
         str=br.readLine();
         while (str!=null) {
             if (str.charAt(0)==VCFconstants.COMMENT) {
+                if (str.substring(0,6).equals("#CHROM")) bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
                 bw.write(str); bw.newLine();
                 str=br.readLine();
                 continue;
@@ -187,7 +188,7 @@ public class SV2BND {
                 for (i=1; i<tokensPrime.length; i++) bw.write("\t"+tokensPrime[i]);
                 bw.newLine();
             }
-            else if (row==3) {  // INS
+            else if (row==3 && tokens[4].charAt(0)!='<' && tokens[4].length()-1>=MIN_SV_LENGTH) {  // INS
                 // Adjacency 1
                 tokensPrime[0]=tokens[0];
                 tokensPrime[1]=tokens[1];
