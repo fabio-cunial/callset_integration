@@ -9,6 +9,7 @@ workflow BcftoolsMergeIntersample {
         Array[File] vcf_gz
         Array[File] vcf_tbi
         File reference_fa
+        Int mem_gb
     }
     parameter_meta {
     }
@@ -17,7 +18,8 @@ workflow BcftoolsMergeIntersample {
         input:
             vcf_gz = vcf_gz,
             vcf_tbi = vcf_tbi,
-            reference_fa = reference_fa
+            reference_fa = reference_fa,
+            mem_gb = mem_gb
     }
     
     output {
@@ -33,12 +35,12 @@ task BcftoolsMergeIntersampleImpl {
         Array[File] vcf_gz
         Array[File] vcf_tbi
         File reference_fa
+        Int mem_gb
     }
     parameter_meta {
     }
     
     Int disk_size_gb = 10*ceil(size(vcf_gz,"GB")) + 50
-    Int mem_gb = 64
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
