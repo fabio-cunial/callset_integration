@@ -1,6 +1,6 @@
 version: 1.2
 workflows:
-- name: HGSVC2Align
+- name: HGSVC2Align2
   subclass: wdl
   publish: True
   primaryDescriptorPath: /wdl/HGSVC2Align.wdl
@@ -204,4 +204,9 @@ workflows:
   subclass: wdl
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeIntrasampleBND.wdl
+  testParameterFiles:
+- name: BcftoolsMergeIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeIntersample.wdl
   testParameterFiles:
