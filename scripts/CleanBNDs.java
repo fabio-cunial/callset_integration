@@ -32,21 +32,25 @@ public class CleanBNDs {
     
     /**
      * @param args 
-     * 1=directory that contains one $Z.fa$ file for every chromosome $Z$. These
-     * files can be created from a single reference file by doing e.g.: 
+     * 1: Directory that contains one $Z.fa$ file for every chromosome $Z$.
+     *    These files can be created from a single reference file by doing e.g.: 
      *
-     * cat ref.fasta | awk '{ if (substr($0,1,1)==">") { filename=(substr($1,2) ".fa") } print $0 >> filename; close(filename) }'
+     *    cat ref.fasta | awk '{ if (substr($0,1,1)==">") { filename=(substr($1,2) ".fa") } print $0 >> filename; close(filename) }'
      *
-     * The directory is also assumed to contain a file $index.fai$.
+     *    The directory is also assumed to contain a file $index.fai$.
+     * 2: A string of colon-separated, constant INFO fields to be added to
+     *    every record.
      */
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
         CHROMOSOMES_DIR=args[1];
-        final String OUTPUT_VCF = args[2];
+        final String CONSTANT_FEATURES=args[2];  // null = do not add any constant feature
+        final String OUTPUT_VCF = args[3];
         
         final char COMMENT = '#';
         final String MATEID_STR = "MATEID";
         final String NEW_MATE_PREFIX = "mate_of_";
+        final boolean ADD_CONSTANT_FEATURES = !CONSTANT_FEATURES.equalsIgnoreCase("null");
         boolean isSingle, hasMate;
         int pos, pos2, length, nCalls;
         String chromosome, chromosome2, id, ref, alt, qual, filter, info, format, gt;
@@ -101,7 +105,20 @@ public class CleanBNDs {
             bw.write(chromosome); bw.write("\t"+pos); bw.write("\t"+id); bw.write("\t"+ref); bw.write("\t"+alt); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\t"+info); bw.write("\t"+format); bw.write("\t"+gt); bw.newLine();
             
             // Writing the new mate record, if any.
-            if (!isSingle && !hasMate) { bw.write(chromosome2); bw.write("\t"+pos2); bw.write("\t"+NEW_MATE_PREFIX+id); bw.write("\t"+getChar(chromosome2,pos2-1/*zero-based*/)); bw.write("\t"+getMateAlt(alt,chromosome,pos,getChar(chromosome2,pos2-1/*zero-based*/))); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\tSVTYPE=BND;"+MATEID_STR+"="+id); bw.write("\t"+format); bw.write("\t"+gt); bw.newLine(); }
+            if (!isSingle && !hasMate) { 
+                bw.write(chromosome2); 
+                bw.write("\t"+pos2); 
+                bw.write("\t"+NEW_MATE_PREFIX+id); 
+                bw.write("\t"+getChar(chromosome2,pos2-1/*zero-based*/)); 
+                bw.write("\t"+getMateAlt(alt,chromosome,pos,getChar(chromosome2,pos2-1/*zero-based*/))); 
+                bw.write("\t"+qual); 
+                bw.write("\t"+filter); 
+                bw.write("\tSVTYPE=BND;"+MATEID_STR+"="+id);
+                if (ADD_CONSTANT_FEATURES) bw.write(";"+CONSTANT_FEATURES);
+                bw.write("\t"+format); 
+                bw.write("\t"+gt); 
+                bw.newLine(); 
+            }
             
             // Next record
             str=br.readLine();

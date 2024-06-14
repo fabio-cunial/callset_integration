@@ -17,19 +17,23 @@ public class SV2BND {
     /**
      * @param args
      * 1: only calls this length or longer are used;
-     * 2: converts and INS into a single breakend with this number of bases.
+     * 2: a string of colon-separated, constant INFO fields to be added to
+     *    every record;
+     * 3: converts and INS into a single breakend with this number of bases.
      */
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
         CHROMOSOMES_DIR=args[1];
-        final int MIN_SV_LENGTH = Integer.parseInt(args[2]);
-        final int SINGLE_BREAKEND_LENGTH = Integer.parseInt(args[3]);
-        final String OUTPUT_VCF = args[4];
+        final String CONSTANT_FEATURES=args[2];  // null = do not add any constant feature
+        final int MIN_SV_LENGTH = Integer.parseInt(args[3]);
+        final int SINGLE_BREAKEND_LENGTH = Integer.parseInt(args[4]);
+        final String OUTPUT_VCF = args[5];
         
         final char COMMENT = '#';
         final String MATEID_STR = "MATEID";
         final String NEW_MATE_PREFIX = "mate_of_";
         final String SECOND_ADJACENCY_SUFFIX = "_prime";
+        final boolean ADD_CONSTANT_FEATURES = !CONSTANT_FEATURES.equalsIgnoreCase("null");
         
         int i;
         int pos, length, row;
@@ -80,6 +84,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+NEW_MATE_PREFIX+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -94,6 +99,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -110,6 +116,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+NEW_MATE_PREFIX+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -124,6 +131,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -138,6 +146,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+NEW_MATE_PREFIX+tokens[2]+SECOND_ADJACENCY_SUFFIX;
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -152,6 +161,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+tokens[2]+SECOND_ADJACENCY_SUFFIX;
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -168,6 +178,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+NEW_MATE_PREFIX+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -182,6 +193,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;"+MATEID_STR+"="+tokens[2];
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -198,6 +210,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;";
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);
@@ -212,6 +225,7 @@ public class SV2BND {
                 tokensPrime[5]=tokens[5];
                 tokensPrime[6]=tokens[6];
                 tokensPrime[7]="SVTYPE=BND;";
+                if (ADD_CONSTANT_FEATURES) tokensPrime[7]+=";"+CONSTANT_FEATURES;
                 tokensPrime[8]=tokens[8];
                 tokensPrime[9]=tokens[9];
                 bw.write(tokensPrime[0]);

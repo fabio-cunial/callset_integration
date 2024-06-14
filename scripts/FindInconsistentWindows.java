@@ -104,7 +104,10 @@ public class FindInconsistentWindows {
                 else {
                     buildGraph(intervals,currentFirst,i-1);
                     if (isBipartite()) bwBipartite.write(((i-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((i-4)>>2)+"\n");
-                    else bwNotBipartite.write(((i-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((i-4)>>2)+"\n");
+                    else {
+                        bwNotBipartite.write(((i-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((i-4)>>2)+"\n");
+                        //printGraph();
+                    }
                 }
                 // Next window
                 currentChromosome=chr;
@@ -118,7 +121,10 @@ public class FindInconsistentWindows {
         else {
             buildGraph(intervals,currentFirst,lastInterval);
             if (isBipartite()) bwBipartite.write(((lastInterval+1-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((lastInterval-3)>>2)+"\n");
-            else bwNotBipartite.write(((lastInterval+1-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((lastInterval-3)>>2)+"\n");
+            else {
+                bwNotBipartite.write(((lastInterval+1-currentFirst)>>2)+","+nNodes+","+(currentFirst>>2)+","+((lastInterval-3)>>2)+"\n");
+                //printGraph();
+            }
         }
         bwBipartite.close(); bwNotBipartite.close();
     }
@@ -182,7 +188,7 @@ public class FindInconsistentWindows {
             addNeighbor(idI,idI+1);
             addNeighbor(idI+1,idI);
         }
-        
+      
         // Adding non-self edges, if any.
         for (i=first; i<last; i+=4) {
             if (intervals[i+3]<=0) continue;
@@ -239,6 +245,22 @@ public class FindInconsistentWindows {
             neighbors[idI]=newArray;
         }
         neighbors[idI][lastNeighbor[idI]]=idJ;
+    }
+    
+    
+    private static final void printGraph() {
+        int i, j;
+        int neighbor;
+        
+        System.out.println("nNodes="+nNodes);
+        System.out.println("graph G {");
+        for (i=0; i<nNodes; i++) {
+            for (j=0; j<=lastNeighbor[i]; j++) {
+                neighbor=neighbors[i][j];
+                if (neighbor>i) System.out.println(i+" -- "+neighbor+";");
+            }
+        }
+        System.out.println("}");
     }
     
     
