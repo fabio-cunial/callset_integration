@@ -15,7 +15,14 @@ public class FindInconsistentWindows {
     
     
     /**
-     * @param args 0 the VCF is assumed to be sorted.
+     * @param args
+     * 0: input VCF, assumed to be sorted; GTs that contain a single '.' are
+     *    assumed to be equal to './.';
+     * 1: for each VCF record: chrID, first, last, nCopies (from GT; -1 if GT 
+     *    contains a '.');
+     * 2,3: for each window:
+     * nRecords, nNodesInOverlapGraph, firstRecord (0-based), 
+     * lastRecord (0-based, included).
      */
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
@@ -32,7 +39,8 @@ public class FindInconsistentWindows {
         int[] intervals;
         String[] tokens;
         
-        // Loading all intervals, assuming that the VCF is sorted.
+        // Loading all intervals (including intervals with no occurrence),
+        // assuming that the VCF is sorted.
         intervals = new int[4000];  // Arbitrary, multiple of 4.
         lastInterval=-1;
         br = new BufferedReader(new FileReader(INPUT_VCF));
@@ -67,7 +75,7 @@ public class FindInconsistentWindows {
             intervals[++lastInterval]=VCFconstants.string2contig(tokens[0]);
             intervals[++lastInterval]=pos+1;  // One-based
             intervals[++lastInterval]=end;
-            intervals[++lastInterval]=(tokens[9].charAt(0)=='1'?1:0)+(tokens[9].charAt(2)=='1'?1:0);
+            intervals[++lastInterval]=(tokens[9].charAt(0)=='.'||tokens[9].charAt(2)=='.')?-1:(tokens[9].charAt(0)=='1'?1:0)+(tokens[9].charAt(2)=='1'?1:0);
             str=br.readLine();
         }
         br.close();
@@ -79,7 +87,8 @@ public class FindInconsistentWindows {
         for (i=0; i<lastInterval; i+=4) bwIntervals.write(intervals[i]+","+intervals[i+1]+","+intervals[i+2]+","+intervals[i+3]+"\n");
         bwIntervals.close();
         
-        // Finding windows of overlapping intervals
+        // Finding windows of overlapping intervals (including intervals with 
+        // no occurrence).
         bwBipartite = new BufferedWriter(new FileWriter(OUTPUT_BIPARTITE));
         bwNotBipartite = new BufferedWriter(new FileWriter(OUTPUT_NOT_BIPARTITE));
         currentChromosome=intervals[0];
@@ -135,25 +144,25 @@ public class FindInconsistentWindows {
     
     
     /**
-     * Builds the overlap graph of $intervals[first..last]$, which contains a 
-     * vertex for each instance of a call that appears in its GT, and an edge 
-     * between two nodes iff the corresponding intervals intersect.
+     * Builds the overlap graph of $intervals[first..last]$, which contains 
+     * zero, one, or two nodes per VCF record, depending on its GT, and which
+     * contains an edge between two nodes iff the corresponding intervals
+     * intersect.
      */
     private static final void buildGraph(int[] intervals, int first, int last) throws IOException {
         final int CAPACITY = 10;  // Arbitrary
         int i, j;
-        int idI, idJ, startI, startJ, endI, endJ;        
+        int idI, idJ, startI, startJ, endI, endJ;     
         
         // Allocating memory
         if (interval2id==null || interval2id.length<(last-first+1)>>2) interval2id = new int[(last-first+1)>>2];
         nNodes=0;
         for (i=first; i<=last; i+=4) {
             interval2id[(i-first)>>2]=nNodes;
-            nNodes+=intervals[i+3];
+            if (intervals[i+3]>0) nNodes+=intervals[i+3];
         }
         if (lastNeighbor==null) {
             lastNeighbor = new int[nNodes];
-            for (i=0; i<nNodes; i++) lastNeighbor[i]=-1;
             neighbors = new int[nNodes][CAPACITY];
         }
         else if (lastNeighbor.length<nNodes) {
@@ -164,6 +173,7 @@ public class FindInconsistentWindows {
             for (i=neighbors.length; i<nNodes; i++) newArray[i] = new int[CAPACITY];
             neighbors=newArray;
         }
+        for (i=0; i<nNodes; i++) lastNeighbor[i]=-1;
         
         // Adding self-edges, if any.
         for (i=first; i<last; i+=4) {
@@ -175,11 +185,11 @@ public class FindInconsistentWindows {
         
         // Adding non-self edges, if any.
         for (i=first; i<last; i+=4) {
-            if (intervals[i+3]==0) continue;
+            if (intervals[i+3]<=0) continue;
             idI=interval2id[(i-first)>>2];
             startI=intervals[i+1]; endI=intervals[i+2];
             for (j=i+4; j<last; j+=4) {
-                if (intervals[j+3]==0) continue;
+                if (intervals[j+3]<=0) continue;
                 startJ=intervals[j+1]; endJ=intervals[j+2];
                 idJ=interval2id[(j-first)>>2];
                 if (startJ>endI) break;
@@ -214,7 +224,7 @@ public class FindInconsistentWindows {
             Arrays.sort(neighbors[i],0,lastNeighbor[i]+1);
             nEdges+=lastNeighbor[i]+1;
         }
-        nEdges>>=1;
+        nEdges>>=1;  
     }
     
     

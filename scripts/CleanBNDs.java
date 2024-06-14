@@ -7,6 +7,15 @@ import java.io.*;
  * - Ensures that REF and ALT use the same first character, and that such a
  *   character is the same as in the ref.
  * - Ensures that every non-single BND has a mate.
+
+
+------> sniffles emits records like:
+chr1    101952978       Sniffles2.BND.380ES0    A       ACNNNNNNNNNNNNNNN       60      PASS    PRECISE;SVTYPE=BND;SUPPORT=3;COVERAGE=6,4,8,8,9;
+chr1    127710152       Sniffles2.BND.382DS0    A       ACNNNNNNNNNNNNNNN       60      GT      PRECISE;SVTYPE=BND;SUPPORT=2;COVERAGE=10,10,12,12,12;STRAND=+-;AF=0.182;CHR2=chr10;STDEV_POS=11.314 GT:GQ:DR:DV     0/0:5:9:2
+chr1    128167870       Sniffles2.BND.382FS0    G       GCNNNNNNNNNNNNNN        56      PASS    PRECISE;SVTYPE=BND;SUPPORT=4;COVERAGE=4,4,8,8,8;STRAND=+-;AF=0.571;CHR2=chr22;STDEV_POS=0   GT:GQ:DR:DV     0/1:18:3:4
+
+clean these as well!!!!!!!!!!! maybe just remove them.
+
  */
 public class CleanBNDs {
     /**
