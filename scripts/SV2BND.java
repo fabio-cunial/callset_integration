@@ -25,9 +25,10 @@ public class SV2BND {
         final String INPUT_VCF = args[0];
         CHROMOSOMES_DIR=args[1];
         final String CONSTANT_FEATURES=args[2];  // null = do not add any constant feature
-        final int MIN_SV_LENGTH = Integer.parseInt(args[3]);
-        final int SINGLE_BREAKEND_LENGTH = Integer.parseInt(args[4]);
-        final String OUTPUT_VCF = args[5];
+        final String CONSTANT_FEATURES_FILE=args[3];
+        final int MIN_SV_LENGTH = Integer.parseInt(args[4]);
+        final int SINGLE_BREAKEND_LENGTH = Integer.parseInt(args[5]);
+        final String OUTPUT_VCF = args[6];
         
         final char COMMENT = '#';
         final String MATEID_STR = "MATEID";
@@ -37,7 +38,7 @@ public class SV2BND {
         
         int i;
         int pos, length, row;
-        String str, tmpString, chromosome;
+        String str, tmpString, chromosome, header;
         BufferedReader br;
         BufferedWriter bw;
         String[] tokens, tokensPrime;
@@ -46,6 +47,19 @@ public class SV2BND {
             System.err.println("Inconsistent input: "+MIN_SV_LENGTH+"<"+(2*SINGLE_BREAKEND_LENGTH));
             System.exit(1);
         }
+        
+        // Loading headers, if any.
+        header="";
+        if (ADD_CONSTANT_FEATURES) {
+            br = new BufferedReader(new FileReader(CONSTANT_FEATURES_FILE));
+            str=br.readLine();
+            while (str!=null) {
+                header+=str+"\n";
+                str=br.readLine();
+            }
+            br.close();
+        }
+        
         currentChromosome=""; sb = new StringBuilder();
         tokensPrime = new String[10];
         br = new BufferedReader(new FileReader(INPUT_VCF));
@@ -53,7 +67,10 @@ public class SV2BND {
         str=br.readLine();
         while (str!=null) {
             if (str.charAt(0)==VCFconstants.COMMENT) {
-                if (str.substring(0,6).equals("#CHROM")) bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
+                if (str.substring(0,6).equals("#CHROM")) {
+                    bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
+                    if (ADD_CONSTANT_FEATURES) bw.write(header);
+                }
                 bw.write(str); bw.newLine();
                 str=br.readLine();
                 continue;

@@ -45,7 +45,8 @@ public class CleanBNDs {
         final String INPUT_VCF = args[0];
         CHROMOSOMES_DIR=args[1];
         final String CONSTANT_FEATURES=args[2];  // null = do not add any constant feature
-        final String OUTPUT_VCF = args[3];
+        final String CONSTANT_FEATURES_FILE=args[3];
+        final String OUTPUT_VCF = args[4];
         
         final char COMMENT = '#';
         final String MATEID_STR = "MATEID";
@@ -54,12 +55,24 @@ public class CleanBNDs {
         boolean isSingle, hasMate;
         int pos, pos2, length, nCalls;
         String chromosome, chromosome2, id, ref, alt, qual, filter, info, format, gt;
-        String str;
+        String str, header;
         BufferedReader br;
         BufferedWriter bw;
         String[] tokens;
         
         loadChromosomeLengths(CHROMOSOMES_DIR+"/index.fai");
+        
+        // Loading headers, if any.
+        header="";
+        if (ADD_CONSTANT_FEATURES) {
+            br = new BufferedReader(new FileReader(CONSTANT_FEATURES_FILE));
+            str=br.readLine();
+            while (str!=null) {
+                header+=str+"\n";
+                str=br.readLine();
+            }
+            br.close();
+        }
         
         // Fixing the VCF
         nCalls=0; currentChromosome=""; sb = new StringBuilder();
@@ -68,7 +81,10 @@ public class CleanBNDs {
         str=br.readLine();
         while (str!=null) {
             if (str.charAt(0)==COMMENT) {
-                if (str.substring(0,6).equals("#CHROM")) bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
+                if (str.substring(0,6).equals("#CHROM")) {
+                    bw.write("##INFO=<ID=MATEID,Number=A,Type=String,Description=\"ID of mate breakends\">\n");
+                    if (ADD_CONSTANT_FEATURES) bw.write(header);
+                }
                 bw.write(str); bw.newLine();
                 str=br.readLine();
                 continue;
@@ -102,7 +118,17 @@ public class CleanBNDs {
             if (alt.charAt(0)=='N' || alt.charAt(0)=='n') alt=getChar(chromosome,pos-1/*zero-based*/)+alt.substring(1);
             if (alt.charAt(length-1)=='N' || alt.charAt(length-1)=='n') alt=alt.substring(0,length-1)+getChar(chromosome,pos-1/*zero-based*/);
             if (!isSingle && !hasMate) info+=";"+MATEID_STR+"="+NEW_MATE_PREFIX+id;
-            bw.write(chromosome); bw.write("\t"+pos); bw.write("\t"+id); bw.write("\t"+ref); bw.write("\t"+alt); bw.write("\t"+qual); bw.write("\t"+filter); bw.write("\t"+info); bw.write("\t"+format); bw.write("\t"+gt); bw.newLine();
+            bw.write(chromosome); 
+            bw.write("\t"+pos); 
+            bw.write("\t"+id); 
+            bw.write("\t"+ref); 
+            bw.write("\t"+alt); 
+            bw.write("\t"+qual); 
+            bw.write("\t"+filter); 
+            bw.write("\t"+info); 
+            if (ADD_CONSTANT_FEATURES) bw.write(";"+CONSTANT_FEATURES);
+            bw.write("\t"+format); 
+            bw.write("\t"+gt); bw.newLine();
             
             // Writing the new mate record, if any.
             if (!isSingle && !hasMate) { 

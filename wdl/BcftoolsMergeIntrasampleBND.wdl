@@ -15,6 +15,7 @@ workflow BcftoolsMergeIntrasampleBND {
         Int min_sv_length = 10000
         Int single_breakend_length = 1000
         String constant_features = "null"
+        File constant_features_file
     }
     parameter_meta {
     }
@@ -30,7 +31,8 @@ workflow BcftoolsMergeIntrasampleBND {
             pav_vcf_gz_tbi = pav_vcf_gz_tbi,
             min_sv_length = min_sv_length,
             single_breakend_length = single_breakend_length,
-            constant_features = constant_features
+            constant_features = constant_features,
+            constant_features_file = constant_features_file
     }
     
     output {
@@ -54,6 +56,7 @@ task BcftoolsMergeIntrasampleBNDImpl {
         Int min_sv_length
         Int single_breakend_length
         String constant_features
+        File constant_features_file
     }
     parameter_meta {
     }
@@ -91,25 +94,25 @@ task BcftoolsMergeIntrasampleBNDImpl {
         
         # Harvesting the original BNDs from sniffles and pbsv
         bcftools filter --include 'SVTYPE="BND"' --output-type v pbsv_1.vcf.gz > pbsv_2.vcf
-        java -cp ~{docker_dir} CleanBNDs pbsv_2.vcf . ~{constant_features} pbsv_bnds.vcf
+        java -cp ~{docker_dir} CleanBNDs pbsv_2.vcf . "~{constant_features}" ~{constant_features_file} pbsv_bnds.vcf
         bcftools sort --output-type z pbsv_bnds.vcf > pbsv_bnds.vcf.gz
         tabix -f pbsv_bnds.vcf.gz
         bcftools filter --include 'SVTYPE="BND"' --output-type v sniffles_1.vcf.gz > sniffles_2.vcf
-        java -cp ~{docker_dir} CleanBNDs sniffles_2.vcf . ~{constant_features} sniffles_bnds.vcf
+        java -cp ~{docker_dir} CleanBNDs sniffles_2.vcf . "~{constant_features}" ~{constant_features_file} sniffles_bnds.vcf
         bcftools sort --output-type z sniffles_bnds.vcf > sniffles_bnds.vcf.gz
         tabix -f sniffles_bnds.vcf.gz
         rm -f *_2.vcf
         
         # Creating new BNDs from the large calls of every caller
         bcftools filter --include 'SVTYPE!="BND"' --output-type v pbsv_1.vcf.gz > pbsv_2.vcf
-        java -cp ~{docker_dir} SV2BND pbsv_2.vcf . ~{constant_features} ~{min_sv_length} ~{single_breakend_length} pbsv_others.vcf
+        java -cp ~{docker_dir} SV2BND pbsv_2.vcf . "~{constant_features}" ~{constant_features_file} ~{min_sv_length} ~{single_breakend_length} pbsv_others.vcf
         bcftools sort --output-type z pbsv_others.vcf > pbsv_others.vcf.gz
         tabix -f pbsv_others.vcf.gz
         bcftools filter --include 'SVTYPE!="BND"' --output-type v sniffles_1.vcf.gz > sniffles_2.vcf
-        java -cp ~{docker_dir} SV2BND sniffles_2.vcf . ~{constant_features} ~{min_sv_length} ~{single_breakend_length} sniffles_others.vcf
+        java -cp ~{docker_dir} SV2BND sniffles_2.vcf . "~{constant_features}" ~{constant_features_file} ~{min_sv_length} ~{single_breakend_length} sniffles_others.vcf
         bcftools sort --output-type z sniffles_others.vcf > sniffles_others.vcf.gz
         tabix -f sniffles_others.vcf.gz
-        java -cp ~{docker_dir} SV2BND pav_1.vcf . ~{constant_features} ~{min_sv_length} ~{single_breakend_length} pav_others.vcf
+        java -cp ~{docker_dir} SV2BND pav_1.vcf . "~{constant_features}" ~{constant_features_file} ~{min_sv_length} ~{single_breakend_length} pav_others.vcf
         bcftools sort --output-type z pav_others.vcf > pav_others.vcf.gz
         tabix -f pav_others.vcf.gz
         rm -f *_2.vcf
