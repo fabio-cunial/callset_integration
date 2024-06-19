@@ -7,15 +7,8 @@ import java.io.*;
  * - Ensures that REF and ALT use the same first character, and that such a
  *   character is the same as in the ref.
  * - Ensures that every non-single BND has a mate.
-
-
-------> sniffles emits records like:
-chr1    101952978       Sniffles2.BND.380ES0    A       ACNNNNNNNNNNNNNNN       60      PASS    PRECISE;SVTYPE=BND;SUPPORT=3;COVERAGE=6,4,8,8,9;
-chr1    127710152       Sniffles2.BND.382DS0    A       ACNNNNNNNNNNNNNNN       60      GT      PRECISE;SVTYPE=BND;SUPPORT=2;COVERAGE=10,10,12,12,12;STRAND=+-;AF=0.182;CHR2=chr10;STDEV_POS=11.314 GT:GQ:DR:DV     0/0:5:9:2
-chr1    128167870       Sniffles2.BND.382FS0    G       GCNNNNNNNNNNNNNN        56      PASS    PRECISE;SVTYPE=BND;SUPPORT=4;COVERAGE=4,4,8,8,8;STRAND=+-;AF=0.571;CHR2=chr22;STDEV_POS=0   GT:GQ:DR:DV     0/1:18:3:4
-
-clean these as well!!!!!!!!!!! maybe just remove them.
-
+ * - Discards breakends that do not conform to the VCF spec (e.g. sniffles can
+ *   output ACNNNNNNNNNNNNNNN in the ALT of a BND).
  */
 public class CleanBNDs {
     /**
@@ -29,9 +22,12 @@ public class CleanBNDs {
     private static int[] chromosomeLengths;
     private static int nChromosomes;
     
+    private static char MISSING_CHAR = '.';
+    
     
     /**
      * @param args 
+     * 0: the VCF is assumed to contain only BNDs;
      * 1: Directory that contains one $Z.fa$ file for every chromosome $Z$.
      *    These files can be created from a single reference file by doing e.g.: 
      *
@@ -99,7 +95,12 @@ public class CleanBNDs {
                 continue;
             }
             id=tokens[2]; ref=tokens[3]; alt=tokens[4]; qual=tokens[5]; filter=tokens[6]; info=tokens[7]; format=tokens[8]; gt=tokens[9];
-            isSingle=alt.charAt(0)=='.'||alt.charAt(alt.length()-1)=='.';
+            if (!isValidAlt(alt)) {
+                // Invalid BND format
+                str=br.readLine();
+                continue;
+            }
+            isSingle=alt.charAt(0)==MISSING_CHAR||alt.charAt(alt.length()-1)==MISSING_CHAR;
             hasMate=info.indexOf(MATEID_STR)>=0;
             if (!isSingle) {
                 chromosome2=alt2chromosome(alt);
@@ -184,6 +185,25 @@ public class CleanBNDs {
             if (chromosomeIDs[i].equalsIgnoreCase(chr)) return chromosomeLengths[i];
         }
         return 0;
+    }
+    
+    
+    private static final boolean isValidAlt(String alt) {
+        boolean isSingle, isNonsingle;
+        char a, b;
+        int p;
+        
+        a=alt.charAt(0);
+        b=alt.charAt(alt.length()-1);
+        isSingle=(a==MISSING_CHAR&&b!=MISSING_CHAR)||(a!=MISSING_CHAR&&b==MISSING_CHAR);
+        p=alt.indexOf('[');
+        if (p>=0) isNonsingle=alt.indexOf('[',p+1)>=0;
+        else {
+            p=alt.indexOf(']');
+            if (p>=0) isNonsingle=alt.indexOf(']',p+1)>=0;
+            else isNonsingle=false;
+        }
+        return (isSingle&&!isNonsingle)||(!isSingle&&isNonsingle);
     }
     
     

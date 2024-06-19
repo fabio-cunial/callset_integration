@@ -1,9 +1,10 @@
 version 1.0
 
 
-# 
+# Copies some FORMAT fields of one VCF to corresponding INFO fields of another
+# VCF.
 #
-workflow TransferAnnotations {
+workflow TransferFormat {
     input {
         File from_vcf_gz
         File from_vcf_gz_tbi
@@ -15,7 +16,7 @@ workflow TransferAnnotations {
         annotations_map: "Format: FROM,TO"
     }
 
-    call TransferAnnotationsImpl {
+    call TransferFormatImpl {
         input:
             from_vcf_gz = from_vcf_gz,
             from_vcf_gz_tbi = from_vcf_gz_tbi,
@@ -25,13 +26,13 @@ workflow TransferAnnotations {
     }
     
     output {
-        File out_vcf = TransferAnnotationsImpl.out_vcf
-        File out_tbi = TransferAnnotationsImpl.out_tbi
+        File out_vcf = TransferFormatImpl.out_vcf
+        File out_tbi = TransferFormatImpl.out_tbi
     }
 }
 
 
-task TransferAnnotationsImpl {
+task TransferFormatImpl {
     input {
         File from_vcf_gz
         File from_vcf_gz_tbi
@@ -57,8 +58,8 @@ task TransferAnnotationsImpl {
         while read ROW; do
             ANNOTATION_FROM=${ROW%,*}
             ANNOTATION_TO=${ROW#*,}
-            bcftools view --header-only ~{from_vcf_gz} | grep ${ANNOTATION_FROM} | sed -e "s/${ANNOTATION_FROM}/${ANNOTATION_TO}/g" >> header.txt
-            FORMAT="${FORMAT}\t%INFO/${ANNOTATION_FROM}"
+            bcftools view --header-only ~{from_vcf_gz} | grep ${ANNOTATION_FROM} | sed -e "s/##FORMAT=<ID=${ANNOTATION_FROM}/##INFO=<ID=${ANNOTATION_TO}/g" >> header.txt
+            FORMAT="${FORMAT}\t[%${ANNOTATION_FROM}]"
             COLUMNS="${COLUMNS},INFO/${ANNOTATION_TO}"
         done < ~{annotations_map}
         bcftools query ~{from_vcf_gz} --format ${FORMAT} | bgzip -c > annotations.tsv.gz

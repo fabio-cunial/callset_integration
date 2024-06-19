@@ -18,6 +18,7 @@ workflow BcftoolsMergeIntrasampleBND {
         File constant_features_file
     }
     parameter_meta {
+        constant_features_file: "Must always be provided. Can be an empty file."
     }
     
     call BcftoolsMergeIntrasampleBNDImpl {

@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l TransferFormat.wdl
 java -jar ${WOMTOOL_PATH} validate -l TransferAnnotations.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeIntersample.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeIntrasampleBND.wdl

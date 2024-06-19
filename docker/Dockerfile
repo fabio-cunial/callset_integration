@@ -199,6 +199,14 @@ RUN wget https://github.com/lh3/minimap2/releases/download/v${minimap2_version}/
     && mv ./minimap2-${minimap2_version}_x64-linux/ ./minimap2/ \
     && ./minimap2/minimap2 -h && echo 0 || echo 1
 
+# SEQKIT
+ARG seqkit_version=2.8.2
+RUN wget https://github.com/shenwei356/seqkit/releases/download/v2.8.2/seqkit_linux_amd64.tar.gz \
+    && tar -xzvf seqkit_linux_amd64.tar.gz \
+    && rm -f seqkit_linux_amd64.tar.gz \
+    && chmod +x seqkit \
+    && ./seqkit --help
+
 # AD HOC SCRIPTS
 COPY *.java .
 RUN javac *.java

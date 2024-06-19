@@ -3,7 +3,7 @@ import java.io.*;
 
 
 /**
- * 
+ * Transforms large calls into BNDs.
  */
 public class SV2BND {
     /**
@@ -16,16 +16,18 @@ public class SV2BND {
     
     /**
      * @param args
-     * 1: only calls this length or longer are used;
+     * 0: the VCF is assumed to contain no BND;
      * 2: a string of colon-separated, constant INFO fields to be added to
-     *    every record;
-     * 3: converts and INS into a single breakend with this number of bases.
+     *    every record (null = do not add any constant feature);
+     * 4: only calls this length or longer are used; every other call is kept
+     *    intact and printed to the output;
+     * 5: converts an INS into a single breakend with this number of bases.
      */
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
         CHROMOSOMES_DIR=args[1];
-        final String CONSTANT_FEATURES=args[2];  // null = do not add any constant feature
-        final String CONSTANT_FEATURES_FILE=args[3];
+        final String CONSTANT_FEATURES=args[2];
+        final String CONSTANT_FEATURES_HEADERS=args[3];
         final int MIN_SV_LENGTH = Integer.parseInt(args[4]);
         final int SINGLE_BREAKEND_LENGTH = Integer.parseInt(args[5]);
         final String OUTPUT_VCF = args[6];
@@ -51,7 +53,7 @@ public class SV2BND {
         // Loading headers, if any.
         header="";
         if (ADD_CONSTANT_FEATURES) {
-            br = new BufferedReader(new FileReader(CONSTANT_FEATURES_FILE));
+            br = new BufferedReader(new FileReader(CONSTANT_FEATURES_HEADERS));
             str=br.readLine();
             while (str!=null) {
                 header+=str+"\n";
@@ -78,6 +80,7 @@ public class SV2BND {
             tokens=str.split("\t");
             row=svType2Row(VCFconstants.getField(tokens[7],VCFconstants.SVTYPE_STR));
             if (row==-1) {
+                bw.write(str); bw.newLine();
 				str=br.readLine();
 				continue;
             }
@@ -86,6 +89,7 @@ public class SV2BND {
             if (tmpString!=null) length=Integer.parseInt(tmpString);
             else length=Math.max(tokens[3].length(),tokens[4].length())-1;
             if (length<MIN_SV_LENGTH) {
+                bw.write(str); bw.newLine();
 				str=br.readLine();
 				continue;
             }
@@ -249,6 +253,9 @@ public class SV2BND {
                 for (i=1; i<tokensPrime.length; i++) bw.write("\t"+tokensPrime[i]);
                 bw.newLine();
             }
+            else {
+                bw.write(str); bw.newLine();
+            }
             str=br.readLine();
         }
         br.close(); bw.close();
@@ -281,6 +288,9 @@ public class SV2BND {
     }
     
     
+    /**
+     * @return >=0 iff it is a type that should be used for creating BNDs.
+     */
 	private static final int svType2Row(String type) {
 		if (type==null || type.length()==0) return -1;
 		if ( type.equalsIgnoreCase(VCFconstants.DEL_STR) || 
