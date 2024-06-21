@@ -210,3 +210,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeIntersample.wdl
   testParameterFiles:
+- name: Subsample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/Subsample.wdl
+  testParameterFiles:

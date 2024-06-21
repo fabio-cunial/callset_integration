@@ -63,13 +63,8 @@ public class UnflattenFastq {
         System.err.println("Done");
         
         // Outputting the last line of every coverage (one-based).
-        if (lastLine[0]!=-1) {
-            for (i=0; i<nCoverages; i++) {
-                if (lastLine[i]==-1) break;
-                System.out.println(coverages[i]+","+lastLine[i]);
-            }
-            System.out.println();
-        }
+        for (i=0; i<nCoverages; i++) System.out.println(coverages[i]+","+(lastLine[i]!=-1?lastLine[i]:(nReads*4)));
+        System.out.println();
 	}
 
 }

@@ -207,6 +207,9 @@ RUN wget https://github.com/shenwei356/seqkit/releases/download/v2.8.2/seqkit_li
     && chmod +x seqkit \
     && ./seqkit --help
 
+# PIGZ
+RUN apt-get install -y --no-install-recommends pigz
+
 # AD HOC SCRIPTS
 COPY *.java .
 RUN javac *.java

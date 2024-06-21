@@ -5,19 +5,40 @@ version 1.0
 # which the BAMs are downloaded, and the order of the reads in the
 # concatenation of all downloaded BAMs.
 #
+# Remark: the output FASTQ file for coverage $i+1$ is a superset of the output
+# FASTQ file for coverage $i$.
+#
+# Performance on HPRC's HG002. Requested coverages: 8,16,32.
+# 16 physical cores, 128 GB RAM, 2 TB HDD. 
+# Total time: 3h 30m
+# Total cost: ????
+#
+# STEP                  TIME            CPU            RAM
+# samtools fastq         1 m            250 %         16 MB
+# seqkit stats          13 s            100 %         20 MB
+# seqkit scat           40 m            150 %          4 GB
+# split                 25 m             10 %          2 MB
+# FlattenFastq           9 m             10 %          4 GB
+# terashuf              27 m             23 %        116 GB
+# UnflattenFastq        30 m             30 %          4 GB
+# pigz                  11 m            250 %         15 MB
+#
 workflow Subsample {
     input {
         String sample_id
         Array[String] bam_addresses
         String coverages
         String remote_dir
+        String billing_project = "broad-firecloud-dsde-methods"
         Int haploid_genome_length_gb = 3
-        Int n_cores = 32
+        Int n_cores = 16
         Int mem_gb = 128
-        Int disk_size_gb = 2048
+        Int disk_size_gb = 500
     }
     parameter_meta {
+        coverages: "Comma-separated. Example: 8,16,32"
         remote_dir: "Output directory in a remote bucket"
+        n_cores: ">=max{4, 2*n_coverages}"
     }
     
     call SubsampleImpl {
@@ -26,6 +47,7 @@ workflow Subsample {
             bam_addresses = bam_addresses,
             coverages = coverages,
             remote_dir = remote_dir,
+            billing_project = billing_project,
             haploid_genome_length_gb = haploid_genome_length_gb,
             n_cores = n_cores,
             mem_gb = mem_gb,
@@ -43,13 +65,13 @@ task SubsampleImpl {
         Array[String] bam_addresses
         String coverages
         String remote_dir
+        String billing_project
         Int haploid_genome_length_gb
         Int n_cores
         Int mem_gb
         Int disk_size_gb
     }
     parameter_meta {
-        coverages: "Comma-separated"
     }
     
     String docker_dir = "/hgsvc2"
@@ -67,7 +89,6 @@ task SubsampleImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         RAM_PER_THREAD_BYTES=$(( (1000000000*( ~{mem_gb} -5)) / ${N_THREADS} ))
-        BILLING_PROJECT="broad-firecloud-dsde-methods"
         HAPLOID_GENOME_LENGTH_GB=$(( ~{haploid_genome_length_gb} * 1000000000 ))
         df -h
         
@@ -93,7 +114,7 @@ task SubsampleImpl {
             FILE_ID=$(( ${FILE_ID} + 1 ))
             SUCCESS="0"
             if [[ ${ADDRESS} == gs://* ]]; then
-                SUCCESS=$(gsutil -u ${BILLING_PROJECT} cp ${ADDRESS} . && echo 1 || echo 0)
+                SUCCESS=$(gsutil -u ~{billing_project} cp ${ADDRESS} . && echo 1 || echo 0)
             else
                 SUCCESS=$(wget ${ADDRESS} && echo 1 || echo 0)
             fi
@@ -119,10 +140,10 @@ task SubsampleImpl {
             fi
             df -h
         done < randomized.txt
-        ~{docker_dir}/seqkit scat --threads ${N_THREADS} -f --out-format fastq . > tmp1.fastq
-        for ID in $(seq ${FILE_ID} -1 1 ); do
-            rm -f ${ID}.fastq
-        done
+        mkdir ./fastqs
+        mv *.fastq ./fastqs
+        ${TIME_COMMAND} ~{docker_dir}/seqkit scat --threads ${N_THREADS} -f --out-format fastq ./fastqs > tmp1.fastq
+        rm -rf ./fastqs
         df -h
         
         # 2. Randomizing the order of the reads
@@ -151,7 +172,7 @@ task SubsampleImpl {
             fi
             COVERAGE=$(echo ${ROW} | cut -d , -f 1)
             LAST_LINE=$(echo ${ROW} | cut -d , -f 2)
-            head -n ${LAST_LINE} tmp4.fastq | gzip -1 > ~{sample_id}_${COVERAGE}.fastq.gz &
+            head -n ${LAST_LINE} tmp4.fastq | ${TIME_COMMAND} pigz --processes ${N_THREADS} --fast --to-stdout > ~{sample_id}_${COVERAGE}.fastq.gz
         done < lastLines.txt
         wait
         rm -f tmp4.fastq
