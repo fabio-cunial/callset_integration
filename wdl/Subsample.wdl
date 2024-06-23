@@ -36,6 +36,7 @@ workflow Subsample {
         Int disk_size_gb = 500
     }
     parameter_meta {
+        bam_addresses: "Can be .bam, .fastq, .fastq.gz"
         coverages: "Comma-separated. Example: 8,16,32"
         remote_dir: "Output directory in a remote bucket"
         n_cores: ">=max{4, 2*n_coverages}"

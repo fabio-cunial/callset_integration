@@ -86,7 +86,10 @@ public class SV2BND {
             }
             pos=Integer.parseInt(tokens[1]);
             tmpString=VCFconstants.getField(tokens[7],VCFconstants.SVLEN_STR);
-            if (tmpString!=null) length=Integer.parseInt(tmpString);
+            if (tmpString!=null) {
+                length=Integer.parseInt(tmpString);
+                if (length<0) length=-length;
+            }
             else length=Math.max(tokens[3].length(),tokens[4].length())-1;
             if (length<MIN_SV_LENGTH) {
                 bw.write(str); bw.newLine();
