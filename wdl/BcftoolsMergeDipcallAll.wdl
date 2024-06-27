@@ -6,15 +6,13 @@ version 1.0
 workflow BcftoolsMergeDipcallAll {
     input {
         Array[File] sample_vcf_gz
-        Array[File] sample_tbi
     }
     parameter_meta {
     }
     
     call BcftoolsMergeDipcallAllImpl {
         input:
-            input_vcf_gz = sample_vcf_gz,
-            input_tbi = sample_tbi
+            input_vcf_gz = sample_vcf_gz
     }
     
     output {
@@ -27,7 +25,6 @@ workflow BcftoolsMergeDipcallAll {
 task BcftoolsMergeDipcallAllImpl {
     input {
         Array[File] input_vcf_gz
-        Array[File] input_tbi
     }
     parameter_meta {
     }
@@ -53,6 +50,7 @@ task BcftoolsMergeDipcallAllImpl {
         SAMPLE_ID="0"
         for INPUT_FILE in ${INPUT_FILES}; do
             SAMPLE_ID=$(( ${SAMPLE_ID} + 1 ))
+            tabix -f ${INPUT_FILE}
             bcftools norm --multiallelics - --output-type v ${INPUT_FILE} > ${SAMPLE_ID}.vcf
             bgzip ${SAMPLE_ID}.vcf
             tabix -f ${SAMPLE_ID}.vcf.gz
