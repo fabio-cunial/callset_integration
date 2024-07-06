@@ -8,9 +8,9 @@ workflow GiraffeMap {
         String sample_id
         File reads1_fastq_gz
         File reads2_fastq_gz
-        Int n_cpus = 16
-        Int ram_size_gb = 32
-        Int disk_size_gb
+        Int n_cpus = 64
+        Int ram_size_gb = 64
+        Int disk_size_gb = 512
     }
     parameter_meta {
         remote_dir: "The GBZ, MIN and DIST graph indexes are assumed to be in directory `remote_dir/sample_id`."
@@ -32,9 +32,9 @@ workflow GiraffeMap {
 }
 
 
-# COMMAND    | TIME | CORES | RAM
-# vg giraffe | 6h   |   16  | 50G
-# vg stats   |  ?   |    ?  |   ?     CRASHED
+# COMMAND    | TIME | CORES | RAM  | DISK
+# vg giraffe | 1.5h |   55  | 50G  | 262G
+# vg stats   |  ?   |    ?  |   ?  |   ?        CRASHED
 #
 task GiraffeMapImpl {
     input {

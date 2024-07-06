@@ -21,9 +21,9 @@ workflow VgCall {
         Int min_mapq = 5
         Int trim_ends = 5
         Int strict = 1
-        Int n_cpus = 16
+        Int n_cpus = 32
         Int ram_size_gb = 128
-        Int disk_size_gb
+        Int disk_size_gb = 256
     }
     parameter_meta {
         remote_dir: "The XG graph index is assumed to be in directory `remote_dir/sample_id`."
@@ -105,6 +105,7 @@ task VgCallImpl {
         touch ~{vcf_tbi}
         ${TIME_COMMAND} ${VG_COMMAND} pack --threads ${N_THREADS} --xg ~{sample_id}.xg --gam ~{alignments_gam} --min-mapq ~{min_mapq} --trim-ends ~{trim_ends} --packs-out ~{sample_id}.pack
         ${TIME_COMMAND} ${VG_COMMAND} call --threads ${N_THREADS} --progress --pack ~{sample_id}.pack --ploidy 2 ${VCF_FLAG} ~{sample_id}.xg > out.vcf
+        df -h
         bcftools sort -m $(( ~{ram_size_gb} - 8 ))G --output-type z > ~{sample_id}.vcf.gz out.vcf
         tabix -f ~{sample_id}.vcf.gz
         df -h
