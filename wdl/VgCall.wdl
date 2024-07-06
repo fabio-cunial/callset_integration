@@ -3,13 +3,22 @@ version 1.0
 
 # The output by `vg call` contains the following SV features:
 #
-# DP="Read Depth"
-# AD="Allelic depths for the ref and alt alleles in the order listed"
-# MAD="Minimum site allele depth"
-# GL="Genotype Likelihood, log10-scaled likelihoods of the data given the called genotype for each possible genotype generated from the reference and alternate alleles given the sample ploidy"
-# GQ="Genotype Quality, the Phred-scaled probability estimate of the called genotype"
-# GP="Genotype Probability, the log-scaled posterior probability of the called genotype"
-# XD="eXpected Depth, background coverage as used for the Poisson model"
+# INFO.AT="Allele Traversal as path in graph"
+# INFO.DP,="Total Depth"
+# FORMAT.AD="Allelic depths for the ref and alt alleles in the order listed"
+# FORMAT.MAD="Minimum site allele depth"
+# FORMAT.DP="Read Depth"
+# FORMAT.GL="Genotype Likelihood, log10-scaled likelihoods of the data given
+# the called genotype for each possible genotype generated from the reference
+# and alternate alleles given the sample ploidy"
+# FORMAT.GQ="Genotype Quality, the Phred-scaled probability estimate of the
+# called genotype"
+# FORMAT.GP="Genotype Probability, the log-scaled posterior probability of the
+# called genotype"
+# FORMAT.XD="eXpected Depth, background coverage as used for the Poisson model"
+# FILTER.lowad="Variant does not meet minimum allele read support threshold of
+# 1"
+# FILTER.lowdepth="Variant has read depth less than 4"
 #
 workflow VgCall {
     input {
@@ -51,9 +60,9 @@ workflow VgCall {
 
 
 # COMMAND        | TIME | CORES | RAM
-# vg pack        | 1h   |  35   | 61 G
+# vg pack        | 1h   |  27   | 61 G
+# vg call --vcf  | 1h   |  21   | 128 G
 # vg call        | 1h   |  30   | 115 G
-# vg call --vcf  | 1h   |  32   | 120 G
 #
 task VgCallImpl {
     input {
@@ -94,7 +103,7 @@ task VgCallImpl {
             VCF_FLAG=""
         fi
         while : ; do
-            TEST=$(gsutil -m cp ~{remote_dir}/~{sample_id}.xg . && echo 0 || echo 1)
+            TEST=$(gsutil -m cp ~{remote_dir}/~{sample_id}/~{sample_id}.xg . && echo 0 || echo 1)
             if [ ${TEST} -eq 1 ]; then
                 echo "Error downloading XG. Trying again..."
                 sleep ${GSUTIL_DELAY_S}
