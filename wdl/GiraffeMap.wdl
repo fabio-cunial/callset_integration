@@ -33,8 +33,8 @@ workflow GiraffeMap {
 
 
 # COMMAND    | TIME | CORES | RAM
-# vg giraffe | 1.5h |  all  | 32G
-# vg stats   |      |       |
+# vg giraffe | 6h   |   16  | 50G
+# vg stats   |  ?   |    ?  |   ?     CRASHED
 #
 task GiraffeMapImpl {
     input {
@@ -76,7 +76,9 @@ task GiraffeMapImpl {
             fi
         done
         ${TIME_COMMAND} ${VG_COMMAND} giraffe --threads ${N_THREADS} --progress --output-format gam --gbz-name ~{sample_id}.gbz --minimizer-name ~{sample_id}.min --dist-name ~{sample_id}.dist --fastq-in ~{reads1_fastq_gz} --fastq-in ~{reads2_fastq_gz} > ~{sample_id}.gam
-        ${TIME_COMMAND} ${VG_COMMAND} stats --threads ${N_THREADS} --alignments ~{sample_id}.gam > stats.txt
+        # The following command crashes on vg 1.58.0:
+        #${TIME_COMMAND} ${VG_COMMAND} stats --threads ${N_THREADS} --alignments ~{sample_id}.gam > stats.txt
+        touch stats.txt
         df -h
     >>>
     
