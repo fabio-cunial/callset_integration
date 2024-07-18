@@ -6,6 +6,12 @@ import java.io.*;
  * 
  */
 public class FindInconsistentWindows {
+    private static final int DEL = 0;
+    private static final int INV = 1;
+    private static final int DUP = 2;
+    private static final int INS = 3;
+    private static final int SNP = 4;
+    
     /**
      * Temporary variables to store the graph of a window
      */
@@ -33,7 +39,7 @@ public class FindInconsistentWindows {
         int i;
         int lastInterval, row, pos, length;
         int currentChromosome, currentStart, currentEnd, currentFirst, chr, start, end;
-        String str, tmpString;
+        String str, tmpString, svtype;
         BufferedReader br;
         BufferedWriter bwIntervals, bwBipartite, bwNotBipartite;
         int[] intervals;
@@ -51,7 +57,9 @@ public class FindInconsistentWindows {
                 continue;
             }
             tokens=str.split("\t");
-            row=svType2Row(VCFconstants.getField(tokens[7],VCFconstants.SVTYPE_STR));
+            svtype=VCFconstants.getField(tokens[7],VCFconstants.SVTYPE_STR);
+            if (svtype!=null && svtype.length()!=0) row=svType2Row(svtype);
+            else row=refAlt2Row(tokens[3],tokens[4]);
             if (row==-1) {
 				str=br.readLine();
 				continue;
@@ -61,8 +69,9 @@ public class FindInconsistentWindows {
             if (tmpString!=null) length=Integer.parseInt(tmpString);
             else length=Math.max(tokens[3].length(),tokens[4].length())-1;
             pos=Integer.parseInt(tokens[1]);
-            if (row==0 || row==1 || row==2) end=pos+length;
-            else if (row==3) end=pos+1;
+            if (row==0 || row==1 || row==2) { start=pos+1; end=pos+length; }
+            else if (row==3) { start=pos; end=pos+1; }
+            else if (row==SNP) { start=pos; end=pos; }
             else {
 				str=br.readLine();
 				continue;
@@ -73,8 +82,8 @@ public class FindInconsistentWindows {
                 intervals=newArray;
             }
             intervals[++lastInterval]=VCFconstants.string2contig(tokens[0]);
-            intervals[++lastInterval]=pos+1;  // One-based
-            intervals[++lastInterval]=end;
+            intervals[++lastInterval]=start;  // One-based
+            intervals[++lastInterval]=end;  // One-based
             intervals[++lastInterval]=(tokens[9].charAt(0)=='.'||tokens[9].charAt(2)=='.')?-1:(tokens[9].charAt(0)=='1'?1:0)+(tokens[9].charAt(2)=='1'?1:0);
             str=br.readLine();
         }
@@ -131,21 +140,29 @@ public class FindInconsistentWindows {
     
     
 	private static final int svType2Row(String type) {
-		if (type==null || type.length()==0) return -1;
 		if ( type.equalsIgnoreCase(VCFconstants.DEL_STR) || 
 			 type.equalsIgnoreCase(VCFconstants.DEL_ME_STR)
-		   ) return 0;
-		else if (type.equalsIgnoreCase(VCFconstants.INV_STR)) return 1;
+		   ) return DEL;
+		else if (type.equalsIgnoreCase(VCFconstants.INV_STR)) return INV;
         else if ( type.equalsIgnoreCase(VCFconstants.DUP_STR) ||
 			      type.equalsIgnoreCase(VCFconstants.DUP_TANDEM_STR) ||
 				  type.equalsIgnoreCase(VCFconstants.DUP_INT_STR) ||
                   type.equalsIgnoreCase(VCFconstants.CNV_STR)
-			    ) return 2;
+			    ) return DUP;
         else if ( type.equalsIgnoreCase(VCFconstants.INS_STR) ||
                   type.equalsIgnoreCase(VCFconstants.INS_ME_STR) ||
                   type.equalsIgnoreCase(VCFconstants.INS_NOVEL_STR)
-                ) return 3;
+                ) return INS;
 		else return -1;
+	}
+    
+    
+	private static final int refAlt2Row(String ref, String alt) {
+        if (ref.length()==1) {
+            if (alt.length()>1) return INS;
+            else return SNP;
+        }
+        else return DEL;
 	}
     
     
