@@ -3,22 +3,28 @@ version 1.0
 
 # Features added by Paragraph: GT:GQ:DR:DV:OLD_GT:DP:FT:AD:ADF:ADR:PL
 #
-# INFO.GRMPY_ID="Graph ID for linking to genotypes.json.gz; matches record.graphinfo.ID in there.
+# INFO.GRMPY_ID="Graph ID for linking to genotypes.json.gz; matches
+# record.graphinfo.ID in there.
 #
 # FORMAT.OLD_GT="Previous GT which was replaced by paragraph"
 # FORMAT.FT="Filter for genotype"
-# FORMAT.ADF="Allele depth on forward strand for each allele, including the reference."
-# FORMAT.ADR="Allele depth on reverse strand for each allele, including the reference."
-# FORMAT.PL="Phred-scaled likelihoods for genotypes as defined in the VCF specification"
+# FORMAT.ADF="Allele depth on forward strand for each allele, including the
+# reference."
+# FORMAT.ADR="Allele depth on reverse strand for each allele, including the
+# reference."
+# FORMAT.PL="Phred-scaled likelihoods for genotypes as defined in the VCF
+# specification"
 #
 # FILTER.BP_DEPTH="One or more breakpoints have abnormal depth"
 # FILTER.NO_VALID_GT="No valid genotypes from breakpoints"
 # FILTER.CONFLICT="Breakpoints gave different genotypes"
 # FILTER.BP_NO_GT="One genotype was missing"
 # FILTER.NO_READS="No reads could be retrieved for a breakpoint."
-# FILTER.DEPTH="Poisson depth filter: observed depth deviates too far from Poisson expectation"
+# FILTER.DEPTH="Poisson depth filter: observed depth deviates too far from
+# Poisson expectation"
 # FILTER.UNMATCHED="VCF record could not be matched to a paragraph record."
-# FILTER.MULTIMATCHED="VCF record could not be matched to a paragraph record uniquely."
+# FILTER.MULTIMATCHED="VCF record could not be matched to a paragraph record
+# uniquely."
 #
 workflow ParagraphGenotyper {
     input {
@@ -58,7 +64,7 @@ workflow ParagraphGenotyper {
 
 
 # TIME | CORES | RAM   | COST
-# 1.5h |  27   | 6 GB  | 
+# 1.5h |  27   | 6 GB  | 2.50 $
 #
 task ParagraphImpl {
     input {

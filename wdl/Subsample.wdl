@@ -148,7 +148,7 @@ task SubsampleImpl {
         df -h
         
         # 2. Randomizing the order of the reads
-        LINES_PER_CHUNK=$((  ( ${TOTAL_N_READS} * 4 ) / ${N_THREADS}  ))
+        LINES_PER_CHUNK=$((  ( ${TOTAL_N_READS} / ${N_THREADS} )*4  ))
         ${TIME_COMMAND} split -d -a 2 -l ${LINES_PER_CHUNK} tmp1.fastq
         rm -f tmp1.fastq
         cp ~{docker_dir}/*.class .
