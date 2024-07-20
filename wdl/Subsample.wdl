@@ -89,7 +89,9 @@ task SubsampleImpl {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
-        RAM_PER_THREAD_BYTES=$(( (1000000000*( ~{mem_gb} -5)) / ${N_THREADS} ))
+        TOTAL_RAM_KB=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
+        TOTAL_RAM_GB=$(( ${TOTAL_RAM_KB} / 1000000 ))
+        RAM_PER_THREAD_BYTES=$(( (1000000000*( ${TOTAL_RAM_GB} - 10)) / ${N_THREADS} ))
         HAPLOID_GENOME_LENGTH_GB=$(( ~{haploid_genome_length_gb} * 1000000000 ))
         df -h
         
@@ -161,9 +163,8 @@ task SubsampleImpl {
         cat *.flattened > tmp2.txt
         rm -f *.flattened
         export TMPDIR="./terashuf_tmp"; mkdir ${TMPDIR}
-        export MEMORY=$(( ~{mem_gb} - 5 ))
         ulimit -n 100000
-        ${TIME_COMMAND} ~{docker_dir}/terashuf/terashuf < tmp2.txt > tmp3.txt
+        MEMORY=$(( ${TOTAL_RAM_GB} - 10 )) ~{docker_dir}/terashuf/terashuf < tmp2.txt > tmp3.txt
         rm -f tmp2.txt; rm -rf ${TMPDIR}
         ${TIME_COMMAND} java UnflattenFastq tmp3.txt "SEPARATOR" ${HAPLOID_GENOME_LENGTH_GB} ~{coverages} tmp4.fastq 1000000000 > lastLines.txt
         rm -f tmp3.txt
