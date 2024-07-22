@@ -9,6 +9,7 @@ workflow AlignONT {
         File reference_fa
         File reference_fai
         File reads_fastq_gz
+        Boolean is_r10
         Int n_cpus
         Int ram_size_gb
         Int disk_gb
@@ -22,6 +23,7 @@ workflow AlignONT {
             reference_fa = reference_fa,
             reference_fai = reference_fai,
             reads_fastq_gz = reads_fastq_gz,
+            is_r10 = is_r10,
             n_cpus = n_cpus,
             ram_size_gb = ram_size_gb,
             disk_gb = disk_gb
@@ -40,6 +42,7 @@ task AlignONTImpl {
         File reference_fa
         File reference_fai
         File reads_fastq_gz
+        Boolean is_r10
         Int n_cpus
         Int ram_size_gb
         Int disk_gb
@@ -61,8 +64,13 @@ task AlignONTImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        
-        ${TIME_COMMAND} ~{docker_dir}/minimap2/minimap2 -t ${N_THREADS} -x map-ont -ayYL --MD --eqx --cs ~{reference_fa} ~{reads_fastq_gz} > out.sam
+        FLAGS=""
+        if [[ ~{is_r10} == true ]]; then
+            FLAGS="-x lr:hq"
+        else
+            FLAGS="-x map-ont"
+        fi
+        ${TIME_COMMAND} ~{docker_dir}/minimap2/minimap2 -t ${N_THREADS} ${FLAGS} -ayYL --MD --eqx --cs ~{reference_fa} ~{reads_fastq_gz} > out.sam
         ${TIME_COMMAND} samtools sort -@ ${N_THREADS} --no-PG -O BAM out.sam > ~{sample_id}.bam
         ${TIME_COMMAND} samtools index -@ ${N_THREADS} ~{sample_id}.bam
     >>>
