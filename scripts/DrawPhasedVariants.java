@@ -82,12 +82,14 @@ public class DrawPhasedVariants {
      */
     public static void main(String[] args) throws IOException {
         final String INPUT_VCF = args[0];
-        final String OUTPUT_DIR = args[1];
+        final String OUTPUT_VCF = args[0];  // null=only counts, does not fix.
+        String FIGURES_DIR = args[1];
         final boolean COUNT_ONLY = Integer.parseInt(args[2])==1;
         LOAD_WEIGHT_FROM_SAMPLE_COLUMN=Integer.parseInt(args[3])==1;
         
         int i;
         BufferedReader br;
+        BufferedWriter bw;
         long[] histogram;
         
         initType2color();
@@ -96,15 +98,18 @@ public class DrawPhasedVariants {
         histogram = new long[100];
         windowLast=-1; windowLastPos=-1;
         br = new BufferedReader(new FileReader(INPUT_VCF));
+        if (OUTPUT_VCF.equalsIgnoreCase("null")) bw=null;
+        else bw = new BufferedWriter(new FileWriter(OUTPUT_VCF));
+        if (FIGURES_DIR.equalsIgnoreCase("null")) FIGURES_DIR=null;
         while (true) {
             initNextWindow();
 System.err.println("VITTU> 1  windowLast="+windowLast+" windowLastPos="+windowLastPos);            
             loadNextWindow(br);
 System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLastPos+(windowLast>=0?" first pos: "+window[0].first:""));
             if (windowLast==-1) break;
-            drawWindow(OUTPUT_DIR,histogram,COUNT_ONLY);
+            fixWindow(bw,FIGURES_DIR,histogram);
         }
-        br.close();
+        br.close(); bw.close();
         System.err.println("Histogram (nCollision, nHaplotypes):");
         for (i=0; i<histogram.length; i++) System.err.println(i+","+histogram[i]);
     }
@@ -520,21 +525,22 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
     // --------------------- WINDOW DRAWING PROCEDURES -------------------------
     
     /**
-     * Stores in a directory the overlap diagram of the window for every sample
-     * that contains a collision (one PNG file per sample).
-     *
-     * @param histogram for each $i$, the number of haplotypes (=windows in 
-     * samples) with $i$ collisions. Windows with exactly one variant are not
-     * considered in the count.
-     * @param countOnly only compute the histogram, do not draw.
+     * @param outputVcf if NULL, the procedure does not fix collisions, it only
+     * counts them;
+     * @param figuresDir if not NULL, the procedure stores in this directory an
+     * overlap diagram of the window for every sample that contains a collision
+     * (one PNG file per sample);
+     * @param histogram for each $i$, the number of (window,sample) pairs with
+     * $i$ collisions; windows with exactly one variant are not considered in
+     * the count.
      */
-    private static final void drawWindow(BufferedWriter bw, String outputDir, long[] histogram, boolean countOnly) throws IOException {
+    private static final void fixWindow(BufferedWriter outputVcf, String figuresDir, long[] histogram) throws IOException {
         final int FIRST = window[0].first;
         final int N_COLUMNS = (2+windowLastPos-FIRST+1)*PIXELS_PER_POS;
         final int LAST = isLastInWindow()?windowLast:windowLast-1;
         final int N_SAMPLES = window[0].genotypes.length;
         final int CHR = window[0].chr;
-        final String WINDOW_DIR = outputDir+"/chr"+CHR+"_"+FIRST+"_"+windowLastPos;
+        final String WINDOW_DIR = figuresDir+"/chr"+CHR+"_"+FIRST+"_"+windowLastPos;
         final int HIGH_COLLISIONS = 10;  // Arbitrary
         
         int i, j, x, y;
@@ -544,9 +550,9 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         BufferedImage image = null;
         Graphics2D graphics = null;
         
-        if (LAST==0) return;  // Ignoring windows with only one variant
+        if (LAST==0) { window[0].toVCF(outputVcf); return; }
         Arrays.sort(window,0,LAST+1);
-        if (!countOnly) {
+        if (figuresDir!=null) {
             random = new Random();
             directory = new File(WINDOW_DIR);
             image = new BufferedImage(N_COLUMNS,N_ROWS,BufferedImage.TYPE_INT_RGB);
@@ -555,20 +561,24 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         for (j=0; j<N_SAMPLES; j++) {
             collisions=nCollisions(LAST,j);
             histogram[collisions>histogram.length-1?histogram.length-1:collisions]++;
-            if (collisions==0 || countOnly) continue;
             if (collisions>=HIGH_COLLISIONS) System.err.println(collisions+" collisions in window "+WINDOW_DIR+" sample "+j);
-            if (!directory.exists()) directory.mkdirs();
-            drawWindow_impl(j,LAST,graphics,N_COLUMNS,FIRST,random);
-            ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_before.png"));
+            if (collisions==0 || outputVcf==null) continue;
+            if (figuresDir!=null) {
+                if (!directory.exists()) directory.mkdirs();
+                drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
+                ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_before.png"));
+            }
             independentSet2(j,LAST);
-            drawWindow_impl(j,LAST,graphics,N_COLUMNS,FIRST,random);
-            ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_after.png"));
+            if (figuresDir!=null) {
+                drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
+                ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_after.png"));
+            }
         }
-        for (i=0; i<=LAST; i++) window[i].toVCF(bw);
+        for (i=0; i<=LAST; i++) window[i].toVCF(outputVcf);
     }
     
     
-    private static final void drawWindow_impl(int sample, int last, Graphics2D graphics, int nColumns, int first, Random random) {
+    private static final void drawWindow(int sample, int last, Graphics2D graphics, int nColumns, int first, Random random) {
         int i, x, y;
         int gt, width;
         
@@ -596,18 +606,6 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
                 graphics.drawRect(x,y,width,PIXELS_PER_POS);
             }
         }
-    }
-    
-    
-    /**
-     *
-     */
-    private static final void printWindow(BufferedWriter bw) throws IOException {
-        
-        
-        
-        
-        
     }
     
     
