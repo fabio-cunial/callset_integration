@@ -9,14 +9,14 @@ import java.text.*;
 
 
 /**
- * 
+ * <-------------- READ ORIGINAL PANGENIE SCRIPT THAT DELETES ALL OVERLAPS, FOR INSPIRATION.
  */
 public class DrawPhasedVariants {
     /**
      * Expected weight tags in the INFO field and in the SAMPLE field of a VCF
      */
-    private static final String WEIGHT_ID_INFO = "IS_WEIGHT";
-    private static final String WEIGHT_ID_SAMPLE = "IS_WEIGHT";
+    private static final String WEIGHT_ID_INFO = "isWeight";
+    private static final String WEIGHT_ID_SAMPLE = "isWeight";
     private static boolean LOAD_WEIGHT_FROM_SAMPLE_COLUMN;
     
     /**
@@ -30,7 +30,7 @@ public class DrawPhasedVariants {
     private static final int REPLACEMENT = 5;
     
     /**
-     * Genotypes
+     * Genotypes   <------------- HANDLE DOTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
     private static final int PHASED_00 = 0;
     private static final int PHASED_01 = 1;
@@ -84,7 +84,7 @@ public class DrawPhasedVariants {
         final String INPUT_VCF = args[0];
         final String OUTPUT_DIR = args[1];
         final boolean COUNT_ONLY = Integer.parseInt(args[2])==1;
-        LOAD_WEIGHT_FROM_SAMPLE_COLUMN = Integer.parseInt(args[3])==1;
+        LOAD_WEIGHT_FROM_SAMPLE_COLUMN=Integer.parseInt(args[3])==1;
         
         int i;
         BufferedReader br;
@@ -122,7 +122,6 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
      * The optimal solution of independent set procedures
      */
     private static double maxWeight;
-    private static boolean[] maxPath;  // <-------- MIGHT NOT BE NEEDED, CAN REUSE THE BOOLEAN INSIDE INTERVAL?
     
     /**
      * Space reused by independent set procedures
@@ -167,13 +166,12 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
             currentInterval=window[i];
             if (!currentInterval.isPresent(sample)) continue;
             sampleWindow[++sampleWindowLast]=currentInterval;
+            currentInterval.clearIndependentSetVariables();
             currentInterval.setWeight(sample);
         }
         
         // Recursion
         maxWeight=0;
-        if (maxPath==null || maxPath.length<sampleWindowLast+1) maxPath = new boolean[sampleWindowLast+1];
-        Arrays.fill(maxPath,false);
         active = new boolean[sampleWindowLast+1];
         Arrays.fill(active,true);
         for (i=sampleWindowLast; i>=0; i--) independendSet1_impl(i,active,new int[0],0,sample);
@@ -181,8 +179,8 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         if (maxWeight==0) error=true;
         else {
             error=true;
-            for (i=0; i<maxPath.length; i++) {
-                if (maxPath[i]) { error=false; break; }
+            for (i=0; i<=sampleWindowLast; i++) {
+                if (sampleWindow[i].inIndependentSet) { error=false; break; }
             }
         }
         if (error) {
@@ -193,14 +191,12 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         // Removing from $sample$ every phased interval that is not in the
         // max-weight independent set.
         for (i=0; i<=sampleWindowLast; i++) {
-            if (!maxPath[i]) sampleWindow[i].genotypes[sample]=UNPHASED_00;
+            if (!sampleWindow[i].inIndependentSet) sampleWindow[i].genotypes[sample]=UNPHASED_00;
         }
     }
     
     
     /**
-     * Remark: the procedure assumes that $maxPath$ has already been allocated. 
-     *
      * @param id position in $sampleWindow$ to solve for;
      * @param active one flag per position in $sampleWindow$; indicates whether 
      * the corresponding interval is active before solving for $id$;
@@ -242,9 +238,9 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         }
         else if (weight_prime>maxWeight) {  // Base case of the recursion
             maxWeight=weight_prime;
-            Arrays.fill(maxPath,false);
-            for (i=0; i<ancestors.length; i++) maxPath[ancestors[i]]=true;
-            maxPath[id]=true;
+            for (i=0; i<=sampleWindowLast; i++) sampleWindow[i].inIndependentSet=false;
+            for (i=0; i<ancestors.length; i++) sampleWindow[ancestors[i]].inIndependentSet=true;
+            currentInterval.inIndependentSet=true;
         }
     }
     
@@ -287,7 +283,7 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
                 window[i].setWeight(sample);
             }
         }
-        independentSet2_impl(sample,true);
+        if (sampleWindowLast!=-1) independentSet2_impl(sample,true);
         
         // Solving Hap 2
         sampleWindowLast=-1;
@@ -297,7 +293,7 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
                 window[i].setWeight(sample);
             }
         }
-        independentSet2_impl(sample,false);
+        if (sampleWindowLast!=-1) independentSet2_impl(sample,false);
     }
 
 
@@ -532,7 +528,7 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
      * considered in the count.
      * @param countOnly only compute the histogram, do not draw.
      */
-    private static final void drawWindow(String outputDir, long[] histogram, boolean countOnly) throws IOException {
+    private static final void drawWindow(BufferedWriter bw, String outputDir, long[] histogram, boolean countOnly) throws IOException {
         final int FIRST = window[0].first;
         final int N_COLUMNS = (2+windowLastPos-FIRST+1)*PIXELS_PER_POS;
         final int LAST = isLastInWindow()?windowLast:windowLast-1;
@@ -568,6 +564,7 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
             drawWindow_impl(j,LAST,graphics,N_COLUMNS,FIRST,random);
             ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_after.png"));
         }
+        for (i=0; i<=LAST; i++) window[i].toVCF(bw);
     }
     
     
@@ -599,6 +596,18 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
                 graphics.drawRect(x,y,width,PIXELS_PER_POS);
             }
         }
+    }
+    
+    
+    /**
+     *
+     */
+    private static final void printWindow(BufferedWriter bw) throws IOException {
+        
+        
+        
+        
+        
     }
     
     
@@ -727,6 +736,7 @@ for (int x=0; x<=windowLast; x++) System.err.println(window[x]);
     private static class Interval implements Comparable {
         private static final String VCF_SEPARATOR = "\t";
         private static final char GT_SEPARATOR = ':';
+        private static final String GT_STR = "GT";
         
         public boolean isSV;  // True=SV, False=SNP/small indel.
         public int variantType;
@@ -796,7 +806,8 @@ for (int x=0; x<=windowLast; x++) System.err.println(window[x]);
         /**
          * Sets $weight$ to a value loaded from the INFO field or the SAMPLE
          * field, depending on global variable $LOAD_WEIGHT_FROM_SAMPLE_COLUMN$.
-         * If no value is found in the VCF record, $weight$ is set to one.
+         * If no value is found in the VCF record, $weight$ is arbitrarily set 
+         * to one.
          */
         private final void setWeight(int sample) {
             int i, j, p;
@@ -857,6 +868,47 @@ for (int x=0; x<=windowLast; x++) System.err.println(window[x]);
         public final boolean precedes(Interval nextInterval, int sample) {
             return N_GT_COLLISIONS[genotypes[sample]][nextInterval.genotypes[sample]]==0 || last<nextInterval.first;
         }
+        
+        
+        /**
+         * Prints the original VCF record, but using the GTs in $genotypes$.
+         */
+        public final void toVCF(BufferedWriter bw) throws IOException {
+            int i, j, k, p;
+            int gtIndex, gtLength;
+            String gt;
+            
+            // Computing the index of the GT field
+            p=vcfRecord[8].indexOf(GT_STR);
+            gtIndex=0;
+            for (i=0; i<p; i++) {
+                if (vcfRecord[8].charAt(i)==GT_SEPARATOR) gtIndex++;
+            }
+            
+            // Printing the VCF record
+            bw.write(vcfRecord[0]);
+            for (i=1; i<=8; i++) { bw.write(VCF_SEPARATOR); bw.write(vcfRecord[i]); }
+            for (i=0; i<genotypes.length; i++) {
+                bw.write(VCF_SEPARATOR);
+                gt=vcfRecord[9+i]; gtLength=gt.length(); k=gtIndex;
+                for (j=0; j<gtLength; j++) {
+                    if (gt.charAt(j)!=GT_SEPARATOR) continue;
+                    k--;
+                    if (k>0) continue;
+                    bw.write(gt.substring(0,j+1));
+                    bw.write(GT2STR[genotypes[i]]);
+                    p=gt.indexOf(GT_SEPARATOR,j+1);
+                    if (p>=0) bw.write(gt.substring(p));
+                    break;
+                }
+            }
+            bw.newLine();
+        }
+        
+        
+        private static String[] GT2STR = new String[] {
+            "0|0", "0|1", "1|0", "1|1",  "0/0", "0/1", "1/0", "1/1"
+        };
         
         
         public String toString() {
