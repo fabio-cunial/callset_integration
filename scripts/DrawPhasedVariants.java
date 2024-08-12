@@ -454,9 +454,6 @@ public class DrawPhasedVariants {
     
     
 
-    
-    
-    
     // --------------------- INDEPENDENT SET PROCEDURES ------------------------
     
     /**
@@ -474,13 +471,12 @@ public class DrawPhasedVariants {
     
     
     /**
-     * Assume that we can fix the genotypes of $sample$ only by setting some
-     * of them to 0/0, i.e. by deleting records on both haplotypes. Then we
-     * would like to keep a heaviest set of VCF records that do not overlap on
-     * any haplotype. The procedure computes a max-weight independent set of the 
-     * graph where every element of $window[0..last]$ that occurs in $sample$ 
-     * (on any haplotype) is a node, and where there is an edge iff two elements
-     * overlap on some haplotype.
+     * Assume that we can fix the genotypes of $sample$ only by deleting records
+     * on both haplotypes. Then we would like to keep a heaviest set of VCF 
+     * records that do not overlap on any haplotype. The procedure computes a 
+     * max-weight independent set of the graph where every element of 
+     * $window[0..last]$ that occurs in $sample$ (on any haplotype) is a node, 
+     * and where there is an edge iff two elements overlap on some haplotype.
      *
      * Remark: the procedure considers also unphased calls, since they might
      * collide with phased calls.
@@ -592,13 +588,13 @@ public class DrawPhasedVariants {
     
     
     /**
-     * Assume that we can fix the genotypes of $sample$ only by replacing ones 
-     * with zeros, i.e. by deleting specific calls on specific haplotypes. Then 
-     * we would like to keep, on each haplotype, a heaviest set of calls that do
-     * not overlap on that haplotype. The procedure computes, for each 
-     * haplotype, a max-weight independent set of the graph where every element 
-     * of $window[0..last]$ that occurs on that haplotype is a node, and where 
-     * there is an edge iff two elements overlap.
+     * Assume that we can fix the genotypes of $sample$ only by deleting
+     * specific calls on specific haplotypes. Then we would like to keep, on
+     * each haplotype, a heaviest set of calls that do not overlap on that
+     * haplotype. The procedure computes, for each haplotype, a max-weight
+     * independent set of the graph where every element of $window[0..last]$
+     * that occurs on that haplotype is a node, and where there is an edge iff
+     * two elements overlap.
      *
      * Remark: the procedure considers only phased calls and 1/1 unphased calls.
      *
@@ -740,8 +736,10 @@ public class DrawPhasedVariants {
             endpoints[lastEndpoint].pos=sampleWindow[i].last;
             endpoints[lastEndpoint].addClosed(sampleWindow[i]);
         }
-        if (lastEndpoint==1) return;
-        Arrays.sort(endpoints,0,lastEndpoint+1);
+        if (lastEndpoint>1) {
+            // If there are <=2 points, they must be already sorted. 
+            Arrays.sort(endpoints,0,lastEndpoint+1);
+        }
         j=0;
         for (i=1; i<=lastEndpoint; i++) {
             if (endpoints[i].pos==endpoints[j].pos) endpoints[j].merge(endpoints[i]);
@@ -758,14 +756,14 @@ public class DrawPhasedVariants {
     
     /**
      * Sets the $overlapsIS_hap*$ flags of every element of $sampleWindow[0..
-     * last]$. Such flags tell if an interval that is not in the max weight 
-     * independent set, overlaps with an element of the max weight independent
-     * set on a given haplotype of $sample$.
+     * last]$. Such flags tell if an interval that is not in the selected max
+     * weight independent set, overlaps with an element of the selected max
+     * weight independent set on a given haplotype of $sample$.
      *
      * Remark: the procedure assumes that $window[0..last]$ is sorted by last
      * position.
      *
-     * @param hap* consider this haplotype.
+     * @param hap* TRUE=the procedure considers this haplotype.
      */
     private static final void markIndependentSetOverlaps(int sample, boolean hap1, boolean hap2, int last) {
         boolean onHap1, onHap2;
@@ -795,16 +793,6 @@ public class DrawPhasedVariants {
             }
         }
     }
-    
-    
-    
-    
-    
-    
-    //  ------------------> for j=i-1 when sorted by last... we should also look at the right side for intervals with identical last to i......
-    
-    
-    
     
     
     
@@ -844,13 +832,13 @@ public class DrawPhasedVariants {
         graphics.fillRect(0,0,nColumns,N_ROWS);
         for (i=0; i<=last; i++) {
             gt=window[i].genotypes[sample];
-            if (gt==UNPHASED_00 || gt==PHASED_00) continue;
-            if (gt==UNPHASED_01 || gt==UNPHASED_10) graphics.setStroke(STROKE_UNPHASED);
-            else graphics.setStroke(STROKE_PHASED);
+            if (gt==UNPHASED_00 || gt==PHASED_00 || gt==UNPHASED_0D || gt==UNPHASED_D0 || gt==UNPHASED_DD || gt==PHASED_0D || gt==PHASED_D0 || gt==PHASED_DD) continue;
+            if (gt==UNPHASED_01 || gt==UNPHASED_10 || gt==UNPHASED_D1 || gt==UNPHASED_1D) graphics.setStroke(STROKE_UNPHASED);
+            else graphics.setStroke(STROKE_PHASED);  // Also assigned to 1/1
             graphics.setColor(type2color[window[i].variantType]);
             x=(1+window[i].first-first)*PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
             width=(window[i].last-window[i].first+1)*PIXELS_PER_POS;
-            if (gt==UNPHASED_01 || gt==UNPHASED_10 || gt==UNPHASED_11 || gt==PHASED_11) {
+            if (gt==UNPHASED_01 || gt==UNPHASED_10 || gt==UNPHASED_D1 || gt==UNPHASED_1D || gt==UNPHASED_11 || gt==PHASED_11) {
                 y=PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
                 graphics.drawRect(x,y,width,3*PIXELS_PER_POS);
             }
@@ -888,7 +876,9 @@ public class DrawPhasedVariants {
         public String[] vcfRecord;  // One cell per VCF column
         public int[] genotypes;
         
-        // Independent set variables
+        /**
+         * Independent set variables
+         */
         public boolean inIndependentSet;
         public double independentSetWeight;
         public Interval independentSetPrevious;
@@ -903,6 +893,7 @@ public class DrawPhasedVariants {
         
         public final void clearIndependentSetVariables() {
             independentSetWeight=0.0; independentSetPrevious=null; inIndependentSet=false;
+            overlapsIS_hap1=false; overlapsIS_hap2=false;
         }
         
         
@@ -984,22 +975,30 @@ public class DrawPhasedVariants {
         
         
         public final boolean isPresent(int sample) {
-            return genotypes[sample]!=PHASED_00 && genotypes[sample]!=UNPHASED_00;
+            return genotypes[sample]!=PHASED_00 && genotypes[sample]!=UNPHASED_00 && 
+                   genotypes[sample]!=PHASED_DD && genotypes[sample]!=UNPHASED_DD && 
+                   genotypes[sample]!=PHASED_D0 && genotypes[sample]!=UNPHASED_D0 && 
+                   genotypes[sample]!=PHASED_0D && genotypes[sample]!=UNPHASED_0D;
         }
         
         
         public final boolean onHap1(int sample) {
-            return genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
+            return genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_1D ||
+                   genotypes[sample]==PHASED_11 || 
+                   genotypes[sample]==UNPHASED_11;
         }
         
         
         public final boolean onHap2(int sample) {
-            return genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
+            return genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_D1 ||
+                   genotypes[sample]==PHASED_11 || 
+                   genotypes[sample]==UNPHASED_11;
         }
         
         
         public final boolean isPhased(int sample) {
-            return genotypes[sample]==PHASED_00 || genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11;
+            return genotypes[sample]==PHASED_00 || genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11 ||
+                   genotypes[sample]==PHASED_DD || genotypes[sample]==PHASED_D1 || genotypes[sample]==PHASED_1D || genotypes[sample]==PHASED_D0 || genotypes[sample]==PHASED_0D;
         }
 
         
@@ -1210,70 +1209,5 @@ public class DrawPhasedVariants {
             return out+"\n";
         }
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-
-    // ---------- WRONG QUADRATIC IMPLEMENTATION OF INDEPENDENT SET. HAS COUNTEREXAMPLE. ------------
-    // /**
-//      * Remark: the procedure assumes that $window[0..last]$ is sorted by last
-//      * position.
-//      */
-//     private static final void independentSet(int sample, int last) {
-//         int i, j;
-//         int sampleWindowLast;
-//         double weight, currentWeight, maxWeight;
-//         Interval currentInterval, neighbor;
-//
-//         // Computing the independent set
-//         if (sampleWindow==null || sampleWindow.length<last+1) sampleWindow = new Interval[last+1];
-//         sampleWindowLast=-1;
-//         for (i=0; i<=last; i++) {
-//             currentInterval=window[i];
-//             if (!currentInterval.isPresent(sample) || !currentInterval.isPhased(sample)) continue;
-//             sampleWindow[++sampleWindowLast]=currentInterval;
-//             currentInterval.clearIndependentSetVariables();
-//         }
-//         maxWeight=0;
-//         for (i=0; i<=sampleWindowLast; i++) {
-//             currentInterval=sampleWindow[i];
-//             currentWeight=currentInterval.weight;
-//             for (j=i-1; j>=0; j--) {
-//                 neighbor=sampleWindow[j];
-//                 if (!neighbor.precedes(currentInterval,sample)) continue;
-//                 weight=neighbor.independentSetWeight+currentWeight;
-//                 if (weight>currentInterval.independentSetWeight) {
-//                     currentInterval.independentSetWeight=weight;
-//                     currentInterval.independentSetPrevious=neighbor;
-// System.err.println("Setting independentSetWeight of "+currentInterval+" (GT="+currentInterval.genotypes[sample]+") to "+weight+" and independentSetPrevious="+neighbor+" (GT="+neighbor.genotypes[sample]+")");
-//                 }
-//             }
-//             if (currentInterval.independentSetWeight>maxWeight) maxWeight=currentInterval.independentSetWeight;
-//         }
-//
-//         // Removing from $sample$ every phased interval that is not in a
-//         // max-weight independent set that ends farther to the right.
-//         for (i=sampleWindowLast; i>=0; i--) {
-//             if (sampleWindow[i].independentSetWeight!=maxWeight) continue;
-//             currentInterval=sampleWindow[i];
-//             while (currentInterval!=null) {
-//                 currentInterval.inIndependentSet=true;
-//                 currentInterval=currentInterval.independentSetPrevious;
-//             }
-//             break;
-//         }
-//         for (i=0; i<=sampleWindowLast; i++) {
-//             if (!sampleWindow[i].inIndependentSet) sampleWindow[i].genotypes[sample]=UNPHASED_00;
-//         }
-//     }
-    
 }
