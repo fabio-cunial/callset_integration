@@ -35,7 +35,7 @@ public class DrawPhasedVariants {
     private static final int REPLACEMENT = 5;
     
     /**
-     * Genotypes   <------------- HANDLE DOTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     * Genotypes
      */
     private static final int PHASED_00 = 0;
     private static final int PHASED_01 = 1;
@@ -45,6 +45,17 @@ public class DrawPhasedVariants {
     private static final int UNPHASED_01 = 5;
     private static final int UNPHASED_10 = 6;
     private static final int UNPHASED_11 = 7;
+    
+    private static final int PHASED_D0 = 8;
+    private static final int PHASED_0D = 9;
+    private static final int PHASED_D1 = 10;
+    private static final int PHASED_1D = 11;
+    private static final int PHASED_DD = 12;
+    private static final int UNPHASED_D0 = 13;
+    private static final int UNPHASED_0D = 14;
+    private static final int UNPHASED_D1 = 15;
+    private static final int UNPHASED_1D = 16;
+    private static final int UNPHASED_DD = 17;
     
     /**
      * VCF constants
@@ -298,40 +309,6 @@ public class DrawPhasedVariants {
     // ------------------------ GENOTYPE PROCEDURES ----------------------------
     
     /**
-     * Rows, columns: GT ids. Cells: {0,1,2} the number of pairs of intervals
-     * that collide, assuming that a diploid call consists of two intervals. 
-     */
-    private static final int[][] N_GT_COLLISIONS = new int[][] { 
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        {0,0,0,0, 0,0,0,0},
-        {0,1,0,1, 0,0,0,1},
-        {0,0,1,1, 0,0,0,1},
-        {0,1,1,2, 0,0,0,2},
-        {0,0,0,0, 0,0,0,0},
-        {0,0,0,1, 0,0,0,1},
-        {0,0,0,1, 0,0,0,1},
-        {0,1,1,2, 0,0,0,2},
-    };
-    
-    
-    private static final String[] GT2STR = new String[] {
-        "0|0", "0|1", "1|0", "1|1",  "0/0", "0/1", "1/0", "1/1"
-    };
-    
-    
-    private static final int[] REMOVE_HAP1 = new int[] {
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        PHASED_00,PHASED_01,PHASED_00,PHASED_01,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
-    };
-    
-    
-    private static final int[] REMOVE_HAP2 = new int[] {
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        PHASED_00,PHASED_00,PHASED_10,PHASED_10,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
-    };
-    
-    
-    /**
      * @return a unique ID for every possible genotype.
      */
     private static final int gt2Id(String gt) {
@@ -340,26 +317,142 @@ public class DrawPhasedVariants {
         final char c = gt.charAt(2);
     
         if (b=='/') {
-            if (a=='.' || a=='0') {
-                if (c=='.' || c=='0') return UNPHASED_00;
+            if (a=='.') {
+                if (c=='.') return UNPHASED_DD;
+                else if (c=='0') return UNPHASED_D0;
+                else return UNPHASED_D1;
+            }
+            else if (a=='0') {
+                if (c=='.') return UNPHASED_0D;
+                else if (c=='0') return UNPHASED_00;
                 else return UNPHASED_01;
             }
             else {
-                if (c=='.' || c=='0') return UNPHASED_10;
+                if (c=='.') return UNPHASED_1D;
+                else if (c=='0') return UNPHASED_10;
                 else return UNPHASED_11;
             }
         }
         else {
-            if (a=='.' || a=='0') {
-                if (c=='.' || c=='0') return PHASED_00;
+            if (a=='.') {
+                if (c=='.') return PHASED_DD;
+                else if (c=='0') return PHASED_D0;
+                else return PHASED_D1;
+            }
+            else if (a=='0') {
+                if (c=='.') return PHASED_0D;
+                else if (c=='0') return PHASED_00;
                 else return PHASED_01;
             }
             else {
-                if (c=='.' || c=='0') return PHASED_10;
+                if (c=='.') return PHASED_1D;
+                else if (c=='0') return PHASED_10;
                 else return PHASED_11;
             }
         }
     }
+    
+    
+    private static final String[] GT2STR = new String[] {
+        "0|0", "0|1", "1|0", "1|1",  
+        "0/0", "0/1", "1/0", "1/1",
+        ".|0", "0|.", ".|1", "1|.", ".|.",  
+        "./0", "0/.", "./1", "1/.", "./."
+    };
+    
+    
+    /**
+     * Rows, columns: GT ids. Cells: {0,1,2} the number of pairs of intervals
+     * that collide, assuming that a diploid call consists of two intervals. 
+     */
+    private static final int[][] N_GT_COLLISIONS = new int[][] { 
+        // 0|0, 0|1, 1|0, 1|1,  
+        // 0/0, 0/1, 1/0, 1/1,  
+        // .|0, 0|., .|1, 1|., .|.,  
+        // ./0, 0/., ./1, 1/., ./.
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,1,0,1, 0,0,0,1, 0,0,1,0,0, 0,0,0,0,0},
+        {0,0,1,1, 0,0,0,1, 0,0,0,1,0, 0,0,0,0,0},
+        {0,1,1,2, 0,0,0,2, 0,0,1,1,0, 0,0,1,1,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,1, 0,0,0,1, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,1, 0,0,0,1, 0,0,0,0,0, 0,0,0,0,0},
+        {0,1,1,2, 0,0,0,2, 0,0,1,1,0, 0,0,1,1,0},
+            
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,1,0,1, 0,0,0,1, 0,0,1,0,0, 0,0,0,0,0},
+        {0,0,1,1, 0,0,0,1, 0,0,0,1,0, 0,0,0,0,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,1, 0,0,0,1, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,1, 0,0,0,1, 0,0,0,0,0, 0,0,0,0,0},
+        {0,0,0,0, 0,0,0,0, 0,0,0,0,0, 0,0,0,0,0}
+    };
+
+    
+    /**
+     * Replaces a one with a zero on hap1.
+     */
+    private static final int[] REMOVE_HAP1_0 = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,
+        // 0/0, 0/1, 1/0, 1/1,
+        // .|0, 0|., .|1, 1|., .|.,
+        // ./0, 0/., ./1, 1/., ./.
+        PHASED_00,PHASED_01,PHASED_00,PHASED_01,  
+        UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01,
+        PHASED_D0,PHASED_0D,PHASED_D1,PHASED_0D,PHASED_DD,
+        UNPHASED_D0,UNPHASED_0D,UNPHASED_D1,UNPHASED_1D,UNPHASED_DD
+    };
+    
+    
+    /**
+     * Replaces a one with a dot on hap1.
+     */
+    private static final int[] REMOVE_HAP1_D = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,
+        // 0/0, 0/1, 1/0, 1/1,
+        // .|0, 0|., .|1, 1|., .|.,
+        // ./0, 0/., ./1, 1/., ./.
+        PHASED_00,PHASED_01,PHASED_D0,PHASED_D1,
+        UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_D1,
+        PHASED_D0,PHASED_0D,PHASED_D1,PHASED_DD,PHASED_DD,
+        UNPHASED_D0,UNPHASED_0D,UNPHASED_D1,UNPHASED_1D,UNPHASED_DD
+    };
+    
+    
+    /**
+     * Replaces a one with a zero on hap2.
+     */
+    private static final int[] REMOVE_HAP2_0 = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,
+        // 0/0, 0/1, 1/0, 1/1,
+        // .|0, 0|., .|1, 1|., .|.,
+        // ./0, 0/., ./1, 1/., ./.
+        PHASED_00,PHASED_00,PHASED_10,PHASED_10,
+        UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01,
+        PHASED_D0,PHASED_0D,PHASED_D0,PHASED_1D,PHASED_DD,
+        UNPHASED_D0,UNPHASED_0D,UNPHASED_D1,UNPHASED_1D,UNPHASED_DD
+    };
+    
+    
+    /**
+     * Replaces a one with a dot on hap2.
+     */
+    private static final int[] REMOVE_HAP2_D = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,
+        // 0/0, 0/1, 1/0, 1/1,
+        // .|0, 0|., .|1, 1|., .|.,
+        // ./0, 0/., ./1, 1/., ./.
+        PHASED_00,PHASED_0D,PHASED_10,PHASED_1D,
+        UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_D1,
+        PHASED_D0,PHASED_0D,PHASED_DD,PHASED_1D,PHASED_DD,
+        UNPHASED_D0,UNPHASED_0D,UNPHASED_D1,UNPHASED_1D,UNPHASED_DD
+    };
+    
+    
+    
 
     
     
@@ -436,10 +529,15 @@ public class DrawPhasedVariants {
             System.exit(1);
         }
         
-        // Removing from $sample$ every phased interval that is not in the
-        // max-weight independent set.
+        // Removing from $sample$ every interval that is not in the max-weight
+        // independent set.
+        markIndependentSetOverlaps(sample,true,true,sampleWindowLast);
         for (i=0; i<=sampleWindowLast; i++) {
-            if (!sampleWindow[i].inIndependentSet) sampleWindow[i].genotypes[sample]=UNPHASED_00;
+            if (sampleWindow[i].inIndependentSet) continue;
+            if (sampleWindow[i].overlapsIS_hap1) sampleWindow[i].genotypes[sample]=REMOVE_HAP1_D[sampleWindow[i].genotypes[sample]];
+            else sampleWindow[i].genotypes[sample]=REMOVE_HAP1_0[sampleWindow[i].genotypes[sample]];
+            if (sampleWindow[i].overlapsIS_hap2) sampleWindow[i].genotypes[sample]=REMOVE_HAP2_D[sampleWindow[i].genotypes[sample]];
+            else sampleWindow[i].genotypes[sample]=REMOVE_HAP2_0[sampleWindow[i].genotypes[sample]];
         }
     }
     
@@ -598,15 +696,19 @@ public class DrawPhasedVariants {
         }
         error=true;
         if (onHap1) {
+            markIndependentSetOverlaps(sample,true,false,sampleWindowLast);
             for (i=0; i<=sampleWindowLast; i++) {
-                if (!sampleWindow[i].inIndependentSet) sampleWindow[i].genotypes[sample]=REMOVE_HAP1[sampleWindow[i].genotypes[sample]];
-                else error=false;
+                if (sampleWindow[i].inIndependentSet) { error=false; continue; }
+                if (sampleWindow[i].overlapsIS_hap1) sampleWindow[i].genotypes[sample]=REMOVE_HAP1_D[sampleWindow[i].genotypes[sample]];
+                else sampleWindow[i].genotypes[sample]=REMOVE_HAP1_0[sampleWindow[i].genotypes[sample]];
             }
         }
         else {
+            markIndependentSetOverlaps(sample,false,true,sampleWindowLast);
             for (i=0; i<=sampleWindowLast; i++) {
-                if (!sampleWindow[i].inIndependentSet) sampleWindow[i].genotypes[sample]=REMOVE_HAP2[sampleWindow[i].genotypes[sample]];
-                else error=false;
+                if (sampleWindow[i].inIndependentSet) { error=false; continue; }
+                if (sampleWindow[i].overlapsIS_hap2) sampleWindow[i].genotypes[sample]=REMOVE_HAP2_D[sampleWindow[i].genotypes[sample]];
+                sampleWindow[i].genotypes[sample]=REMOVE_HAP2_0[sampleWindow[i].genotypes[sample]];
             }
         }
         if (error) {
@@ -652,7 +754,58 @@ public class DrawPhasedVariants {
         }
         lastEndpoint=j;
     }
-
+    
+    
+    /**
+     * Sets the $overlapsIS_hap*$ flags of every element of $sampleWindow[0..
+     * last]$. Such flags tell if an interval that is not in the max weight 
+     * independent set, overlaps with an element of the max weight independent
+     * set on a given haplotype of $sample$.
+     *
+     * Remark: the procedure assumes that $window[0..last]$ is sorted by last
+     * position.
+     *
+     * @param hap* consider this haplotype.
+     */
+    private static final void markIndependentSetOverlaps(int sample, boolean hap1, boolean hap2, int last) {
+        boolean onHap1, onHap2;
+        int i, j;
+        int first;
+        
+        if (hap1) {
+            for (i=0; i<=last; i++) sampleWindow[i].overlapsIS_hap1=false;
+        }
+        if (hap2) {
+            for (i=0; i<=last; i++) sampleWindow[i].overlapsIS_hap2=false;
+        }
+        for (i=last; i>=0; i--) {
+            first=sampleWindow[i].first;
+            onHap1=sampleWindow[i].onHap1(sample);
+            onHap2=sampleWindow[i].onHap2(sample);
+            for (j=i-1; j>=0; j--) {
+                if (sampleWindow[j].last<first) break;
+                if (sampleWindow[i].inIndependentSet && !sampleWindow[j].inIndependentSet) {
+                    if (hap1 && onHap1 && sampleWindow[j].onHap1(sample)) sampleWindow[j].overlapsIS_hap1=true;
+                    if (hap2 && onHap2 && sampleWindow[j].onHap2(sample)) sampleWindow[j].overlapsIS_hap2=true;
+                }
+                else if (sampleWindow[j].inIndependentSet && !sampleWindow[i].inIndependentSet) {
+                    if (hap1 && onHap1 && sampleWindow[j].onHap1(sample)) sampleWindow[i].overlapsIS_hap1=true;
+                    if (hap2 && onHap2 && sampleWindow[j].onHap2(sample)) sampleWindow[i].overlapsIS_hap2=true;
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
+    //  ------------------> for j=i-1 when sorted by last... we should also look at the right side for intervals with identical last to i......
+    
+    
+    
+    
     
     
     
@@ -739,6 +892,7 @@ public class DrawPhasedVariants {
         public boolean inIndependentSet;
         public double independentSetWeight;
         public Interval independentSetPrevious;
+        public boolean overlapsIS_hap1, overlapsIS_hap2;
         
         
         public Interval() {
