@@ -1,11 +1,11 @@
 import java.util.Arrays;
 import java.util.Random;
 import java.io.*;
+import java.util.zip.*;
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.geom.*;
 import javax.imageio.*;
-import java.text.*;
 
 
 /**
@@ -13,11 +13,16 @@ import java.text.*;
  */
 public class DrawPhasedVariants {
     /**
-     * Expected weight tags in the INFO field and in the SAMPLE field of a VCF
+     * Weight tag (in the INFO field or in the SAMPLE field of the VCF).
      */
-    private static final String WEIGHT_ID_INFO = "isWeight";
-    private static final String WEIGHT_ID_SAMPLE = "isWeight";
-    private static boolean LOAD_WEIGHT_FROM_SAMPLE_COLUMN;
+    private static String WEIGHT_TAG;
+    private static boolean WEIGHT_TAG_IN_SAMPLE_COLUMN;
+    
+    /**
+     * FALSE=remove entire VCF records from a sample;
+     * TRUE=remove single ones from a sample's GT.
+     */
+    private static boolean METHOD;
     
     /**
      * Variant types
@@ -42,16 +47,11 @@ public class DrawPhasedVariants {
     private static final int UNPHASED_11 = 7;
     
     /**
-     * Drawing constants
+     * VCF constants
      */
-    private static final int PIXELS_PER_POS = 50;
-    private static final int PIXELS_DELTA = 5;
-    private static final int N_ROWS = 5*PIXELS_PER_POS;
-    private static final Color COLOR_BACKGROUND = new Color(0x00FFFFFF);
-    private static final Stroke STROKE_UNPHASED = new BasicStroke(1.0f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND,10.0f,new float[] {10.0f},0.0f);
-    private static final Stroke STROKE_PHASED = new BasicStroke(1.0f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND,10.0f);
-    private static final Stroke STROKE_BACKGROUND = new BasicStroke(0.0f);
-    private static Color[] type2color;
+    private static final String VCF_SEPARATOR = "\t";
+    private static final char GT_SEPARATOR = ':';
+    private static final String GT_STR = "GT";
     
     /**
      * A maximal set of overlapping intervals.
@@ -74,22 +74,45 @@ public class DrawPhasedVariants {
      */
     private static int windowLastPos;
     
-    
 
     /**
      * @param args
-     * 2: Only build the collision histogram, do not draw (1/0).
+     *
+     * Input arguments:
+     * 0: input VCF.GZ;
+     * 1: operations allowed to fix the genotypes of a sample: 0=can only remove
+     *    an entire VCF record; 1=can remove single ones from a GT;
+     * 2: ID of the weight field; if this field is not found, all weights are
+     *    set to one;
+     * 3: given a VCF record in a sample, assign it a weight encoded in the
+     *    sample column (1) or in the INFO field (0).
+     *
+     * Output arguments:
+     * 4: writes to this file (uncompressed VCF) the input VCF.GZ with all
+     *    collisions fixed; "null"=collisions are not fixed and the file is not
+     *    written;
+     * 5: writes to this file the list of all windows processed;
+     * 6: histogram: for each X, the number of (window,sample) pairs with X
+     *    collisions; "null"=the histogram is not printed;
+     * 7: directory where to store figures for every window and sample with
+     *    collisions; "null"=figures are not printed. 
      */
     public static void main(String[] args) throws IOException {
-        final String INPUT_VCF = args[0];
-        final String OUTPUT_VCF = args[0];  // null=only counts, does not fix.
-        String FIGURES_DIR = args[1];
-        final boolean COUNT_ONLY = Integer.parseInt(args[2])==1;
-        LOAD_WEIGHT_FROM_SAMPLE_COLUMN=Integer.parseInt(args[3])==1;
+        // Input arguments
+        final String INPUT_VCF_GZ = args[0];
+        METHOD=args[1].equalsIgnoreCase("1");
+        WEIGHT_TAG=args[2];
+        WEIGHT_TAG_IN_SAMPLE_COLUMN=Integer.parseInt(args[3])==1;
+        // Output arguments
+        final String OUTPUT_VCF = args[4];
+        final String OUTPUT_WINDOWS = args[5];
+        final String OUTPUT_HISTOGRAM = args[6];
+        String OUTPUT_FIGURES_DIR = args[7];
         
         int i;
-        BufferedReader br;
-        BufferedWriter bw;
+        int nRecords;
+        BufferedReader brVCF;
+        BufferedWriter bwVCF, bwWindows, bwHistogram;
         long[] histogram;
         
         initType2color();
@@ -97,39 +120,259 @@ public class DrawPhasedVariants {
         for (i=0; i<window.length; i++) window[i] = new Interval();
         histogram = new long[100];
         windowLast=-1; windowLastPos=-1;
-        br = new BufferedReader(new FileReader(INPUT_VCF));
-        if (OUTPUT_VCF.equalsIgnoreCase("null")) bw=null;
-        else bw = new BufferedWriter(new FileWriter(OUTPUT_VCF));
-        if (FIGURES_DIR.equalsIgnoreCase("null")) FIGURES_DIR=null;
+        brVCF = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(INPUT_VCF_GZ))));
+        if (OUTPUT_VCF.equalsIgnoreCase("null")) bwVCF=null;
+        else bwVCF = new BufferedWriter(new FileWriter(OUTPUT_VCF));
+        if (OUTPUT_WINDOWS.equalsIgnoreCase("null")) bwWindows=null;
+        else bwWindows = new BufferedWriter(new FileWriter(OUTPUT_WINDOWS));
+        if (OUTPUT_FIGURES_DIR.equalsIgnoreCase("null")) OUTPUT_FIGURES_DIR=null;
+        nRecords=0;
         while (true) {
-            initNextWindow();
-System.err.println("VITTU> 1  windowLast="+windowLast+" windowLastPos="+windowLastPos);            
-            loadNextWindow(br);
-System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLastPos+(windowLast>=0?" first pos: "+window[0].first:""));
+            loadNextWindow(brVCF,bwVCF);
             if (windowLast==-1) break;
-            fixWindow(bw,FIGURES_DIR,histogram);
+            fixWindow(bwVCF,bwWindows,OUTPUT_FIGURES_DIR,histogram);
+            nRecords+=(isLastInWindow()?windowLast:windowLast-1)+1;
+            if (nRecords%10000==0) System.err.println("Loaded "+nRecords+" records");
         }
-        br.close(); bw.close();
-        System.err.println("Histogram (nCollision, nHaplotypes):");
-        for (i=0; i<histogram.length; i++) System.err.println(i+","+histogram[i]);
+        brVCF.close(); bwVCF.close(); bwWindows.close();
+        if (!OUTPUT_HISTOGRAM.equalsIgnoreCase("null")) {
+            bwHistogram = new BufferedWriter(new FileWriter(OUTPUT_HISTOGRAM));
+            bwHistogram.write("#nCollision \t nHaplotypes\n");
+            for (i=0; i<histogram.length; i++) bwHistogram.write(i+"\t"+histogram[i]+"\n");
+            bwHistogram.close();
+        }
+    }
+    
+    
+    /**
+     * Loads in $window$ a maximal set of overlapping intervals, regardless of
+     * their genotypes.
+     *
+     * Remark: after this procedure completes, the last interval in $window$
+     * might not overlap with the previous ones.
+     *
+     * @param bw if not null, input headers (if any) are written here.
+     */
+    private static final void loadNextWindow(BufferedReader br, BufferedWriter bw) throws IOException {
+        int i;
+        String str;
+        Interval tmpInterval;
+        
+        if (isLastInWindow()) {
+            windowLast=-1;
+            windowLastPos=-1;
+        }
+        else {
+            tmpInterval=window[0];
+            window[0]=window[windowLast];
+            window[windowLast]=tmpInterval;
+            windowLastPos=window[0].last;
+            windowLast=0;
+        }
+        while (true) {
+            str=br.readLine();
+            if (str==null) break;
+            if (str.charAt(0)==VCFconstants.COMMENT) {
+                if (bw!=null) { bw.write(str); bw.newLine(); }
+                continue;
+            }
+            windowLast++;
+            if (windowLast==window.length) {
+                Interval[] newArray = new Interval[window.length<<1];
+                System.arraycopy(window,0,newArray,0,window.length);
+                for (i=window.length; i<newArray.length; i++) newArray[i] = new Interval();
+                window=newArray;
+            }
+            tmpInterval=window[windowLast];
+            tmpInterval.init(str);
+            if (!isLastInWindow()) break;
+            if (tmpInterval.last>windowLastPos) windowLastPos=tmpInterval.last;
+        }
+        for (i=0; i<=windowLast; i++) window[i].inputIndex=i;
+    }
+    
+    
+    /**
+     * @return TRUE iff the last interval of $window$ overlaps with the previous
+     * intervals.
+     */
+    private static final boolean isLastInWindow() {
+        return windowLast==-1 || windowLastPos==-1 || (window[windowLast].chr==window[0].chr && window[windowLast].first<=windowLastPos);
+    }
+    
+    
+    /**
+     * @param bwVCF if NULL, the procedure does not fix collisions;
+     * @param figuresDir if not NULL, the procedure stores in this directory an
+     * overlap diagram of the window for every sample that contains a collision
+     * (one PNG file per sample);
+     * @param histogram for each $i$, the number of (window,sample) pairs with
+     * $i$ collisions; windows with exactly one VCF record are not considered in
+     * the count.
+     */
+    private static final void fixWindow(BufferedWriter bwVCF, BufferedWriter bwWindows, String figuresDir, long[] histogram) throws IOException {
+        final int FIRST = window[0].first;
+        final int N_COLUMNS = (2+windowLastPos-FIRST+1)*PIXELS_PER_POS;
+        final int LAST = isLastInWindow()?windowLast:windowLast-1;
+        final int N_SAMPLES = window[0].genotypes.length;
+        final int CHR = window[0].chr;
+        final String WINDOW_DIR = figuresDir==null?null:figuresDir+"/chr"+CHR+"_"+FIRST+"_"+windowLastPos;
+        
+        int i, j;
+        int nCollisions;
+        Random random = null;
+        File directory = null;
+        BufferedImage image = null;
+        Graphics2D graphics = null;
+        
+        if (bwWindows!=null) bwWindows.write(window[0].chr+"\t"+window[0].first+"\t"+windowLastPos+"\t"+(LAST+1));
+        if (LAST==0) { 
+            if (bwWindows!=null) {
+                for (i=0; i<N_SAMPLES; i++) bwWindows.write("\t0");
+                bwWindows.newLine();
+            }
+            if (bwVCF!=null) window[0].toVCF(bwVCF); 
+            return; 
+        }
+        Interval.order=Interval.ORDER_LAST_POS;
+        Arrays.sort(window,0,LAST+1);
+        if (figuresDir!=null) {
+            random = new Random();
+            directory = new File(WINDOW_DIR);
+            image = new BufferedImage(N_COLUMNS,N_ROWS,BufferedImage.TYPE_INT_RGB);
+            graphics=image.createGraphics();
+        }
+        for (j=0; j<N_SAMPLES; j++) {
+            nCollisions=countCollisions(LAST,j);
+            histogram[nCollisions>histogram.length-1?histogram.length-1:nCollisions]++;
+            if (bwWindows!=null) bwWindows.write("\t"+nCollisions);
+            if (nCollisions==0) continue;
+            if (figuresDir!=null) {
+                if (!directory.exists()) directory.mkdirs();
+                drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
+                ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_before.png"));
+            }
+            if (bwVCF!=null) {
+                if (METHOD) independentSet2(j,LAST);
+                else independentSet1(j,LAST);
+                if (figuresDir!=null) {
+                    drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
+                    ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_after.png"));
+                }
+            }
+        }
+        if (bwVCF!=null) {
+            Interval.order=Interval.ORDER_INPUT;
+            Arrays.sort(window,0,LAST+1);
+            for (i=0; i<=LAST; i++) window[i].toVCF(bwVCF);
+        }
+    }
+    
+    
+    /**
+     * Remark: the procedure assumes that $window$ is sorted by last position.
+     *
+     * @return the number of pairs of intervals in $window[0..last]$ that 
+     * collide in $sample$, assuming that a diploid call consists of two 
+     * intervals.
+     */
+    private static final int countCollisions(int last, int sample) {
+        int i, j;
+        int startI, endI, gtI, out;
+        
+        out=0;
+        for (i=last; i>=0; i--) {
+            if (!window[i].isPresent(sample)) continue;
+            startI=window[i].first; gtI=window[i].genotypes[sample];
+            for (j=i-1; j>=0; j--) {
+                if (window[j].last<startI) break;
+                out+=N_GT_COLLISIONS[window[j].genotypes[sample]][gtI];
+            }
+        }
+        return out;
     }
     
     
     
     
+    // ------------------------ GENOTYPE PROCEDURES ----------------------------
     
+    /**
+     * Rows, columns: GT ids. Cells: {0,1,2} the number of pairs of intervals
+     * that collide, assuming that a diploid call consists of two intervals. 
+     */
+    private static final int[][] N_GT_COLLISIONS = new int[][] { 
+        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
+        {0,0,0,0, 0,0,0,0},
+        {0,1,0,1, 0,0,0,1},
+        {0,0,1,1, 0,0,0,1},
+        {0,1,1,2, 0,0,0,2},
+        {0,0,0,0, 0,0,0,0},
+        {0,0,0,1, 0,0,0,1},
+        {0,0,0,1, 0,0,0,1},
+        {0,1,1,2, 0,0,0,2},
+    };
+    
+    
+    private static final String[] GT2STR = new String[] {
+        "0|0", "0|1", "1|0", "1|1",  "0/0", "0/1", "1/0", "1/1"
+    };
+    
+    
+    private static final int[] REMOVE_HAP1 = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
+        PHASED_00,PHASED_01,PHASED_00,PHASED_01,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
+    };
+    
+    
+    private static final int[] REMOVE_HAP2 = new int[] {
+        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
+        PHASED_00,PHASED_00,PHASED_10,PHASED_10,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
+    };
+    
+    
+    /**
+     * @return a unique ID for every possible genotype.
+     */
+    private static final int gt2Id(String gt) {
+        final char a = gt.charAt(0);
+        final char b = gt.charAt(1);
+        final char c = gt.charAt(2);
+    
+        if (b=='/') {
+            if (a=='.' || a=='0') {
+                if (c=='.' || c=='0') return UNPHASED_00;
+                else return UNPHASED_01;
+            }
+            else {
+                if (c=='.' || c=='0') return UNPHASED_10;
+                else return UNPHASED_11;
+            }
+        }
+        else {
+            if (a=='.' || a=='0') {
+                if (c=='.' || c=='0') return PHASED_00;
+                else return PHASED_01;
+            }
+            else {
+                if (c=='.' || c=='0') return PHASED_10;
+                else return PHASED_11;
+            }
+        }
+    }
+
     
     
     
     // --------------------- INDEPENDENT SET PROCEDURES ------------------------
     
     /**
-     * The optimal solution of independent set procedures
+     * The optimal solution
      */
     private static double maxWeight;
     
     /**
-     * Space reused by independent set procedures
+     * Reused space
      */
     private static Interval[] sampleWindow;
     private static int sampleWindowLast;
@@ -371,18 +614,6 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
             System.exit(1);
         }
     }
-    
-    
-    private static final int[] REMOVE_HAP1 = new int[] {
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        PHASED_00,PHASED_01,PHASED_00,PHASED_01,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
-    };
-    
-    
-    private static final int[] REMOVE_HAP2 = new int[] {
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        PHASED_00,PHASED_00,PHASED_10,PHASED_10,  UNPHASED_00,UNPHASED_01,UNPHASED_10,UNPHASED_01
-    };
 
 
     /**
@@ -422,7 +653,314 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
         lastEndpoint=j;
     }
 
+    
+    
+    
+    // --------------------- WINDOW DRAWING PROCEDURES -------------------------
+    
+    /**
+     * Drawing constants
+     */
+    private static final int PIXELS_PER_POS = 50;
+    private static final int PIXELS_DELTA = 5;
+    private static final int N_ROWS = 5*PIXELS_PER_POS;
+    private static final Color COLOR_BACKGROUND = new Color(0x00FFFFFF);
+    private static final Stroke STROKE_UNPHASED = new BasicStroke(1.0f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND,10.0f,new float[] {10.0f},0.0f);
+    private static final Stroke STROKE_PHASED = new BasicStroke(1.0f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND,10.0f);
+    private static final Stroke STROKE_BACKGROUND = new BasicStroke(0.0f);
+    private static Color[] type2color;
+    
+    
+    private static final void initType2color() {
+        type2color = new Color[6];
+        type2color[DEL] = new Color(0x006d9eeb);  // Blue
+        type2color[INV] = new Color(0x0093c47d);  // Green
+        type2color[DUP] = new Color(0x00ffd966);  // Yellow
+        type2color[INS] = new Color(0x00cc0000);  // Red
+        type2color[SNP] = new Color(0x00666666);  // Gray
+        type2color[REPLACEMENT] = new Color(0x009900ff);  // Violet
+    }
+    
+    
+    private static final void drawWindow(int sample, int last, Graphics2D graphics, int nColumns, int first, Random random) {
+        int i, x, y;
+        int gt, width;
+        
+        graphics.setStroke(STROKE_BACKGROUND);
+        graphics.setColor(COLOR_BACKGROUND);
+        graphics.fillRect(0,0,nColumns,N_ROWS);
+        for (i=0; i<=last; i++) {
+            gt=window[i].genotypes[sample];
+            if (gt==UNPHASED_00 || gt==PHASED_00) continue;
+            if (gt==UNPHASED_01 || gt==UNPHASED_10) graphics.setStroke(STROKE_UNPHASED);
+            else graphics.setStroke(STROKE_PHASED);
+            graphics.setColor(type2color[window[i].variantType]);
+            x=(1+window[i].first-first)*PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
+            width=(window[i].last-window[i].first+1)*PIXELS_PER_POS;
+            if (gt==UNPHASED_01 || gt==UNPHASED_10 || gt==UNPHASED_11 || gt==PHASED_11) {
+                y=PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
+                graphics.drawRect(x,y,width,3*PIXELS_PER_POS);
+            }
+            else if (gt==PHASED_10) {
+                y=PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
+                graphics.drawRect(x,y,width,PIXELS_PER_POS);
+            }
+            else if (gt==PHASED_01) {
+                y=PIXELS_PER_POS*3-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
+                graphics.drawRect(x,y,width,PIXELS_PER_POS);
+            }
+        }
+    }
+    
+        
+    
+    
+    // -------------------------- DATA STRUCTURES  -----------------------------
+    
+    /**
+     * A VCF record represented as a weighted interval on the line.
+     * The same object is intended to be reused by multiple VCF records.
+     */
+    private static class Interval implements Comparable {
+        public static final int ORDER_INPUT = 0;
+        public static final int ORDER_LAST_POS = 1;
+        public static int order;
+        
+        public boolean isSV;  // True=SV, False=SNP/small indel.
+        public int variantType;
+        public int chr;
+        public int first, last;  // One-based, inclusive.
+        public int inputIndex;
+        public double weight;
+        public String[] vcfRecord;  // One cell per VCF column
+        public int[] genotypes;
+        
+        // Independent set variables
+        public boolean inIndependentSet;
+        public double independentSetWeight;
+        public Interval independentSetPrevious;
+        
+        
+        public Interval() {
+            isSV=false; variantType=-1; chr=-1; first=-1; last=-1; weight=0.0; 
+            vcfRecord=null; genotypes=null; inputIndex=-1;
+        }
+        
+        
+        public final void clearIndependentSetVariables() {
+            independentSetWeight=0.0; independentSetPrevious=null; inIndependentSet=false;
+        }
+        
+        
+        /**
+         * @param record a VCF record;
+         * @return FALSE iff $vcfRecord$ does not encode any known variant type.
+         */
+        public final void init(String record) {
+            int i;
+            int pos, length, nSamples;
+            String tmpString;
+            
+            this.vcfRecord=record.split(VCF_SEPARATOR);
+            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVTYPE_STR);
+            if (tmpString!=null && tmpString.length()!=0) {
+                isSV=true;
+                variantType=svType2Row(tmpString);
+            }
+            else {
+                isSV=false;
+                variantType=refAlt2Row(this.vcfRecord[3],this.vcfRecord[4]);
+            }
+            if (variantType==-1) {
+                System.err.println("ERROR: this record encodes an unknown variant type: "+record);
+                System.exit(1);
+            }
+            chr=VCFconstants.string2contig(this.vcfRecord[0]);
+            pos=Integer.parseInt(this.vcfRecord[1]);
+            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVLEN_STR);
+            if (tmpString!=null) {
+                length=Integer.parseInt(tmpString);
+                if (length<0) length=-length;
+            }
+            else if (variantType==REPLACEMENT) length=this.vcfRecord[3].length()-1;
+            else length=Math.max(this.vcfRecord[3].length(),this.vcfRecord[4].length())-1;
+            first=-1; last=-1;
+            if (variantType==DEL || variantType==INV || variantType==DUP || variantType==REPLACEMENT) { first=pos+1; last=pos+length; }
+            else if (variantType==INS) { first=pos; last=pos+1; }
+            else if (variantType==SNP) { first=pos; last=pos; }
+            nSamples=this.vcfRecord.length-9;
+            if (genotypes==null || genotypes.length<nSamples) genotypes = new int[nSamples];
+            for (i=0; i<nSamples; i++) genotypes[i]=gt2Id(this.vcfRecord[9+i]);
+        }
+        
+        
+        /**
+         * Sets $weight$ to a value loaded from the INFO field or the SAMPLE
+         * field, depending on global variable $LOAD_WEIGHT_FROM_SAMPLE_COLUMN$.
+         * If no value is found in the VCF record, $weight$ is arbitrarily set 
+         * to one.
+         */
+        private final void setWeight(int sample) {
+            int i, j, p;
+            int gtLength;
+            String gt, value;
+            
+            value=null;
+            if (WEIGHT_TAG_IN_SAMPLE_COLUMN) {
+                p=vcfRecord[8].indexOf(WEIGHT_TAG);
+                if (p>=0) {
+                    j=0;
+                    for (i=0; i<p; i++) {
+                        if (vcfRecord[8].charAt(i)==GT_SEPARATOR) j++;
+                    }
+                    gt=vcfRecord[9+sample]; gtLength=gt.length();
+                    for (i=0; i<gtLength; i++) {
+                        if (gt.charAt(i)!=GT_SEPARATOR) continue;
+                        j--;
+                        if (j>0) continue;
+                        p=gt.indexOf(GT_SEPARATOR,i+1);
+                        value=p>=0?gt.substring(i+1,p):gt.substring(i+1);
+                        break;
+                    }
+                }
+            }
+            else value=VCFconstants.getField(vcfRecord[7],WEIGHT_TAG);
+            weight=value!=null?Double.parseDouble(value):1.0;
+        }
+        
+        
+        public final boolean isPresent(int sample) {
+            return genotypes[sample]!=PHASED_00 && genotypes[sample]!=UNPHASED_00;
+        }
+        
+        
+        public final boolean onHap1(int sample) {
+            return genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
+        }
+        
+        
+        public final boolean onHap2(int sample) {
+            return genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
+        }
+        
+        
+        public final boolean isPhased(int sample) {
+            return genotypes[sample]==PHASED_00 || genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11;
+        }
 
+        
+        /**
+         * @param nextInterval an interval that ends after $last$;
+         * @param sample both this interval and $nextInterval$ are assumed to be
+         * phased in $sample$;
+         * @return TRUE iff this interval can precede $nextInterval$ in an 
+         * independent set of $sample$.
+         */
+        public final boolean precedes(Interval nextInterval, int sample) {
+            return N_GT_COLLISIONS[genotypes[sample]][nextInterval.genotypes[sample]]==0 || last<nextInterval.first;
+        }
+        
+        
+        /**
+         * Prints the original VCF record, but using the GTs in $genotypes$.
+         */
+        public final void toVCF(BufferedWriter bw) throws IOException {
+            int i, j, k, p, q;
+            int gtIndex, gtLength;
+            String gt;
+            
+            // Computing the index of the GT field in this record
+            p=vcfRecord[8].indexOf(GT_STR);
+            gtIndex=0;
+            for (i=0; i<p; i++) {
+                if (vcfRecord[8].charAt(i)==GT_SEPARATOR) gtIndex++;
+            }
+            
+            // Printing the VCF record
+            bw.write(vcfRecord[0]);
+            for (i=1; i<=8; i++) { bw.write(VCF_SEPARATOR); bw.write(vcfRecord[i]); }
+            for (i=0; i<genotypes.length; i++) {
+                bw.write(VCF_SEPARATOR);
+                gt=vcfRecord[9+i]; gtLength=gt.length();
+                k=0; p=0;
+                for (j=0; j<gtLength; j++) {
+                    if (gt.charAt(j)==GT_SEPARATOR) {
+                        k++;
+                        if (k==gtIndex) { p=j+1; break; }
+                    }
+                }
+                if (p>0) bw.write(gt.substring(0,p));
+                bw.write(GT2STR[genotypes[i]]);
+                q=gt.indexOf(GT_SEPARATOR,p);
+                if (q>=0) bw.write(gt.substring(q));
+            }
+            bw.newLine();
+        }
+        
+        
+        public String toString() {
+            return (isSV?"1":"0")+", "+variantType+", chr"+chr+"["+first+".."+last+"], weight="+weight;
+        }
+        
+        
+        public boolean equals(Object other) {
+            final Interval otherInterval = (Interval)other;
+            
+            if (order==ORDER_LAST_POS) return last==otherInterval.last;
+            else if (order==ORDER_INPUT) return inputIndex==otherInterval.inputIndex;
+            return false;
+        }
+        
+        
+        public int compareTo(Object other) {
+            final Interval otherInterval = (Interval)other;
+            
+            if (order==ORDER_LAST_POS) {
+                if (last<otherInterval.last) return -1;
+                else if (last>otherInterval.last) return 1;
+                else return 0;
+            }
+            else if (order==ORDER_INPUT) {
+                if (inputIndex<otherInterval.inputIndex) return -1;
+                else if (inputIndex>otherInterval.inputIndex) return 1;
+                else return 0;
+            }
+            return 0;
+        }
+        
+    }
+    
+    
+	private static final int svType2Row(String type) {
+		if ( type.equalsIgnoreCase(VCFconstants.DEL_STR) || 
+			 type.equalsIgnoreCase(VCFconstants.DEL_ME_STR)
+		   ) return DEL;
+		else if (type.equalsIgnoreCase(VCFconstants.INV_STR)) return INV;
+        else if ( type.equalsIgnoreCase(VCFconstants.DUP_STR) ||
+			      type.equalsIgnoreCase(VCFconstants.DUP_TANDEM_STR) ||
+				  type.equalsIgnoreCase(VCFconstants.DUP_INT_STR) ||
+                  type.equalsIgnoreCase(VCFconstants.CNV_STR)
+			    ) return DUP;
+        else if ( type.equalsIgnoreCase(VCFconstants.INS_STR) ||
+                  type.equalsIgnoreCase(VCFconstants.INS_ME_STR) ||
+                  type.equalsIgnoreCase(VCFconstants.INS_NOVEL_STR)
+                ) return INS;
+		else return -1;
+	}
+
+
+	private static final int refAlt2Row(String ref, String alt) {
+        if (ref.length()==1) {
+            if (alt.length()>1) return INS;
+            else return SNP;
+        }
+        else {
+            if (alt.length()==1) return DEL;
+            else return REPLACEMENT;
+        }
+	}
+    
+    
     /**
      * The endpoint of an interval
      */
@@ -516,494 +1054,6 @@ System.err.println("VITTU> 2  windowLast="+windowLast+" windowLastPos="+windowLa
             out+="\n  closed: ";
             for (i=0; i<=lastClosed; i++) out+=closed[i].variantType+",";
             return out+"\n";
-        }
-    }
-
-    
-    
-    
-    // --------------------- WINDOW DRAWING PROCEDURES -------------------------
-    
-    /**
-     * @param outputVcf if NULL, the procedure does not fix collisions, it only
-     * counts them;
-     * @param figuresDir if not NULL, the procedure stores in this directory an
-     * overlap diagram of the window for every sample that contains a collision
-     * (one PNG file per sample);
-     * @param histogram for each $i$, the number of (window,sample) pairs with
-     * $i$ collisions; windows with exactly one variant are not considered in
-     * the count.
-     */
-    private static final void fixWindow(BufferedWriter outputVcf, String figuresDir, long[] histogram) throws IOException {
-        final int FIRST = window[0].first;
-        final int N_COLUMNS = (2+windowLastPos-FIRST+1)*PIXELS_PER_POS;
-        final int LAST = isLastInWindow()?windowLast:windowLast-1;
-        final int N_SAMPLES = window[0].genotypes.length;
-        final int CHR = window[0].chr;
-        final String WINDOW_DIR = figuresDir+"/chr"+CHR+"_"+FIRST+"_"+windowLastPos;
-        final int HIGH_COLLISIONS = 10;  // Arbitrary
-        
-        int i, j, x, y;
-        int gt, width, collisions;
-        Random random = null;
-        File directory = null;
-        BufferedImage image = null;
-        Graphics2D graphics = null;
-        
-        if (LAST==0) { window[0].toVCF(outputVcf); return; }
-        Arrays.sort(window,0,LAST+1);
-        if (figuresDir!=null) {
-            random = new Random();
-            directory = new File(WINDOW_DIR);
-            image = new BufferedImage(N_COLUMNS,N_ROWS,BufferedImage.TYPE_INT_RGB);
-            graphics=image.createGraphics();
-        }
-        for (j=0; j<N_SAMPLES; j++) {
-            collisions=nCollisions(LAST,j);
-            histogram[collisions>histogram.length-1?histogram.length-1:collisions]++;
-            if (collisions>=HIGH_COLLISIONS) System.err.println(collisions+" collisions in window "+WINDOW_DIR+" sample "+j);
-            if (collisions==0 || outputVcf==null) continue;
-            if (figuresDir!=null) {
-                if (!directory.exists()) directory.mkdirs();
-                drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
-                ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_before.png"));
-            }
-            independentSet2(j,LAST);
-            if (figuresDir!=null) {
-                drawWindow(j,LAST,graphics,N_COLUMNS,FIRST,random);
-                ImageIO.write(image,"png",new File(WINDOW_DIR+"/sample"+j+"_after.png"));
-            }
-        }
-        for (i=0; i<=LAST; i++) window[i].toVCF(outputVcf);
-    }
-    
-    
-    private static final void drawWindow(int sample, int last, Graphics2D graphics, int nColumns, int first, Random random) {
-        int i, x, y;
-        int gt, width;
-        
-        graphics.setStroke(STROKE_BACKGROUND);
-        graphics.setColor(COLOR_BACKGROUND);
-        graphics.fillRect(0,0,nColumns,N_ROWS);
-        for (i=0; i<=last; i++) {
-            gt=window[i].genotypes[sample];
-            if (gt==UNPHASED_00 || gt==PHASED_00) continue;
-            if (gt==UNPHASED_01 || gt==UNPHASED_10) graphics.setStroke(STROKE_UNPHASED);
-            else graphics.setStroke(STROKE_PHASED);
-            graphics.setColor(type2color[window[i].variantType]);
-            x=(1+window[i].first-first)*PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
-            width=(window[i].last-window[i].first+1)*PIXELS_PER_POS;
-            if (gt==UNPHASED_01 || gt==UNPHASED_10 || gt==UNPHASED_11 || gt==PHASED_11) {
-                y=PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
-                graphics.drawRect(x,y,width,3*PIXELS_PER_POS);
-            }
-            else if (gt==PHASED_10) {
-                y=PIXELS_PER_POS-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
-                graphics.drawRect(x,y,width,PIXELS_PER_POS);
-            }
-            else if (gt==PHASED_01) {
-                y=PIXELS_PER_POS*3-PIXELS_DELTA+random.nextInt((PIXELS_DELTA)<<1);
-                graphics.drawRect(x,y,width,PIXELS_PER_POS);
-            }
-        }
-    }
-    
-    
-    /**
-     * Remark: the procedure assumes that $window$ is sorted by last position.
-     *
-     * @return the number of pairs of intervals in $window[0..last]$ that 
-     * collide in $sample$, assuming that a diploid call consists of two 
-     * intervals.
-     */
-    private static final int nCollisions(int last, int sample) {
-        int i, j;
-        int startI, endI, gtI, out;
-        
-        out=0;
-        for (i=last; i>=0; i--) {
-            if (!window[i].isPresent(sample)) continue;
-            startI=window[i].first; gtI=window[i].genotypes[sample];
-            for (j=i-1; j>=0; j--) {
-                if (window[j].last<startI) break;
-                out+=N_GT_COLLISIONS[window[j].genotypes[sample]][gtI];
-            }
-        }
-        return out;
-    }
-    
-    
-    /**
-     * Rows, columns: GT ids. Cells: {0,1,2} the number of pairs of intervals
-     * that collide, assuming that a diploid call consists of two intervals. 
-     */
-    private static final int[][] N_GT_COLLISIONS = new int[][] { 
-        // 0|0, 0|1, 1|0, 1|1,  0/0, 0/1, 1/0, 1/1
-        {0,0,0,0, 0,0,0,0},
-        {0,1,0,1, 0,0,0,1},
-        {0,0,1,1, 0,0,0,1},
-        {0,1,1,2, 0,0,0,2},
-        {0,0,0,0, 0,0,0,0},
-        {0,0,0,1, 0,0,0,1},
-        {0,0,0,1, 0,0,0,1},
-        {0,1,1,2, 0,0,0,2},
-    };
-
-    
-    
-    
-    // --------------------- WINDOW LOADING PROCEDURES -------------------------
-    
-    /**
-     * @return TRUE iff the last interval of $window$ overlaps with the previous
-     * intervals.
-     */
-    private static final boolean isLastInWindow() {
-        return windowLast==-1 || windowLastPos==-1 || (window[windowLast].chr==window[0].chr && window[windowLast].first<=windowLastPos);
-    }
-    
-    
-    /**
-     * Prepares $window$ for loading the next set of overlapping intervals.
-     */
-    private static final void initNextWindow() {
-        if (isLastInWindow()) {
-            windowLast=-1;
-            windowLastPos=-1;
-        }
-        else {
-            Interval tmpInterval = window[0];
-            window[0]=window[windowLast];
-            window[windowLast]=tmpInterval;
-            windowLastPos=window[0].last;
-            windowLast=0;
-        }
-    }
-    
-    
-    /**
-     * Loads in $window$ a maximal set of overlapping intervals, regardless of
-     * their genotypes.
-     *
-     * Remark: after this procedure completes, the last interval in $window$
-     * might not overlap with the previous ones.
-     */
-    private static final void loadNextWindow(BufferedReader br) throws IOException {
-        int i;
-        String str;
-        Interval tmpInterval;
-        
-        while (true) {
-            str=br.readLine();
-            if (str==null) break;
-            if (str.charAt(0)==VCFconstants.COMMENT) continue;
-            windowLast++;
-            if (windowLast==window.length) {
-                Interval[] newArray = new Interval[window.length<<1];
-                System.arraycopy(window,0,newArray,0,window.length);
-                for (i=window.length; i<newArray.length; i++) newArray[i] = new Interval();
-                window=newArray;
-            }
-            tmpInterval=window[windowLast];
-            if (!tmpInterval.init(str)) {
-                windowLast--;
-                str=br.readLine();
-                continue;
-            }
-            if (!isLastInWindow()) break;
-            if (tmpInterval.last>windowLastPos) windowLastPos=tmpInterval.last;
-        }
-        
-        
-System.err.println("loadNextWindow> loaded window:");
-for (int x=0; x<=windowLast; x++) System.err.println(window[x]);
-        
-        
-        
-    }
-    
-    
-    
-    
-    // ----------------------- PROPERTIES OF INTERVALS  ------------------------
-    
-    /**
-     * A VCF record represented as a weighted interval on the line.
-     * The same object is intended to be reused by multiple VCF records.
-     */
-    private static class Interval implements Comparable {
-        private static final String VCF_SEPARATOR = "\t";
-        private static final char GT_SEPARATOR = ':';
-        private static final String GT_STR = "GT";
-        
-        public boolean isSV;  // True=SV, False=SNP/small indel.
-        public int variantType;
-        public int chr;
-        public int first, last;  // One-based, inclusive.
-        public double weight;
-        public String[] vcfRecord;  // One cell per VCF column
-        public int[] genotypes;
-        
-        // Independent set variables
-        public boolean inIndependentSet;
-        public double independentSetWeight;
-        public Interval independentSetPrevious;
-        
-        
-        public Interval() {
-            isSV=false; variantType=-1; chr=-1; first=-1; last=-1; weight=0.0; 
-            vcfRecord=null; genotypes=null;
-        }
-        
-        
-        public final void clearIndependentSetVariables() {
-            independentSetWeight=0.0; independentSetPrevious=null; inIndependentSet=false;
-        }
-        
-        
-        /**
-         * @param record a VCF record;
-         * @return FALSE iff $vcfRecord$ does not encode any known variant type.
-         */
-        public final boolean init(String record) {
-            int i;
-            int pos, length, nSamples;
-            String tmpString;
-            
-            this.vcfRecord=record.split(VCF_SEPARATOR);
-            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVTYPE_STR);
-            if (tmpString!=null && tmpString.length()!=0) {
-                isSV=true;
-                variantType=svType2Row(tmpString);
-            }
-            else {
-                isSV=false;
-                variantType=refAlt2Row(this.vcfRecord[3],this.vcfRecord[4]);
-            }
-            if (variantType==-1) return false;
-            chr=VCFconstants.string2contig(this.vcfRecord[0]);
-            pos=Integer.parseInt(this.vcfRecord[1]);
-            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVLEN_STR);
-            if (tmpString!=null) {
-                length=Integer.parseInt(tmpString);
-                if (length<0) length=-length;
-            }
-            else if (variantType==REPLACEMENT) length=this.vcfRecord[3].length()-1;
-            else length=Math.max(this.vcfRecord[3].length(),this.vcfRecord[4].length())-1;
-            first=-1; last=-1;
-            if (variantType==DEL || variantType==INV || variantType==DUP || variantType==REPLACEMENT) { first=pos+1; last=pos+length; }
-            else if (variantType==INS) { first=pos; last=pos+1; }
-            else if (variantType==SNP) { first=pos; last=pos; }
-            nSamples=this.vcfRecord.length-9;
-            if (genotypes==null || genotypes.length<nSamples) genotypes = new int[nSamples];
-            for (i=0; i<nSamples; i++) genotypes[i]=gt2Id(this.vcfRecord[9+i]);
-            return true;
-        }
-        
-        
-        /**
-         * Sets $weight$ to a value loaded from the INFO field or the SAMPLE
-         * field, depending on global variable $LOAD_WEIGHT_FROM_SAMPLE_COLUMN$.
-         * If no value is found in the VCF record, $weight$ is arbitrarily set 
-         * to one.
-         */
-        private final void setWeight(int sample) {
-            int i, j, p;
-            int gtLength;
-            String gt, value;
-            
-            value=null;
-            if (LOAD_WEIGHT_FROM_SAMPLE_COLUMN) {
-                p=vcfRecord[8].indexOf(WEIGHT_ID_SAMPLE);
-                if (p>=0) {
-                    j=0;
-                    for (i=0; i<p; i++) {
-                        if (vcfRecord[8].charAt(i)==GT_SEPARATOR) j++;
-                    }
-                    gt=vcfRecord[9+sample]; gtLength=gt.length();
-                    for (i=0; i<gtLength; i++) {
-                        if (gt.charAt(i)!=GT_SEPARATOR) continue;
-                        j--;
-                        if (j>0) continue;
-                        p=gt.indexOf(GT_SEPARATOR,i+1);
-                        value=p>=0?gt.substring(i+1,p):gt.substring(i+1);
-                        break;
-                    }
-                }
-            }
-            else value=VCFconstants.getField(vcfRecord[7],WEIGHT_ID_INFO);
-            weight=value!=null?Double.parseDouble(value):1.0;
-        }
-        
-        
-        public final boolean isPresent(int sample) {
-            return genotypes[sample]!=PHASED_00 && genotypes[sample]!=UNPHASED_00;
-        }
-        
-        
-        public final boolean onHap1(int sample) {
-            return genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
-        }
-        
-        
-        public final boolean onHap2(int sample) {
-            return genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_11 || genotypes[sample]==UNPHASED_11;
-        }
-        
-        
-        public final boolean isPhased(int sample) {
-            return genotypes[sample]==PHASED_00 || genotypes[sample]==PHASED_01 || genotypes[sample]==PHASED_10 || genotypes[sample]==PHASED_11;
-        }
-
-        
-        /**
-         * @param nextInterval an interval that ends after $last$;
-         * @param sample both this interval and $nextInterval$ are assumed to be
-         * phased in $sample$;
-         * @return TRUE iff this interval can precede $nextInterval$ in an 
-         * independent set of $sample$.
-         */
-        public final boolean precedes(Interval nextInterval, int sample) {
-            return N_GT_COLLISIONS[genotypes[sample]][nextInterval.genotypes[sample]]==0 || last<nextInterval.first;
-        }
-        
-        
-        /**
-         * Prints the original VCF record, but using the GTs in $genotypes$.
-         */
-        public final void toVCF(BufferedWriter bw) throws IOException {
-            int i, j, k, p;
-            int gtIndex, gtLength;
-            String gt;
-            
-            // Computing the index of the GT field
-            p=vcfRecord[8].indexOf(GT_STR);
-            gtIndex=0;
-            for (i=0; i<p; i++) {
-                if (vcfRecord[8].charAt(i)==GT_SEPARATOR) gtIndex++;
-            }
-            
-            // Printing the VCF record
-            bw.write(vcfRecord[0]);
-            for (i=1; i<=8; i++) { bw.write(VCF_SEPARATOR); bw.write(vcfRecord[i]); }
-            for (i=0; i<genotypes.length; i++) {
-                bw.write(VCF_SEPARATOR);
-                gt=vcfRecord[9+i]; gtLength=gt.length(); k=gtIndex;
-                for (j=0; j<gtLength; j++) {
-                    if (gt.charAt(j)!=GT_SEPARATOR) continue;
-                    k--;
-                    if (k>0) continue;
-                    bw.write(gt.substring(0,j+1));
-                    bw.write(GT2STR[genotypes[i]]);
-                    p=gt.indexOf(GT_SEPARATOR,j+1);
-                    if (p>=0) bw.write(gt.substring(p));
-                    break;
-                }
-            }
-            bw.newLine();
-        }
-        
-        
-        private static String[] GT2STR = new String[] {
-            "0|0", "0|1", "1|0", "1|1",  "0/0", "0/1", "1/0", "1/1"
-        };
-        
-        
-        public String toString() {
-            return (isSV?"1":"0")+", "+variantType+", chr"+chr+"["+first+".."+last+"], weight="+weight;
-        }
-        
-        
-        /**
-         * By last position only
-         */
-        public boolean equals(Object other) {
-            final Interval otherInterval = (Interval)other;
-            return last==otherInterval.last;
-        }
-        
-        
-        /**
-         * By last position only
-         */
-        public int compareTo(Object other) {
-            final Interval otherInterval = (Interval)other;
-            if (last<otherInterval.last) return -1;
-            else if (last>otherInterval.last) return 1;
-            else return 0;
-        }
-        
-    }
-    
-    
-	private static final int svType2Row(String type) {
-		if ( type.equalsIgnoreCase(VCFconstants.DEL_STR) || 
-			 type.equalsIgnoreCase(VCFconstants.DEL_ME_STR)
-		   ) return DEL;
-		else if (type.equalsIgnoreCase(VCFconstants.INV_STR)) return INV;
-        else if ( type.equalsIgnoreCase(VCFconstants.DUP_STR) ||
-			      type.equalsIgnoreCase(VCFconstants.DUP_TANDEM_STR) ||
-				  type.equalsIgnoreCase(VCFconstants.DUP_INT_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.CNV_STR)
-			    ) return DUP;
-        else if ( type.equalsIgnoreCase(VCFconstants.INS_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.INS_ME_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.INS_NOVEL_STR)
-                ) return INS;
-		else return -1;
-	}
-
-
-	private static final int refAlt2Row(String ref, String alt) {
-        if (ref.length()==1) {
-            if (alt.length()>1) return INS;
-            else return SNP;
-        }
-        else {
-            if (alt.length()==1) return DEL;
-            else return REPLACEMENT;
-        }
-	}
-    
-    
-    private static final void initType2color() {
-        type2color = new Color[6];
-        type2color[DEL] = new Color(0x006d9eeb);  // Blue
-        type2color[INV] = new Color(0x0093c47d);  // Green
-        type2color[DUP] = new Color(0x00ffd966);  // Yellow
-        type2color[INS] = new Color(0x00cc0000);  // Red
-        type2color[SNP] = new Color(0x00666666);  // Gray
-        type2color[REPLACEMENT] = new Color(0x009900ff);  // Violet
-    }
-    
-    
-    /**
-     * @return a unique ID for every possible genotype.
-     */
-    private static final int gt2Id(String gt) {
-        final char a = gt.charAt(0);
-        final char b = gt.charAt(1);
-        final char c = gt.charAt(2);
-    
-        if (b=='/') {
-            if (a=='.' || a=='0') {
-                if (c=='.' || c=='0') return UNPHASED_00;
-                else return UNPHASED_01;
-            }
-            else {
-                if (c=='.' || c=='0') return UNPHASED_10;
-                else return UNPHASED_11;
-            }
-        }
-        else {
-            if (a=='.' || a=='0') {
-                if (c=='.' || c=='0') return PHASED_00;
-                else return PHASED_01;
-            }
-            else {
-                if (c=='.' || c=='0') return PHASED_10;
-                else return PHASED_11;
-            }
         }
     }
     
