@@ -1,17 +1,29 @@
 import java.util.Arrays;
 import java.util.Random;
-import java.io.*;
-import java.util.zip.*;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.geom.*;
-import javax.imageio.*;
+import java.util.zip.GZIPInputStream;
+
+import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+
+import java.awt.Color;
+import java.awt.Stroke;
+import java.awt.BasicStroke;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 
 /**
- * <-------------- READ ORIGINAL PANGENIE SCRIPT THAT DELETES ALL OVERLAPS, FOR INSPIRATION.
+ * Assume we are given a multi-sample VCF with SVs and SNPs. For each window of 
+ * overlapping calls, the program finds a max-weight set of non-overlapping 
+ * calls for each sample and haplotype, and it modifies the GTs accordingly.
  */
-public class DrawPhasedVariants {
+public class FixVariantCollisions {
     /**
      * Weight tag (in the INFO field or in the SAMPLE field of the VCF).
      */
@@ -58,13 +70,6 @@ public class DrawPhasedVariants {
     private static final int UNPHASED_DD = 17;
     
     /**
-     * VCF constants
-     */
-    private static final String VCF_SEPARATOR = "\t";
-    private static final char GT_SEPARATOR = ':';
-    private static final String GT_STR = "GT";
-    
-    /**
      * A maximal set of overlapping intervals.
      *
      * Remark: the last interval in $window$ might not overlap with the previous
@@ -87,8 +92,11 @@ public class DrawPhasedVariants {
     
 
     /**
-     * @param args
+     * Example usage:
      *
+     * java FixVariantCollisions input.vcf.gz 0 WEIGHT_TAG 0 output.vcf windows.txt histogram.txt null
+     *
+     * @param args
      * Input arguments:
      * 0: input VCF.GZ;
      * 1: operations allowed to fix the genotypes of a sample: 0=can only remove
@@ -183,7 +191,7 @@ public class DrawPhasedVariants {
         while (true) {
             str=br.readLine();
             if (str==null) break;
-            if (str.charAt(0)==VCFconstants.COMMENT) {
+            if (str.charAt(0)==COMMENT) {
                 if (bw!=null) { bw.write(str); bw.newLine(); }
                 continue;
             }
@@ -272,6 +280,7 @@ public class DrawPhasedVariants {
                 }
             }
         }
+        bwWindows.newLine();
         if (bwVCF!=null) {
             Interval.order=Interval.ORDER_INPUT;
             Arrays.sort(window,0,LAST+1);
@@ -907,7 +916,7 @@ public class DrawPhasedVariants {
             String tmpString;
             
             this.vcfRecord=record.split(VCF_SEPARATOR);
-            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVTYPE_STR);
+            tmpString=getInfoField(this.vcfRecord[7],SVTYPE_STR);
             if (tmpString!=null && tmpString.length()!=0) {
                 isSV=true;
                 variantType=svType2Row(tmpString);
@@ -920,9 +929,9 @@ public class DrawPhasedVariants {
                 System.err.println("ERROR: this record encodes an unknown variant type: "+record);
                 System.exit(1);
             }
-            chr=VCFconstants.string2contig(this.vcfRecord[0]);
+            chr=string2contig(this.vcfRecord[0]);
             pos=Integer.parseInt(this.vcfRecord[1]);
-            tmpString=VCFconstants.getField(this.vcfRecord[7],VCFconstants.SVLEN_STR);
+            tmpString=getInfoField(this.vcfRecord[7],SVLEN_STR);
             if (tmpString!=null) {
                 length=Integer.parseInt(tmpString);
                 if (length<0) length=-length;
@@ -969,7 +978,7 @@ public class DrawPhasedVariants {
                     }
                 }
             }
-            else value=VCFconstants.getField(vcfRecord[7],WEIGHT_TAG);
+            else value=getInfoField(vcfRecord[7],WEIGHT_TAG);
             weight=value!=null?Double.parseDouble(value):1.0;
         }
         
@@ -1085,18 +1094,18 @@ public class DrawPhasedVariants {
     
     
 	private static final int svType2Row(String type) {
-		if ( type.equalsIgnoreCase(VCFconstants.DEL_STR) || 
-			 type.equalsIgnoreCase(VCFconstants.DEL_ME_STR)
+		if ( type.equalsIgnoreCase(DEL_STR) || 
+			 type.equalsIgnoreCase(DEL_ME_STR)
 		   ) return DEL;
-		else if (type.equalsIgnoreCase(VCFconstants.INV_STR)) return INV;
-        else if ( type.equalsIgnoreCase(VCFconstants.DUP_STR) ||
-			      type.equalsIgnoreCase(VCFconstants.DUP_TANDEM_STR) ||
-				  type.equalsIgnoreCase(VCFconstants.DUP_INT_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.CNV_STR)
+		else if (type.equalsIgnoreCase(INV_STR)) return INV;
+        else if ( type.equalsIgnoreCase(DUP_STR) ||
+			      type.equalsIgnoreCase(DUP_TANDEM_STR) ||
+				  type.equalsIgnoreCase(DUP_INT_STR) ||
+                  type.equalsIgnoreCase(CNV_STR)
 			    ) return DUP;
-        else if ( type.equalsIgnoreCase(VCFconstants.INS_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.INS_ME_STR) ||
-                  type.equalsIgnoreCase(VCFconstants.INS_NOVEL_STR)
+        else if ( type.equalsIgnoreCase(INS_STR) ||
+                  type.equalsIgnoreCase(INS_ME_STR) ||
+                  type.equalsIgnoreCase(INS_NOVEL_STR)
                 ) return INS;
 		else return -1;
 	}
@@ -1209,5 +1218,86 @@ public class DrawPhasedVariants {
             return out+"\n";
         }
     }
+    
+    
+    
+    
+    // ------------------------- BASIC VCF HANDLING ----------------------------
+    
+    private static final String VCF_SEPARATOR = "\t";
+    private static final char GT_SEPARATOR = ':';
+    private static final String GT_STR = "GT";
+    public static final char COMMENT = '#';
+    public static final String END_STR = "END";
+    public static final String CIEND_STR = "CIEND";
+    public static final String INFO_SEPARATOR = ";";
+    public static final String SVTYPE_STR = "SVTYPE";
+    public static final String SVLEN_STR = "SVLEN";
+    public static final String CHR_STR = "chr";
+    public static final int CHR_STR_LENGTH = CHR_STR.length();
+	public static final String X_STR_PRIME = "X";
+	public static final String Y_STR_PRIME = "Y";
+	public static final String M_STR_PRIME = "M";
+	public static final String MT_STR_PRIME = "MT";
+	public static final String X_STR = CHR_STR+X_STR_PRIME;
+	public static final String Y_STR = CHR_STR+Y_STR_PRIME;
+	public static final String M_STR = CHR_STR+M_STR_PRIME;
+	public static final String MT_STR = CHR_STR+MT_STR_PRIME;
+    
+	/**
+	 * SV types: labels used by callers.
+	 */
+	public static final String DEL_STR = "DEL";
+	public static final String DEL_ME_STR = "DEL:ME";
+	public static final String DEL_INV_STR = "DEL/INV";
+	public static final String INS_STR = "INS";
+	public static final String INS_ME_STR = "INS:ME";
+	public static final String INS_NOVEL_STR = "INS:NOVEL";
+	public static final String DUP_STR = "DUP";
+	public static final String DUP_TANDEM_STR = "DUP:TANDEM";
+	public static final String DUP_INT_STR = "DUP:INT";
+	public static final String INV_STR = "INV";
+	public static final String INV_DUP_STR = "INVDUP";
+	public static final String CNV_STR = "CNV";
+	public static final String BND_STR = "BND";
+	public static final String TRA_STR = "TRA";
+    
+    
+	/**
+	 * @return NULL if $field$ does not occur in $str$.
+	 */
+	public static final String getInfoField(String str, String field) {
+		final int FIELD_LENGTH = field.length()+1;
+		int p = str.indexOf(field+"=");
+		if (p<0) return null;
+		if (field.equalsIgnoreCase(END_STR)) {
+			while (p>=2 && str.substring(p-2,p-2+CIEND_STR.length()).equalsIgnoreCase(CIEND_STR)) p=str.indexOf(field+"=",p+1);
+			if (p<0) return null;
+		}
+		final int q = str.indexOf(INFO_SEPARATOR,p+FIELD_LENGTH);
+		return str.substring(p+FIELD_LENGTH,q<0?str.length():q);
+	}
+    
+    
+	/**
+	 * @return one-based.
+	 */
+	public static final int string2contig(String str) {
+		if (str.length()>=CHR_STR_LENGTH && str.substring(0,CHR_STR_LENGTH).equalsIgnoreCase(CHR_STR)) {
+			if (str.equalsIgnoreCase(X_STR)) return 23;
+			else if (str.equalsIgnoreCase(Y_STR)) return 24;
+			else if (str.equalsIgnoreCase(M_STR) || str.equalsIgnoreCase(MT_STR)) return 25;
+			else if (str.length()<=CHR_STR_LENGTH+2) return Integer.parseInt(str.substring(CHR_STR_LENGTH));
+			else return -1;
+		}
+		else {
+			if (str.equalsIgnoreCase(X_STR_PRIME)) return 23;
+			else if (str.equalsIgnoreCase(Y_STR_PRIME)) return 24;
+			else if (str.equalsIgnoreCase(M_STR_PRIME) || str.equalsIgnoreCase(MT_STR_PRIME)) return 25;
+			else if (str.length()<=2) return Integer.parseInt(str);
+			else return -1;
+		}
+	}
+    
 
 }
