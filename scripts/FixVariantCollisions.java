@@ -1235,69 +1235,69 @@ public class FixVariantCollisions {
     public static final String SVLEN_STR = "SVLEN";
     public static final String CHR_STR = "chr";
     public static final int CHR_STR_LENGTH = CHR_STR.length();
-	public static final String X_STR_PRIME = "X";
-	public static final String Y_STR_PRIME = "Y";
-	public static final String M_STR_PRIME = "M";
-	public static final String MT_STR_PRIME = "MT";
-	public static final String X_STR = CHR_STR+X_STR_PRIME;
-	public static final String Y_STR = CHR_STR+Y_STR_PRIME;
-	public static final String M_STR = CHR_STR+M_STR_PRIME;
-	public static final String MT_STR = CHR_STR+MT_STR_PRIME;
+    public static final String X_STR_PRIME = "X";
+    public static final String Y_STR_PRIME = "Y";
+    public static final String M_STR_PRIME = "M";
+    public static final String MT_STR_PRIME = "MT";
+    public static final String X_STR = CHR_STR+X_STR_PRIME;
+    public static final String Y_STR = CHR_STR+Y_STR_PRIME;
+    public static final String M_STR = CHR_STR+M_STR_PRIME;
+    public static final String MT_STR = CHR_STR+MT_STR_PRIME;
     
-	/**
-	 * SV types: labels used by callers.
-	 */
-	public static final String DEL_STR = "DEL";
-	public static final String DEL_ME_STR = "DEL:ME";
-	public static final String DEL_INV_STR = "DEL/INV";
-	public static final String INS_STR = "INS";
-	public static final String INS_ME_STR = "INS:ME";
-	public static final String INS_NOVEL_STR = "INS:NOVEL";
-	public static final String DUP_STR = "DUP";
-	public static final String DUP_TANDEM_STR = "DUP:TANDEM";
-	public static final String DUP_INT_STR = "DUP:INT";
-	public static final String INV_STR = "INV";
-	public static final String INV_DUP_STR = "INVDUP";
-	public static final String CNV_STR = "CNV";
-	public static final String BND_STR = "BND";
-	public static final String TRA_STR = "TRA";
-    
-    
-	/**
-	 * @return NULL if $field$ does not occur in $str$.
-	 */
-	public static final String getInfoField(String str, String field) {
-		final int FIELD_LENGTH = field.length()+1;
-		int p = str.indexOf(field+"=");
-		if (p<0) return null;
-		if (field.equalsIgnoreCase(END_STR)) {
-			while (p>=2 && str.substring(p-2,p-2+CIEND_STR.length()).equalsIgnoreCase(CIEND_STR)) p=str.indexOf(field+"=",p+1);
-			if (p<0) return null;
-		}
-		final int q = str.indexOf(INFO_SEPARATOR,p+FIELD_LENGTH);
-		return str.substring(p+FIELD_LENGTH,q<0?str.length():q);
-	}
+    /**
+     * SV types: labels used by callers.
+     */
+    public static final String DEL_STR = "DEL";
+    public static final String DEL_ME_STR = "DEL:ME";
+    public static final String DEL_INV_STR = "DEL/INV";
+    public static final String INS_STR = "INS";
+    public static final String INS_ME_STR = "INS:ME";
+    public static final String INS_NOVEL_STR = "INS:NOVEL";
+    public static final String DUP_STR = "DUP";
+    public static final String DUP_TANDEM_STR = "DUP:TANDEM";
+    public static final String DUP_INT_STR = "DUP:INT";
+    public static final String INV_STR = "INV";
+    public static final String INV_DUP_STR = "INVDUP";
+    public static final String CNV_STR = "CNV";
+    public static final String BND_STR = "BND";
+    public static final String TRA_STR = "TRA";
     
     
-	/**
-	 * @return one-based.
-	 */
-	public static final int string2contig(String str) {
-		if (str.length()>=CHR_STR_LENGTH && str.substring(0,CHR_STR_LENGTH).equalsIgnoreCase(CHR_STR)) {
-			if (str.equalsIgnoreCase(X_STR)) return 23;
-			else if (str.equalsIgnoreCase(Y_STR)) return 24;
-			else if (str.equalsIgnoreCase(M_STR) || str.equalsIgnoreCase(MT_STR)) return 25;
-			else if (str.length()<=CHR_STR_LENGTH+2) return Integer.parseInt(str.substring(CHR_STR_LENGTH));
-			else return -1;
-		}
-		else {
-			if (str.equalsIgnoreCase(X_STR_PRIME)) return 23;
-			else if (str.equalsIgnoreCase(Y_STR_PRIME)) return 24;
-			else if (str.equalsIgnoreCase(M_STR_PRIME) || str.equalsIgnoreCase(MT_STR_PRIME)) return 25;
-			else if (str.length()<=2) return Integer.parseInt(str);
-			else return -1;
-		}
-	}
+    /**
+     * @return NULL if $field$ does not occur in $str$.
+     */
+    public static final String getInfoField(String str, String field) {
+        final int FIELD_LENGTH = field.length()+1;
+        int p = str.indexOf(field+"=");
+        if (p<0) return null;
+        if (field.equalsIgnoreCase(END_STR)) {
+            while (p>=2 && str.substring(p-2,p-2+CIEND_STR.length()).equalsIgnoreCase(CIEND_STR)) p=str.indexOf(field+"=",p+1);
+            if (p<0) return null;
+        }
+        final int q = str.indexOf(INFO_SEPARATOR,p+FIELD_LENGTH);
+        return str.substring(p+FIELD_LENGTH,q<0?str.length():q);
+    }
+    
+    
+    /**
+     * @return one-based.
+     */
+    public static final int string2contig(String str) {
+        if (str.length()>=CHR_STR_LENGTH && str.substring(0,CHR_STR_LENGTH).equalsIgnoreCase(CHR_STR)) {
+            if (str.equalsIgnoreCase(X_STR)) return 23;
+            else if (str.equalsIgnoreCase(Y_STR)) return 24;
+            else if (str.equalsIgnoreCase(M_STR) || str.equalsIgnoreCase(MT_STR)) return 25;
+            else if (str.length()<=CHR_STR_LENGTH+2) return Integer.parseInt(str.substring(CHR_STR_LENGTH));
+            else return -1;
+        }
+        else {
+            if (str.equalsIgnoreCase(X_STR_PRIME)) return 23;
+            else if (str.equalsIgnoreCase(Y_STR_PRIME)) return 24;
+            else if (str.equalsIgnoreCase(M_STR_PRIME) || str.equalsIgnoreCase(MT_STR_PRIME)) return 25;
+            else if (str.length()<=2) return Integer.parseInt(str);
+            else return -1;
+        }
+    }
     
 
 }
