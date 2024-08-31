@@ -41,9 +41,11 @@ workflow BcftoolsMergeNoDuplicates {
 #
 # Remark: $bcftools merge$ collapses into the same record every record with the
 # same $CHR,POS,REF,ALT$, disregarding the INFO field and in particular 
-# differences in SVLEN, END or STRAND. This may delete information for symbolic
-# ALTs. Our script makes sure that only symbolic records with the same SVLEN,
-# END and STRAND are collapsed into the same record.
+# differences in SVLEN and END. This may delete information for symbolic
+# ALTs. Our script makes sure that only symbolic records with the same SVLEN and
+# END are collapsed into the same record.
+#
+# Remark: we do not consider STRAND in the above.
 #
 # Remark: the output VCF has artificial FORMAT and SAMPLE columns where all
 # calls are 0/1. I.e. the original genotypes are discarded.
@@ -82,7 +84,6 @@ task IntraSampleMerge {
                     svtype=substr($5,2,3); \
                     end=""; \
                     svlen=""; \
-                    strand=""; \
                     n=split($8,A,";"); \
                     for (i=1; i<=n; i++) { \
                         if (substr(A[i],1,4)=="END=") end=substr(A[i],5); \
@@ -90,9 +91,8 @@ task IntraSampleMerge {
                             if (substr(A[i],7,1)=="-") svlen=substr(A[i],8); \
                             else svlen=substr(A[i],7); \
                         } \
-                        else if (substr(A[i],1,7)=="STRAND=") strand=substr(A[i],8); \
                     } \
-                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ":" (length(strand)==0?"?":strand) ">" \
+                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ">" \
                 }; \
                 printf("%s",$1); \
                 for (i=2; i<=NF; i++) printf("\t%s",$i); \
@@ -146,9 +146,11 @@ task IntraSampleMerge {
 
 # Remark: $bcftools merge$ collapses into the same record every record with the
 # same $CHR,POS,REF,ALT$, disregarding the INFO field and in particular 
-# differences in SVLEN, END or STRAND. This may delete information for symbolic
-# ALTs. Our script makes sure that only symbolic records with the same SVLEN,
-# END and STRAND are collapsed into the same record.
+# differences in SVLEN and END. This may delete information for symbolic
+# ALTs. Our script makes sure that only symbolic records with the same SVLEN and
+# END are collapsed into the same record.
+#
+# Remark: we do not consider STRAND in the above.
 #
 # Remark: since the input comes from $IntraSampleMerge$, which overwrites GTs,
 # every call in the output of this procedure has at least one sample with
@@ -189,7 +191,6 @@ task InterSampleMerge {
                     svtype=substr($5,2,3); \
                     end=""; \
                     svlen=""; \
-                    strand=""; \
                     n=split($8,A,";"); \
                     for (i=1; i<=n; i++) { \
                         if (substr(A[i],1,4)=="END=") end=substr(A[i],5); \
@@ -197,9 +198,8 @@ task InterSampleMerge {
                             if (substr(A[i],7,1)=="-") svlen=substr(A[i],8); \
                             else svlen=substr(A[i],7); \
                         } \
-                        else if (substr(A[i],1,7)=="STRAND=") strand=substr(A[i],8); \
                     } \
-                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ":" (length(strand)==0?"?":strand) ">" \
+                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ">" \
                 }; \
                 printf("%s",$1); \
                 for (i=2; i<=NF; i++) printf("\t%s",$i); \

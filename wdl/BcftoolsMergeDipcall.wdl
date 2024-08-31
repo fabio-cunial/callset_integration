@@ -4,6 +4,7 @@ version 1.0
 #
 workflow BcftoolsMergeDipcall {
     input {
+        Array[String] sample_id
         Array[File] sample_vcf_gz
         Array[File] sample_tbi
         Int min_sv_length
@@ -13,6 +14,7 @@ workflow BcftoolsMergeDipcall {
     
     call InterSampleMerge {
         input:
+            sample_id = sample_id,
             input_vcf_gz = sample_vcf_gz,
             input_tbi = sample_tbi,
             min_sv_length = min_sv_length
@@ -27,6 +29,7 @@ workflow BcftoolsMergeDipcall {
 
 task InterSampleMerge {
     input {
+        Array[String] sample_id
         Array[File] input_vcf_gz
         Array[File] input_tbi
         Int min_sv_length
@@ -36,6 +39,7 @@ task InterSampleMerge {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
+    Int n_files = length(input_vcf_gz)
     
     command <<<
         set -euxo pipefail
@@ -50,11 +54,12 @@ task InterSampleMerge {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         INPUT_FILES=~{sep=',' input_vcf_gz}
-        INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
+        SAMPLE_IDS=~{sep=',' sample_id}
         rm -f list.txt
-        for INPUT_FILE in ${INPUT_FILES}; do
+        for i in $(seq 1 ~{n_files}); do
             # Enforcing the right sample name
-            SAMPLE_ID=${INPUT_FILE%.dipcall_sv*}
+            INPUT_FILE=$(echo ${INPUT_FILES} | cut -d , -f ${i})
+            SAMPLE_ID=$(echo ${SAMPLE_IDS} | cut -d , -f ${i})
             echo ${SAMPLE_ID} > samples.txt
             bcftools reheader --samples samples.txt ${INPUT_FILE} > tmp1.vcf.gz
             tabix -f tmp1.vcf.gz
