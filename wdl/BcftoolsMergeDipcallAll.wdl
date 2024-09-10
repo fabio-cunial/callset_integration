@@ -5,6 +5,7 @@ version 1.0
 #
 workflow BcftoolsMergeDipcallAll {
     input {
+        Array[String] sample_id
         Array[File] sample_vcf_gz
     }
     parameter_meta {
@@ -12,6 +13,7 @@ workflow BcftoolsMergeDipcallAll {
     
     call BcftoolsMergeDipcallAllImpl {
         input:
+            sample_id = sample_id,
             input_vcf_gz = sample_vcf_gz
     }
     
@@ -24,6 +26,7 @@ workflow BcftoolsMergeDipcallAll {
 
 task BcftoolsMergeDipcallAllImpl {
     input {
+        Array[String] sample_id
         Array[File] input_vcf_gz
     }
     parameter_meta {
@@ -31,6 +34,7 @@ task BcftoolsMergeDipcallAllImpl {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
+    Int n_files = length(input_vcf_gz)
     
     command <<<
         set -euxo pipefail
@@ -45,14 +49,19 @@ task BcftoolsMergeDipcallAllImpl {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         INPUT_FILES=~{sep=',' input_vcf_gz}
-        INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
+        SAMPLE_IDS=~{sep=',' sample_id}
         rm -f list.txt
-        SAMPLE_ID="0"
-        for INPUT_FILE in ${INPUT_FILES}; do
-            SAMPLE_ID=$(( ${SAMPLE_ID} + 1 ))
-            tabix -f ${INPUT_FILE}
-            bcftools norm --multiallelics - --output-type v ${INPUT_FILE} > ${SAMPLE_ID}.vcf
-            bgzip ${SAMPLE_ID}.vcf
+        for i in $(seq 1 ~{n_files}); do
+            # Enforcing the right sample name
+            INPUT_FILE=$(echo ${INPUT_FILES} | cut -d , -f ${i})
+            SAMPLE_ID=$(echo ${SAMPLE_IDS} | cut -d , -f ${i})
+            echo ${SAMPLE_ID} > samples.txt
+            bcftools reheader --samples samples.txt ${INPUT_FILE} > tmp1.vcf.gz
+            rm -f samples.txt
+            tabix -f tmp1.vcf.gz
+            # Removing multiallelic records
+            bcftools norm --multiallelics - --output-type z tmp1.vcf.gz > ${SAMPLE_ID}.vcf.gz
+            rm -f tmp1.vcf.gz*
             tabix -f ${SAMPLE_ID}.vcf.gz
             echo ${SAMPLE_ID}.vcf.gz >> list.txt
         done
@@ -60,9 +69,8 @@ task BcftoolsMergeDipcallAllImpl {
         tabix -f tmp1.vcf.gz
         
         # Removing multiallelic records one last time
-        bcftools norm --multiallelics - --output-type v tmp1.vcf.gz > merged.vcf
+        bcftools norm --multiallelics - --output-type z tmp1.vcf.gz > merged.vcf.gz
         rm -f tmp1.vcf.gz*
-        bgzip merged.vcf
         tabix -f merged.vcf.gz
         ls -laht; tree
     >>>
