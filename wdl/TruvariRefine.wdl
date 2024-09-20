@@ -10,10 +10,12 @@ workflow TruvariRefine {
         File reference_fa
         File reference_fai
         File? includebed
-        String truvari_bench_args = "--sizefilt testLength --sizemin truthLength"
+        String truvari_bench_args = ""
         String truvari_refine_args = ""
     }
     parameter_meta {
+        truvari_bench_args: "--sizefilt minSVLengthTest --sizemin minSVLengthTruth"
+        truvari_refine_args: "--mafft-params '--auto --thread 8' "
     }
     
     call TruvariRefineImpl {
