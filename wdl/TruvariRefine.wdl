@@ -12,6 +12,7 @@ workflow TruvariRefine {
         File? includebed
         String truvari_bench_args = ""
         String truvari_refine_args = ""
+        File? force_refine_bed
     }
     parameter_meta {
         truvari_bench_args: "--sizefilt minSVLengthTest --sizemin minSVLengthTruth"
@@ -28,7 +29,8 @@ workflow TruvariRefine {
             reference_fai = reference_fai,
             includebed = includebed,
             truvari_bench_args = truvari_bench_args,
-            truvari_refine_args = truvari_refine_args
+            truvari_refine_args = truvari_refine_args,
+            force_refine_bed = force_refine_bed
     }
     
     output {
@@ -52,6 +54,7 @@ task TruvariRefineImpl {
         File? includebed
         String truvari_bench_args = ""
         String truvari_refine_args = ""
+        File? force_refine_bed
     }
     parameter_meta {
     }
@@ -74,8 +77,13 @@ task TruvariRefineImpl {
         else
             INCLUDE_BED=""
         fi
+        if ~{defined(force_refine_bed)} ; then
+            REGIONS_BED=~{force_refine_bed}
+        else
+            REGIONS_BED="./truvari_output/candidate.refine.bed"
+        fi
         ${TIME_COMMAND} truvari bench ${INCLUDE_BED} -f ~{reference_fa} -b ~{truth_vcf_gz} -c ~{input_vcf_gz} ~{truvari_bench_args} -o ./truvari_output/
-        ${TIME_COMMAND} truvari refine --threads ${N_THREADS} --use-region-coords --use-original-vcfs --recount -f ~{reference_fa} --regions ./truvari_output/candidate.refine.bed ~{truvari_refine_args} ./truvari_output/
+        ${TIME_COMMAND} truvari refine --threads ${N_THREADS} --use-region-coords --use-original-vcfs --recount -f ~{reference_fa} --regions ${REGIONS_BED} ~{truvari_refine_args} ./truvari_output/
         tar -czf out.tar.gz ./truvari_output
     >>>
     
