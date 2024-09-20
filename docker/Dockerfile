@@ -210,6 +210,10 @@ RUN wget https://github.com/shenwei356/seqkit/releases/download/v2.8.2/seqkit_li
 # PIGZ
 RUN apt-get install -y --no-install-recommends pigz
 
+# MAFFT
+RUN conda install conda-forge::mafft \
+    && mafft --help || echo "mafft returns an error code when called"
+
 # AD HOC SCRIPTS
 COPY *.java .
 RUN javac *.java
