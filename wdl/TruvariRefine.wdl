@@ -10,8 +10,8 @@ workflow TruvariRefine {
         File reference_fa
         File reference_fai
         File? includebed
-        String truvari_bench_args = ""
-        String truvari_refine_args=""
+        String truvari_bench_args = "--sizefilt testLength --sizemin truthLength"
+        String truvari_refine_args = ""
     }
     parameter_meta {
     }
@@ -35,6 +35,10 @@ workflow TruvariRefine {
 }
 
 
+# Remark: the updated TP/FP stats are in $truvari_output/refine.*$.
+# $truvari_output/phab_bench$ contains just results from the subset of regions
+# which were harmonized.
+#
 task TruvariRefineImpl {
     input {
         File input_vcf_gz
@@ -45,7 +49,7 @@ task TruvariRefineImpl {
         File reference_fai
         File? includebed
         String truvari_bench_args = ""
-        String truvari_refine_args=""
+        String truvari_refine_args = ""
     }
     parameter_meta {
     }
@@ -69,7 +73,7 @@ task TruvariRefineImpl {
             INCLUDE_BED=""
         fi
         ${TIME_COMMAND} truvari bench ${INCLUDE_BED} -f ~{reference_fa} -b ~{truth_vcf_gz} -c ~{input_vcf_gz} ~{truvari_bench_args} -o ./truvari_output/
-        ${TIME_COMMAND} truvari refine --threads ${N_THREADS} --recount -f ~{reference_fa} --regions ./truvari_output/candidate.refine.bed ~{truvari_refine_args} ./truvari_output/
+        ${TIME_COMMAND} truvari refine --threads ${N_THREADS} --use-region-coords --use-original-vcfs --recount -f ~{reference_fa} --regions ./truvari_output/candidate.refine.bed ~{truvari_refine_args} ./truvari_output/
         tar -czf out.tar.gz ./truvari_output
     >>>
     
