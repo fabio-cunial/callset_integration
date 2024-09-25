@@ -1,6 +1,10 @@
 import java.io.*;
 
 
+/**
+ * Hapestry's optimizier outputs runtime in a variable format, that this script
+ * tries to convert to seconds.
+ */
 public class OptimizerTimeToSeconds {
 
     public static void main(String[] args) throws Exception {
