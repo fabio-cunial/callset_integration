@@ -74,10 +74,11 @@ if __name__ == '__main__':
         entry.alts = [entry.alts[0].upper()]
         
         # Fixing SVLEN
-        if entry.info['SVTYPE'] == 'INS' or entry.info['SVTYPE'] == 'DEL':
-            entry.info['SVLEN'] = abs(len(entry.ref) - len(entry.alts[0]))
-        elif entry.info['SVTYPE'] != 'BND':
-            entry.info['SVLEN'] = len(entry.ref)
+        if 'SVTYPE' in entry.info:
+            if entry.info['SVTYPE'] == 'INS' or entry.info['SVTYPE'] == 'DEL':
+                entry.info['SVLEN'] = abs(len(entry.ref) - len(entry.alts[0]))
+            elif entry.info['SVTYPE'] != 'BND':
+                entry.info['SVLEN'] = len(entry.ref)
         
         # Fixing GTs
         n_gt = tuple([_ if _ is not None else 0 for _ in entry.samples[0]['GT']])

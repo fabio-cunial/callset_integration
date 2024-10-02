@@ -5,11 +5,11 @@ WINDOWS_FILE="windows.txt"
 
 set -euxo pipefail
 
-# Slow, can be exectued just once.
-#rm -f tmp.txt
-#find ./hapestry_merge/ -type d -exec basename {} ';' > tmp.txt
-#tail -n +4 tmp.txt | tr '_' '\t' | tr '-' '\t' > hapestry_merge_windows.txt
-#rm -f tmp.txt
+# Very slow, can be exectued just once.
+rm -f tmp.txt
+find ./hapestry_merge/ -type d -exec basename {} ';' > tmp.txt
+tail -n +4 tmp.txt | tr '_' '\t' | tr '-' '\t' > hapestry_merge_windows.txt
+rm -f tmp.txt
 
 while read WINDOW; do
     # Evaluation window
