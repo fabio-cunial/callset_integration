@@ -57,12 +57,12 @@ workflow BcftoolsMergeNoDuplicates {
 # calls are 0/1. I.e. the original genotypes are discarded.
 #
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
-# bcftools sort     
-# bcftools norm     
-# awk               
-# bcftools merge    
-# bcftools norm     
-# bgzip             
+# bcftools sort     4m          1           230M
+# bcftools norm     60s         2           230M
+# awk               30s         1           156M
+# bcftools merge    3m          2           250M
+# bcftools norm     3m          2           230M
+# bgzip             50s         2           9M
 #
 task IntraSampleMerge {
     input {
@@ -75,7 +75,7 @@ task IntraSampleMerge {
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int ram_gb = 8
+    Int ram_gb = 4
     
     command <<<
         set -euxo pipefail
@@ -176,7 +176,7 @@ task IntraSampleMerge {
     }
     runtime {
         docker: "fcunial/callset_integration"
-        cpu: 4
+        cpu: 2
         memory: ram_gb + "GB"
         disks: "local-disk 50 HDD"
         preemptible: 0
