@@ -56,6 +56,14 @@ workflow BcftoolsMergeNoDuplicates {
 # Remark: the output VCF has artificial FORMAT and SAMPLE columns where all
 # calls are 0/1. I.e. the original genotypes are discarded.
 #
+# COMMAND           RUNTIME     N_CPUS      MAX_RSS
+# bcftools sort     
+# bcftools norm     
+# awk               
+# bcftools merge    
+# bcftools norm     
+# bgzip             
+#
 task IntraSampleMerge {
     input {
         Array[File] sample_vcf_gz
@@ -90,7 +98,7 @@ task IntraSampleMerge {
             local OUTPUT_VCF=$2
             
             # Ensuring that the input file is sorted
-            ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --threads ${N_THREADS} --write-index --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
+            ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --write-index --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
             
             # Removing multiallelic records from the input file
             ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp0.vcf.gz > tmp1.vcf.gz
@@ -183,6 +191,13 @@ task IntraSampleMerge {
 # Remark: since the input comes from $IntraSampleMerge$, which overwrites GTs,
 # every call in the output of this procedure has at least one sample with
 # GT=0/1, and every sample has GT \in {0/1, ./.}.
+#
+# COMMAND           RUNTIME     N_CPUS      MAX_RSS
+# awk               
+# bgzip             
+# bcftools merge    
+# bcftools norm     
+# bgzip             
 #
 task InterSampleMerge {
     input {
