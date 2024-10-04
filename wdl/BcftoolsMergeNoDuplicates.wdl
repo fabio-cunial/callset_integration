@@ -98,10 +98,12 @@ task IntraSampleMerge {
             local OUTPUT_VCF=$2
             
             # Ensuring that the input file is sorted
-            ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --write-index --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
+            ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
+            tabix -f tmp0.vcf.gz
             
             # Removing multiallelic records from the input file
-            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp0.vcf.gz > tmp1.vcf.gz
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp0.vcf.gz > tmp1.vcf.gz
+            tabix -f tmp1.vcf.gz
             rm -f tmp0.vcf.gz*
             
             # Storing SVLEN and END in ID
@@ -143,10 +145,12 @@ task IntraSampleMerge {
             rm -f ${INPUT_FILE}
             i=$(( ${i} + 1 ))
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --write-index --merge none --force-samples --file-list list.txt --output-type z > tmp2.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > tmp2.vcf.gz
+        tabix -f tmp2.vcf.gz
         
         # Removing multiallelic records, if any are generated during the merge.
-        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp2.vcf.gz > tmp3.vcf.gz
+        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp2.vcf.gz > tmp3.vcf.gz
+        tabix -f tmp3.vcf.gz
         rm -f tmp2.vcf.gz*
         
         # Restoring IDs to their original states, and removing GTs.
@@ -274,10 +278,12 @@ task InterSampleMerge {
         # $--info-rules -$ disables default rules, and it is used just to avoid
         # the following error:
         # Only fixed-length vectors are supported with -i sum:AC
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --write-index --merge none --info-rules - --file-list list.txt --output-type z > tmp1.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --info-rules - --file-list list.txt --output-type z > tmp1.vcf.gz
+        tabix -f tmp1.vcf.gz
         
         # Removing multiallelic records, if any are generated during the merge.
-        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
+        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
+        tabix -f tmp2.vcf.gz
         rm -f tmp1.vcf.gz*
         
         # Restoring IDs to their original states
