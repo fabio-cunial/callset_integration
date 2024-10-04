@@ -3,10 +3,11 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l PAV2SVs.wdl
+java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeNoDuplicates.wdl
 java -jar ${WOMTOOL_PATH} validate -l TruvariRefine.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeDipcallAll.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeDipcall.wdl
-java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeNoDuplicates.wdl
 java -jar ${WOMTOOL_PATH} validate -l ParagraphGenotyper.wdl
 java -jar ${WOMTOOL_PATH} validate -l TransferFormat.wdl
 java -jar ${WOMTOOL_PATH} validate -l TransferAnnotations.wdl

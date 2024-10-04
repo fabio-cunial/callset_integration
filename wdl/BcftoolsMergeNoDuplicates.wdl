@@ -1,6 +1,9 @@
 version 1.0
 
 
+# Performs a trivial bcftools merge of multiple samples with multiple callers
+# per sample. The output VCF contains no multiallelic records and no exact
+# duplicates.
 #
 workflow BcftoolsMergeNoDuplicates {
     input {
@@ -10,6 +13,7 @@ workflow BcftoolsMergeNoDuplicates {
         Array[File] sniffles_tbi
         Array[File] pav_vcf_gz
         Array[File] pav_tbi
+        Int compression_level = 1
     }
     parameter_meta {
     }
@@ -18,13 +22,15 @@ workflow BcftoolsMergeNoDuplicates {
         call IntraSampleMerge {
             input:
                 sample_vcf_gz = [pbsv_vcf_gz[i], sniffles_vcf_gz[i], pav_vcf_gz[i]],
-                sample_tbi = [pbsv_tbi[i], sniffles_tbi[i], pav_tbi[i]]
+                sample_tbi = [pbsv_tbi[i], sniffles_tbi[i], pav_tbi[i]],
+                compression_level = compression_level
         }
     }
     call InterSampleMerge {
         input:
             input_vcf_gz = IntraSampleMerge.output_vcf_gz,
-            input_tbi = IntraSampleMerge.output_tbi
+            input_tbi = IntraSampleMerge.output_tbi,
+            compression_level = compression_level
     }
     
     output {
@@ -54,12 +60,14 @@ task IntraSampleMerge {
     input {
         Array[File] sample_vcf_gz
         Array[File] sample_tbi
+        Int compression_level
     }
     parameter_meta {
     }
     
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
+    Int ram_gb = 8
     
     command <<<
         set -euxo pipefail
@@ -72,13 +80,25 @@ task IntraSampleMerge {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
         
+        # This function assumes that no single-sample single-caller VCF contains
+        # exact duplicates.
+        #
         function cleanVCF() {
             local INPUT_VCF_GZ=$1
             local OUTPUT_VCF=$2
             
-            bcftools view --header-only ${INPUT_VCF_GZ} > ${OUTPUT_VCF}
-            ${TIME_COMMAND} bcftools view --no-header ${INPUT_VCF_GZ} | awk '{ \
+            # Ensuring that the input file is sorted
+            ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --threads ${N_THREADS} --write-index --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
+            
+            # Removing multiallelic records from the input file
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp0.vcf.gz > tmp1.vcf.gz
+            rm -f tmp0.vcf.gz*
+            
+            # Storing SVLEN and END in ID
+            bcftools view --header-only tmp1.vcf.gz > ${OUTPUT_VCF}
+            ${TIME_COMMAND} bcftools view --no-header tmp1.vcf.gz | awk '{ \
                 tag="artificial"; \
                 if ($5=="<DEL>" || $5=="<INS>" || $5=="<INV>" || $5=="<DUP>" || $5=="<CNV>") { \
                     svtype=substr($5,2,3); \
@@ -98,10 +118,12 @@ task IntraSampleMerge {
                 for (i=2; i<=NF; i++) printf("\t%s",$i); \
                 printf("\n"); \
             }' >> ${OUTPUT_VCF}
-            ${TIME_COMMAND} bgzip --threads ${N_THREADS} ${OUTPUT_VCF}
-            tabix ${OUTPUT_VCF}.gz
+            rm -f tmp1.vcf.gz*
+            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
+            tabix -f ${OUTPUT_VCF}.gz
         }
         
+        # Merging all single-caller VCFs
         INPUT_FILES=~{sep=',' sample_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
@@ -113,19 +135,25 @@ task IntraSampleMerge {
             rm -f ${INPUT_FILE}
             i=$(( ${i} + 1 ))
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > tmp1.vcf.gz
-        bcftools view --header-only tmp1.vcf.gz > header.txt
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --write-index --merge none --force-samples --file-list list.txt --output-type z > tmp2.vcf.gz
+        
+        # Removing multiallelic records, if any are generated during the merge.
+        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp2.vcf.gz > tmp3.vcf.gz
+        rm -f tmp2.vcf.gz*
+        
+        # Restoring IDs to their original states, and removing GTs.
+        bcftools view --header-only tmp3.vcf.gz > header.txt
         N_ROWS=$(wc -l < header.txt)
         head -n $(( ${N_ROWS} - 1 )) header.txt > out.vcf
         echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t${SAMPLE_ID}" >> out.vcf
-        ${TIME_COMMAND} bcftools view --no-header tmp1.vcf.gz | awk '{ \
+        ${TIME_COMMAND} bcftools view --no-header tmp3.vcf.gz | awk '{ \
             tag="artificial"; \
             if (substr($5,6,length(tag))==tag) $5=substr($5,1,4) ">"; \
             printf("%s",$1); \
             for (i=2; i<=8; i++) printf("\t%s",$i); \
             printf("\tGT\t0/1\n"); \
         }' >> out.vcf
-        bgzip out.vcf
+        ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} out.vcf
         tabix -f out.vcf.gz
         ls -laht; tree
     >>>
@@ -137,7 +165,7 @@ task IntraSampleMerge {
     runtime {
         docker: "fcunial/callset_integration"
         cpu: 4
-        memory: "8GB"
+        memory: ram_gb + "GB"
         disks: "local-disk 50 HDD"
         preemptible: 0
     }
@@ -160,6 +188,7 @@ task InterSampleMerge {
     input {
         Array[File] input_vcf_gz
         Array[File] input_tbi
+        Int compression_level
     }
     parameter_meta {
     }
@@ -167,6 +196,7 @@ task InterSampleMerge {
     Int disk_size_gb = ceil(size(input_vcf_gz, "GB")) + 100
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
+    Int ram_gb = 32
     
     command <<<
         set -euxo pipefail
@@ -179,11 +209,17 @@ task InterSampleMerge {
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
         
+        
+        # This function assumes that every intra-sample VCF was already sorted
+        # and normed by $IntraSampleMerge$.
+        #
         function cleanVCF() {
             local INPUT_VCF_GZ=$1
             local OUTPUT_VCF=$2
             
+            # Storing SVLEN and END in ID
             bcftools view --header-only ${INPUT_VCF_GZ} > ${OUTPUT_VCF}
             ${TIME_COMMAND} bcftools view --no-header ${INPUT_VCF_GZ} | awk '{ \
                 tag="artificial"; \
@@ -205,10 +241,11 @@ task InterSampleMerge {
                 for (i=2; i<=NF; i++) printf("\t%s",$i); \
                 printf("\n"); \
             }' >> ${OUTPUT_VCF}
-            ${TIME_COMMAND} bgzip --threads ${N_THREADS} ${OUTPUT_VCF}
-            tabix ${OUTPUT_VCF}.gz
+            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
+            tabix -f ${OUTPUT_VCF}.gz
         }
         
+        # Merging all intra-sample VCFs
         INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
@@ -220,20 +257,26 @@ task InterSampleMerge {
             i=$(( ${i} + 1 ))
         done
         # $--info-rules -$ disables default rules, and it is used just to avoid
-        # the following error: 
+        # the following error:
         # Only fixed-length vectors are supported with -i sum:AC
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --info-rules - --file-list list.txt --output-type v > tmp.vcf
-        bcftools view --header-only tmp.vcf > merged.vcf
-        ${TIME_COMMAND} bcftools view --no-header tmp.vcf | awk '{ \
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --write-index --merge none --info-rules - --file-list list.txt --output-type z > tmp1.vcf.gz
+        
+        # Removing multiallelic records, if any are generated during the merge.
+        ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --write-index --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
+        rm -f tmp1.vcf.gz*
+        
+        # Restoring IDs to their original states
+        bcftools view --header-only tmp2.vcf.gz > merged.vcf
+        ${TIME_COMMAND} bcftools view --no-header tmp2.vcf.gz | awk '{ \
             tag="artificial"; \
             if (substr($5,6,length(tag))==tag) $5=substr($5,1,4) ">"; \
             printf("%s",$1); \
             for (i=2; i<=NF; i++) printf("\t%s",$i); \
             printf("\n"); \
         }' >> merged.vcf
-        rm -f tmp.vcf
-        ${TIME_COMMAND} bgzip --threads ${N_THREADS} merged.vcf
-        tabix merged.vcf.gz
+        rm -f tmp2.vcf.gz*
+        ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} merged.vcf
+        tabix -f merged.vcf.gz
         ls -laht; tree
     >>>
     
@@ -244,7 +287,7 @@ task InterSampleMerge {
     runtime {
         docker: "fcunial/callset_integration"
         cpu: 4
-        memory: "32GB"
+        memory: ram_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
