@@ -13,6 +13,7 @@ workflow BcftoolsMergeNoDuplicates {
         Array[File] sniffles_tbi
         Array[File] pav_vcf_gz
         Array[File] pav_tbi
+        Int ram_gb_intersample = 128
         Int compression_level = 1
     }
     parameter_meta {
@@ -30,6 +31,7 @@ workflow BcftoolsMergeNoDuplicates {
         input:
             input_vcf_gz = IntraSampleMerge.output_vcf_gz,
             input_tbi = IntraSampleMerge.output_tbi,
+            ram_gb = ram_gb_intersample,
             compression_level = compression_level
     }
     
@@ -208,6 +210,7 @@ task InterSampleMerge {
         Array[File] input_vcf_gz
         Array[File] input_tbi
         Int compression_level
+        Int ram_gb
     }
     parameter_meta {
     }
@@ -215,7 +218,6 @@ task InterSampleMerge {
     Int disk_size_gb = ceil(size(input_vcf_gz, "GB")) + 100
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
-    Int ram_gb = 32
     
     command <<<
         set -euxo pipefail
