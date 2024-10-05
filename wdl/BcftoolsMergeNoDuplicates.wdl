@@ -67,6 +67,7 @@ workflow BcftoolsMergeNoDuplicates {
 # bcftools sort     4m          1           230M
 # bcftools norm     60s         2           230M
 # awk               30s         1           156M
+# rm-dup            2s          1           16M
 # bcftools merge    3m          2           250M
 # bcftools norm     3m          2           230M
 # bgzip             50s         2           9M
@@ -141,9 +142,11 @@ task IntraSampleMerge {
             tabix -f tmp2.vcf.gz
             
             # - Removing identical records
-            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --rm-dup exact --output-type z tmp2.vcf.gz > ${OUTPUT_VCF}
-            tabix -f ${OUTPUT_VCF}.gz
+            # See <https://github.com/samtools/bcftools/issues/1089>.
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --rm-dup exact --output-type v tmp2.vcf.gz > ${OUTPUT_VCF}
             rm -f tmp2.vcf.gz*
+            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
+            tabix -f ${OUTPUT_VCF}.gz
         }
         
         # Merging all single-caller VCFs
