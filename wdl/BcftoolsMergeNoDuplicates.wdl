@@ -13,6 +13,8 @@ workflow BcftoolsMergeNoDuplicates {
         Array[File] sniffles_tbi
         Array[File] pav_vcf_gz
         Array[File] pav_tbi
+        File reference_fa
+        File reference_fai
         Int ram_gb_intersample = 128
         Int compression_level = 1
     }
@@ -24,6 +26,8 @@ workflow BcftoolsMergeNoDuplicates {
             input:
                 sample_vcf_gz = [pbsv_vcf_gz[i], sniffles_vcf_gz[i], pav_vcf_gz[i]],
                 sample_tbi = [pbsv_tbi[i], sniffles_tbi[i], pav_tbi[i]],
+                reference_fa = reference_fa,
+                reference_fai = reference_fai,
                 compression_level = compression_level
         }
     }
@@ -55,8 +59,9 @@ workflow BcftoolsMergeNoDuplicates {
 #
 # Remark: we do not consider STRAND in the above.
 #
-# Remark: the output VCF has artificial FORMAT and SAMPLE columns where all
-# calls are 0/1. I.e. the original genotypes are discarded.
+# Remark: symbolic ALTs in the output VCF are not necessarily identical to the
+# symbolic ALTs in the input, and the input genotypes are discarded (i.e. the
+# output contains artificial FORMAT and SAMPLE columns where all calls are 0/1).
 #
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
 # bcftools sort     4m          1           230M
@@ -70,6 +75,8 @@ task IntraSampleMerge {
     input {
         Array[File] sample_vcf_gz
         Array[File] sample_tbi
+        File reference_fa
+        File reference_fai
         Int compression_level
     }
     parameter_meta {
@@ -103,12 +110,13 @@ task IntraSampleMerge {
             ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
             tabix -f tmp0.vcf.gz
             
-            # Removing multiallelic records from the input file
-            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp0.vcf.gz > tmp1.vcf.gz
+            # Removing multiallelic records.
+            # Fixing wrong REF values (they may occur e.g. in sniffles).
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z tmp0.vcf.gz > tmp1.vcf.gz
             tabix -f tmp1.vcf.gz
             rm -f tmp0.vcf.gz*
             
-            # Storing SVLEN and END in ID
+            # Storing SVLEN and END in symbolic ALTs
             bcftools view --header-only tmp1.vcf.gz > ${OUTPUT_VCF}
             ${TIME_COMMAND} bcftools view --no-header tmp1.vcf.gz | awk '{ \
                 tag="artificial"; \
@@ -155,14 +163,12 @@ task IntraSampleMerge {
         tabix -f tmp3.vcf.gz
         rm -f tmp2.vcf.gz*
         
-        # Restoring IDs to their original states, and removing GTs.
+        # Removing GTs.
         bcftools view --header-only tmp3.vcf.gz > header.txt
         N_ROWS=$(wc -l < header.txt)
         head -n $(( ${N_ROWS} - 1 )) header.txt > out.vcf
         echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t${SAMPLE_ID}" >> out.vcf
         ${TIME_COMMAND} bcftools view --no-header tmp3.vcf.gz | awk '{ \
-            tag="artificial"; \
-            if (substr($5,6,length(tag))==tag) $5=substr($5,1,4) ">"; \
             printf("%s",$1); \
             for (i=2; i<=8; i++) printf("\t%s",$i); \
             printf("\tGT\t0/1\n"); \
@@ -186,14 +192,6 @@ task IntraSampleMerge {
 }
 
 
-# Remark: $bcftools merge$ collapses into the same record every record with the
-# same $CHR,POS,REF,ALT$, disregarding the INFO field and in particular 
-# differences in SVLEN and END. This may delete information for symbolic
-# ALTs. Our script makes sure that only symbolic records with the same SVLEN and
-# END are collapsed into the same record.
-#
-# Remark: we do not consider STRAND in the above.
-#
 # Remark: since the input comes from $IntraSampleMerge$, which overwrites GTs,
 # every call in the output of this procedure has at least one sample with
 # GT=0/1, and every sample has GT \in {0/1, ./.}.
@@ -231,50 +229,12 @@ task InterSampleMerge {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
         
-        # This function assumes that every intra-sample VCF was already sorted
-        # and normed by $IntraSampleMerge$.
-        #
-        function cleanVCF() {
-            local INPUT_VCF_GZ=$1
-            local OUTPUT_VCF=$2
-            
-            # Storing SVLEN and END in ID
-            bcftools view --header-only ${INPUT_VCF_GZ} > ${OUTPUT_VCF}
-            ${TIME_COMMAND} bcftools view --no-header ${INPUT_VCF_GZ} | awk '{ \
-                tag="artificial"; \
-                if ($5=="<DEL>" || $5=="<INS>" || $5=="<INV>" || $5=="<DUP>" || $5=="<CNV>") { \
-                    svtype=substr($5,2,3); \
-                    end=""; \
-                    svlen=""; \
-                    n=split($8,A,";"); \
-                    for (i=1; i<=n; i++) { \
-                        if (substr(A[i],1,4)=="END=") end=substr(A[i],5); \
-                        else if (substr(A[i],1,6)=="SVLEN=") { \
-                            if (substr(A[i],7,1)=="-") svlen=substr(A[i],8); \
-                            else svlen=substr(A[i],7); \
-                        } \
-                    } \
-                    $5="<" svtype ":" tag ":" (length(end)==0?"?":end) ":" (length(svlen)==0?"?":svlen) ">" \
-                }; \
-                printf("%s",$1); \
-                for (i=2; i<=NF; i++) printf("\t%s",$i); \
-                printf("\n"); \
-            }' >> ${OUTPUT_VCF}
-            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
-            tabix -f ${OUTPUT_VCF}.gz
-        }
-        
         # Merging all intra-sample VCFs
-        df -h
         INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
-        i="0"
         for INPUT_FILE in ${INPUT_FILES}; do
-            cleanVCF ${INPUT_FILE} ${i}.vcf
-            echo ${i}.vcf.gz >> list.txt
-            rm -f ${INPUT_FILE}
-            i=$(( ${i} + 1 ))
+            echo ${INPUT_FILE} >> list.txt
         done
         df -h
         # $--info-rules -$ disables default rules, and it is used just to avoid
@@ -290,7 +250,7 @@ task InterSampleMerge {
         rm -f tmp1.vcf.gz*
         df -h
         
-        # Restoring IDs to their original states
+        # Restoring symbolic ALTs to their original states
         bcftools view --header-only tmp2.vcf.gz > merged.vcf
         ${TIME_COMMAND} bcftools view --no-header tmp2.vcf.gz | awk '{ \
             tag="artificial"; \
