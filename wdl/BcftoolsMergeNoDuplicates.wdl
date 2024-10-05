@@ -99,25 +99,22 @@ task IntraSampleMerge {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
         
-        # This function assumes that no single-sample single-caller VCF contains
-        # exact duplicates.
-        #
         function cleanVCF() {
             local INPUT_VCF_GZ=$1
             local OUTPUT_VCF=$2
             
-            # Ensuring that the input file is sorted
+            # - Ensuring that the input file is sorted
             ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --output-type z ${INPUT_VCF_GZ} > tmp0.vcf.gz
             tabix -f tmp0.vcf.gz
             
-            # Removing multiallelic records.
-            # Fixing wrong REF values (they may occur e.g. in sniffles).
+            # - Removing multiallelic records.
+            # - Fixing wrong REF values (which may occur e.g. in sniffles).
             ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --check-ref s --fasta-ref ~{reference_fa} --do-not-normalize --output-type z tmp0.vcf.gz > tmp1.vcf.gz
             tabix -f tmp1.vcf.gz
             rm -f tmp0.vcf.gz*
             
-            # Storing SVLEN and END in symbolic ALTs
-            bcftools view --header-only tmp1.vcf.gz > ${OUTPUT_VCF}
+            # - Storing SVLEN and END in symbolic ALTs
+            bcftools view --header-only tmp1.vcf.gz > tmp2.vcf
             ${TIME_COMMAND} bcftools view --no-header tmp1.vcf.gz | awk '{ \
                 tag="artificial"; \
                 if ($5=="<DEL>" || $5=="<INS>" || $5=="<INV>" || $5=="<DUP>" || $5=="<CNV>") { \
@@ -137,9 +134,13 @@ task IntraSampleMerge {
                 printf("%s",$1); \
                 for (i=2; i<=NF; i++) printf("\t%s",$i); \
                 printf("\n"); \
-            }' >> ${OUTPUT_VCF}
+            }' >> tmp2.vcf
             rm -f tmp1.vcf.gz*
-            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
+            ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} tmp2.vcf
+            tabix -f tmp2.vcf.gz
+            
+            # - Removing identical records
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --collapse none --output-type z tmp2.vcf.gz > ${OUTPUT_VCF}
             tabix -f ${OUTPUT_VCF}.gz
         }
         
@@ -236,19 +237,19 @@ task InterSampleMerge {
         for INPUT_FILE in ${INPUT_FILES}; do
             echo ${INPUT_FILE} >> list.txt
         done
-        df -h
+        ls -laht; tree; df -h
         # $--info-rules -$ disables default rules, and it is used just to avoid
         # the following error:
         # Only fixed-length vectors are supported with -i sum:AC
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --info-rules - --file-list list.txt --output-type z > tmp1.vcf.gz
         tabix -f tmp1.vcf.gz
-        df -h
+        ls -laht; tree; df -h
         
         # Removing multiallelic records, if any are generated during the merge.
         ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
         tabix -f tmp2.vcf.gz
         rm -f tmp1.vcf.gz*
-        df -h
+        ls -laht; tree; df -h
         
         # Restoring symbolic ALTs to their original states
         bcftools view --header-only tmp2.vcf.gz > merged.vcf
@@ -262,7 +263,7 @@ task InterSampleMerge {
         rm -f tmp2.vcf.gz*
         ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} merged.vcf
         tabix -f merged.vcf.gz
-        ls -laht; tree
+        ls -laht; tree; df -h
     >>>
     
     output {
