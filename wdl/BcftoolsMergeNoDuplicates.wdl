@@ -199,10 +199,9 @@ task IntraSampleMerge {
 # GT=0/1, and every sample has GT \in {0/1, ./.}.
 #
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
-# awk               
-# bgzip             
 # bcftools merge    
 # bcftools norm     
+# awk               
 # bgzip             
 #
 task InterSampleMerge {
@@ -215,7 +214,7 @@ task InterSampleMerge {
     parameter_meta {
     }
     
-    Int disk_size_gb = ceil(size(input_vcf_gz, "GB")) + 100
+    Int disk_size_gb = 10*ceil(size(input_vcf_gz, "GB")) + 100
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -231,7 +230,6 @@ task InterSampleMerge {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
-        
         
         # This function assumes that every intra-sample VCF was already sorted
         # and normed by $IntraSampleMerge$.
@@ -267,6 +265,7 @@ task InterSampleMerge {
         }
         
         # Merging all intra-sample VCFs
+        df -h
         INPUT_FILES=~{sep=',' input_vcf_gz}
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
@@ -277,16 +276,19 @@ task InterSampleMerge {
             rm -f ${INPUT_FILE}
             i=$(( ${i} + 1 ))
         done
+        df -h
         # $--info-rules -$ disables default rules, and it is used just to avoid
         # the following error:
         # Only fixed-length vectors are supported with -i sum:AC
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --info-rules - --file-list list.txt --output-type z > tmp1.vcf.gz
         tabix -f tmp1.vcf.gz
+        df -h
         
         # Removing multiallelic records, if any are generated during the merge.
         ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
         tabix -f tmp2.vcf.gz
         rm -f tmp1.vcf.gz*
+        df -h
         
         # Restoring IDs to their original states
         bcftools view --header-only tmp2.vcf.gz > merged.vcf
