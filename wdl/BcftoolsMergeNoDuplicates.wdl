@@ -82,6 +82,7 @@ task IntraSampleMerge {
     parameter_meta {
     }
     
+    Int disk_size_gb = 10*ceil(size(sample_vcf_gz, "GB")) + 10
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     Int ram_gb = 4
@@ -140,8 +141,9 @@ task IntraSampleMerge {
             tabix -f tmp2.vcf.gz
             
             # - Removing identical records
-            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --collapse none --output-type z tmp2.vcf.gz > ${OUTPUT_VCF}
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --rm-dup exact --output-type z tmp2.vcf.gz > ${OUTPUT_VCF}
             tabix -f ${OUTPUT_VCF}.gz
+            rm -f tmp2.vcf.gz*
         }
         
         # Merging all single-caller VCFs
@@ -187,7 +189,7 @@ task IntraSampleMerge {
         docker: "fcunial/callset_integration"
         cpu: 2
         memory: ram_gb + "GB"
-        disks: "local-disk 50 HDD"
+        disks: "local-disk " + disk_size_gb + " HDD"
         preemptible: 0
     }
 }
