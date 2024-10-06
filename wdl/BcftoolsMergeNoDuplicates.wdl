@@ -63,6 +63,7 @@ workflow BcftoolsMergeNoDuplicates {
 # symbolic ALTs in the input, and the input genotypes are discarded (i.e. the
 # output contains artificial FORMAT and SAMPLE columns where all calls are 0/1).
 #
+# Performance on each AoU 8x sample:
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
 # bcftools sort     4m          1           230M
 # bcftools norm     60s         2           230M
@@ -202,11 +203,12 @@ task IntraSampleMerge {
 # every call in the output of this procedure has at least one sample with
 # GT=0/1, and every sample has GT \in {0/1, ./.}.
 #
+# Performance on 1074 AoU 8x samples:
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
-# bcftools merge    
-# bcftools norm     
-# awk               
-# bgzip             
+# bcftools merge    2.5h        2           140G
+# bcftools norm     40m         3           80G
+# awk               2h          0.5         75G
+# bgzip             10m         2           23M
 #
 task InterSampleMerge {
     input {
@@ -251,6 +253,8 @@ task InterSampleMerge {
         ls -laht; tree; df -h
         
         # Removing multiallelic records, if any are generated during the merge.
+        # This is just an extra safeguard and might be dropped if $bcftools
+        # merge --merge none$ always behaves correctly.
         ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --multiallelics - --output-type z tmp1.vcf.gz > tmp2.vcf.gz
         tabix -f tmp2.vcf.gz
         rm -f tmp1.vcf.gz*

@@ -225,3 +225,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeNoDuplicates.wdl
   testParameterFiles:
+- name: MergeSVsSNPs
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/MergeSVsSNPs.wdl
+  testParameterFiles:
