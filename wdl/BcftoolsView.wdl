@@ -57,7 +57,7 @@ task BcftoolsViewImpl {
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         EFFECTIVE_RAM_GB=$(( ~{ram_size_gb} - 2 ))
         
-        ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --compression-level 1 --output-type z --regions-file ~{regions_bed} > out.vcf.gz
+        ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --compression-level 1 --output-type z --regions-file ~{regions_bed} ~{vcf_gz} > out.vcf.gz
         tabix -f out.vcf.gz
     >>>
 
