@@ -230,3 +230,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/MergeSVsSNPs.wdl
   testParameterFiles:
+- name: BcftoolsView
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsView.wdl
+  testParameterFiles:
