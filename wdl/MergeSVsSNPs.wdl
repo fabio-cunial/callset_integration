@@ -1,7 +1,10 @@
 version 1.0
 
 
-# 
+# Merges SVs and SNPs, removing multiallelic records from SNPs and removing 
+# exact duplicates from the output.
+#
+# Remark: task $MergeSVsSNPsImpl$ should be made parallel by chromosome.
 #
 workflow MergeSVsSNPs {
     input {
@@ -11,9 +14,11 @@ workflow MergeSVsSNPs {
         File snps_tbi
         File reference_fa
         File reference_fai
-        Int ram_size_gb = 256
+        Int ram_size_gb = 100
     }
     parameter_meta {
+        svs_vcf_gz: "Assumed to be sorted and without multiallelic records"
+        snps_vcf_gz: "Assumed to be sorted"
     }
     
     call MergeSVsSNPsImpl {
@@ -34,6 +39,11 @@ workflow MergeSVsSNPs {
 }
 
 
+# Performance on 1074 AoU 8x samples:
+# COMMAND           RUNTIME     N_CPUS      MAX_RSS
+# bcftools norm     6           2           500M
+# bcftools concat   6h40m       2           76G
+#
 task MergeSVsSNPsImpl {
     input {
         File svs_vcf_gz
@@ -42,12 +52,14 @@ task MergeSVsSNPsImpl {
         File snps_tbi
         File reference_fa
         File reference_fai
-        Int ram_size_gb
+        Int ram_size_gb = 100
     }
     parameter_meta {
+        svs_vcf_gz: "Assumed to be sorted and without multiallelic records"
+        snps_vcf_gz: "Assumed to be sorted"
     }
     
-    Int disk_size_gb = 10*ceil(size(svs_vcf_gz, "GB")+size(snps_vcf_gz, "GB")) + 10
+    Int disk_size_gb = 10*ceil(size(svs_vcf_gz, "GB")+size(snps_vcf_gz, "GB")) + size(reference_fa, "GB") + 10
     String docker_dir = "/hgsvc2"
     String work_dir = "/cromwell_root/hgsvc2"
     
@@ -56,8 +68,6 @@ task MergeSVsSNPsImpl {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
-        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
-        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"

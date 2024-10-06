@@ -5,6 +5,8 @@ version 1.0
 # per sample. The output VCF contains no multiallelic records and no exact
 # duplicates.
 #
+# Remark: task $InterSampleMerge$ should be made parallel by chromosome.
+#
 workflow BcftoolsMergeNoDuplicates {
     input {
         Array[File] pbsv_vcf_gz
@@ -15,7 +17,7 @@ workflow BcftoolsMergeNoDuplicates {
         Array[File] pav_tbi
         File reference_fa
         File reference_fai
-        Int ram_gb_intersample = 128
+        Int ram_gb_intersample = 200
         Int compression_level = 1
     }
     parameter_meta {
@@ -79,7 +81,7 @@ task IntraSampleMerge {
         Array[File] sample_tbi
         File reference_fa
         File reference_fai
-        Int compression_level
+        Int compression_level = 1
     }
     parameter_meta {
     }
@@ -94,8 +96,6 @@ task IntraSampleMerge {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
-        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
-        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
@@ -214,8 +214,8 @@ task InterSampleMerge {
     input {
         Array[File] input_vcf_gz
         Array[File] input_tbi
-        Int compression_level
-        Int ram_gb
+        Int compression_level = 1
+        Int ram_gb = 200
     }
     parameter_meta {
     }
@@ -229,8 +229,6 @@ task InterSampleMerge {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
-        GSUTIL_UPLOAD_THRESHOLD="-o GSUtil:parallel_composite_upload_threshold=150M"
-        GSUTIL_DELAY_S="600"
         TIME_COMMAND="/usr/bin/time --verbose"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
