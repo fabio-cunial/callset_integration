@@ -1,7 +1,7 @@
 version 1.0
 
 
-# Tries to implement $bcftools view$ as fast as possible on a large VCF.
+# Tries to implement $bcftools view$ as fast as possible for a large VCF.
 #
 workflow BcftoolsView {
     input {
@@ -29,7 +29,7 @@ workflow BcftoolsView {
 
 # Performance on the 1074 AoU 8x VCF:
 # COMMAND           RUNTIME     N_CPUS      MAX_RSS
-# bcftools view     
+# bcftools view     3m          2           4G
 #
 task BcftoolsViewImpl {
     input {
