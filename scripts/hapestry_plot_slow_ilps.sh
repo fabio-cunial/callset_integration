@@ -34,7 +34,7 @@ function collectWindow() {
     SUCCESS_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -ge ${MAX_MINUTES} ]; then
         echo -n "1,${HOURS_F},${MINUTES_F},${SUCCESS_F}," >> ${STATS_FILE}
-        java ${JAVA_FLAGS} DrawILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
+        java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
     
@@ -48,7 +48,7 @@ function collectWindow() {
     SUCCESS_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_D} -eq 0 -o ${HOURS_D} -ge 1 -o ${MINUTES_D} -ge ${MAX_MINUTES} ]; then
         echo -n "2,${HOURS_D},${MINUTES_D},${SUCCESS_D}," >> ${STATS_FILE}
-        java ${JAVA_FLAGS} DrawILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
+        java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
     
@@ -62,7 +62,7 @@ function collectWindow() {
     SUCCESS_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_ND} -eq 0 -o ${HOURS_ND} -ge 1 -o ${MINUTES_ND} -ge ${MAX_MINUTES} ]; then
         echo -n "3,${HOURS_ND},${MINUTES_ND},${SUCCESS_ND}," >> ${STATS_FILE}
-        java ${JAVA_FLAGS} DrawILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
+        java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
     
@@ -76,7 +76,7 @@ function collectWindow() {
     SUCCESS_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_DN} -eq 0 -o ${HOURS_DN} -ge 1 -o ${MINUTES_DN} -ge ${MAX_MINUTES} ]; then
         echo -n "4,${HOURS_DN},${MINUTES_DN},${SUCCESS_DN}," >> ${STATS_FILE}
-        java ${JAVA_FLAGS} DrawILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
+        java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
 }
