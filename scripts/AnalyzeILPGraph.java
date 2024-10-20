@@ -68,8 +68,6 @@ public class AnalyzeILPGraph {
         System.out.println("Finding identical haplotypes...");
         identicalHaplotypes();
         System.err.println(nReads+"\t"+nReadClusters+"\t"+(((double)nReads)/nReadClusters)+"\t"+nHaps+"\t"+nHapClusters+"\t"+(((double)nHaps)/nHapClusters)+"\t"+nSamples+"\t"+nSampleClusters+"\t"+(((double)nSamples)/nSampleClusters));
-
-//System.err.println(nReads+","+nReadClusters+","+(((double)nReads)/nReadClusters));
 	}
     
     
@@ -126,15 +124,6 @@ public class AnalyzeILPGraph {
                 neighbors[j][++lastNeighbor[j]]=triplets[i].count+"";
             }
         }
-        
-        
-// System.err.println("neighbors:");
-// for (int x=0; x<neighbors.length; x++) {
-//     for (int y=0; y<=lastNeighbor[x]; y++) System.err.print(neighbors[x][y]+",");
-//     System.err.println();
-// }
-        
-        
         
         // Clustering reads
         readClusterID = new int[nReads];
