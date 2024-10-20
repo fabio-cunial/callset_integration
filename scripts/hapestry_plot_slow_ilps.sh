@@ -5,7 +5,7 @@ OUTPUT_DIR=$2
 MAX_MINUTES="1"
 WEIGHT_QUANTUM="1"
 N_THREADS="1"
-JAVA_FLAGS="-Xmx6G"
+JAVA_FLAGS="-Xmx12G"
 
 set -euxo pipefail
 
@@ -13,7 +13,7 @@ set -euxo pipefail
 function collectWindow() {
     local WINDOW=$1
     local THREAD_ID=$2
-    local STATS_FILE=${OUTPUT_DIR}/${THREAD_ID}.log
+    local STATS_FILE=${OUTPUT_DIR}/${THREAD_ID}.tsv
     local OUTPUT_DIR=${OUTPUT_DIR}/$(basename ${WINDOW})
     
     rm -rf ${OUTPUT_DIR}; mkdir ${OUTPUT_DIR}
@@ -33,7 +33,7 @@ function collectWindow() {
     MINUTES_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
     SUCCESS_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -ge ${MAX_MINUTES} ]; then
-        echo -n "1,${HOURS_F},${MINUTES_F},${SUCCESS_F}," >> ${STATS_FILE}
+        echo -e -n "1\t${HOURS_F}\t${MINUTES_F}\t${SUCCESS_F}\t" >> ${STATS_FILE}
         java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
@@ -47,7 +47,7 @@ function collectWindow() {
     MINUTES_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
     SUCCESS_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_D} -eq 0 -o ${HOURS_D} -ge 1 -o ${MINUTES_D} -ge ${MAX_MINUTES} ]; then
-        echo -n "2,${HOURS_D},${MINUTES_D},${SUCCESS_D}," >> ${STATS_FILE}
+        echo -e -n "2\t${HOURS_D}\t${MINUTES_D}\t${SUCCESS_D}\t" >> ${STATS_FILE}
         java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
@@ -61,7 +61,7 @@ function collectWindow() {
     MINUTES_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
     SUCCESS_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_ND} -eq 0 -o ${HOURS_ND} -ge 1 -o ${MINUTES_ND} -ge ${MAX_MINUTES} ]; then
-        echo -n "3,${HOURS_ND},${MINUTES_ND},${SUCCESS_ND}," >> ${STATS_FILE}
+        echo -e -n "3\t${HOURS_ND}\t${MINUTES_ND}\t${SUCCESS_ND}\t" >> ${STATS_FILE}
         java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
@@ -75,7 +75,7 @@ function collectWindow() {
     MINUTES_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
     SUCCESS_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
     if [ ${SUCCESS_DN} -eq 0 -o ${HOURS_DN} -ge 1 -o ${MINUTES_DN} -ge ${MAX_MINUTES} ]; then
-        echo -n "4,${HOURS_DN},${MINUTES_DN},${SUCCESS_DN}," >> ${STATS_FILE}
+        echo -e -n "4\t${HOURS_DN}\t${MINUTES_DN}\t${SUCCESS_DN}\t" >> ${STATS_FILE}
         java ${JAVA_FLAGS} AnalyzeILPGraph ${WINDOW}/reads_to_paths.csv ${OUTPUT_DIR} ${WEIGHT_QUANTUM} 2>> ${STATS_FILE}
         return 0
     fi
