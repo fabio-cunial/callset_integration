@@ -67,9 +67,9 @@ task ILPCompressionImpl {
         MONITOR_JOB=$(ps -aux | grep -F 'vm_local_monitoring_script.sh' | head -1 | awk '{print $2}')
         
         # Comparing compressed/non-compressed
-        rm -rf ${OUTPUT_DIR} /tmp/* uncompressed.log
+        rm -rf ${OUTPUT_DIR} /tmp/*
         ${TIME_COMMAND} ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS}
-        rm -rf ${OUTPUT_DIR} /tmp/* compressed.log
+        rm -rf ${OUTPUT_DIR} /tmp/*
         ${TIME_COMMAND} ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS}
         
         # Stopping resource monitoring
