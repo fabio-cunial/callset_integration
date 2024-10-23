@@ -27,7 +27,7 @@ public class AnalyzeILPGraph {
     /**
      * @param args
      * 0: all the read-haplotype edges in the CSV are assumed to be distinct;
-     * 2: read-haplotype weights are taken modulo this amount before being
+     * 2: read-haplotype weights are integer-divided by this amount before being
      * compared exactly.
      */
 	public static void main(String[] args) throws IOException {
