@@ -235,3 +235,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsView.wdl
   testParameterFiles:
+- name: ILPCompression
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/ILPCompression.wdl
+  testParameterFiles:
