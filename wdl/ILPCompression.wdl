@@ -54,7 +54,7 @@ task ILPCompressionImpl {
         tar -xzf ./archive.tar.gz
         rm -f ./archive.tar.gz
         rm -rf ${INPUT_DIR_SMALL} list.txt
-        ls ${INPUT_DIR} | sort --random-sort | head -n ~{n_windows} > list.txt
+        ls ${INPUT_DIR} | sort --random-sort | head -n ~{n_windows} > list.txt && echo 0 || echo 1
         while read WINDOW; do
             mkdir -p ${INPUT_DIR_SMALL}/${WINDOW}
             mv ${INPUT_DIR}/${WINDOW}/* ${INPUT_DIR_SMALL}/${WINDOW}/
