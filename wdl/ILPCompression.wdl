@@ -62,6 +62,7 @@ task ILPCompressionImpl {
         rm -rf ${INPUT_DIR}
         
         # Starting resource monitoring
+        export MONITOR_MOUNT_POINT=~{work_dir}
         bash ~{docker_dir}/vm_local_monitoring_script.sh &> monitoring.log &
         MONITOR_JOB=$(ps -aux | grep -F 'vm_local_monitoring_script.sh' | head -1 | awk '{print $2}')
         
