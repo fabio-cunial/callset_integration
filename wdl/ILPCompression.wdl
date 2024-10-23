@@ -80,7 +80,7 @@ task ILPCompressionImpl {
         File monitor_log = work_dir + "/monitoring.log"
     }
     runtime {
-        docker: "fcunial/callset_integration"
+        docker: "fcunial/hapestry:compression"
         cpu: 32
         memory: "64GB"
         disks: "local-disk 500 HDD"

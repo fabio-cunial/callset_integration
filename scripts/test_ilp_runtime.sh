@@ -20,7 +20,6 @@ done < list.txt
 COMPRESS=""
 rm -rf ${OUTPUT_DIR} /tmp/* log_uncompressed.txt
 ${TIME_COMMAND} ${HAPESTRY_COMMAND} ${COMPRESS} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_uncompressed.txt
-
 COMPRESS="--compress_transmap true"
 rm -rf ${OUTPUT_DIR} /tmp/* log_compressed.txt
 ${TIME_COMMAND} ${HAPESTRY_COMMAND} ${COMPRESS} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_compressed.txt
