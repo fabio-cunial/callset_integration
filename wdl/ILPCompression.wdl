@@ -73,7 +73,7 @@ task ILPCompressionImpl {
         
         # Stopping resource monitoring
         kill ${MONITOR_JOB}
-        tail -n 100 ${MONITOR_FILE}
+        tail -n 100 monitoring.log
     >>>
 
     output {
