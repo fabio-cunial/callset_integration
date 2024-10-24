@@ -65,57 +65,57 @@ task ILPCompressionImpl {
             fi
             cat ${LOG_FILE}
     
-            grep 'feasibility,' ${LOG_FILE} > tmp_${THREAD_ID}.txt || echo ""
-            N_LINES=$(wc -l < tmp_${THREAD_ID}.txt)
+            grep 'feasibility,' ${LOG_FILE} > tmp.txt || echo ""
+            N_LINES=$(wc -l < tmp.txt)
             if [ ${N_LINES} -eq 0 ]; then
                 echo "0"
                 return 0
             fi
-            HOURS_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 2 )
-            MINUTES_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
-            SUCCESS_F=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
+            HOURS_F=$( cat tmp.txt | cut -d , -f 2 )
+            MINUTES_F=$( cat tmp.txt | cut -d , -f 3 )
+            SUCCESS_F=$( cat tmp.txt | cut -d , -f 6 )
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
             fi
     
-            grep 'optimize_d,' ${LOG_FILE} > tmp_${THREAD_ID}.txt || echo ""
-            N_LINES=$(wc -l < tmp_${THREAD_ID}.txt)
+            grep 'optimize_d,' ${LOG_FILE} > tmp.txt || echo ""
+            N_LINES=$(wc -l < tmp.txt)
             if [ ${N_LINES} -eq 0 ]; then
                 echo "0"
                 return 0
             fi
-            HOURS_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 2 )
-            MINUTES_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
-            SUCCESS_D=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
+            HOURS_D=$( cat tmp.txt | cut -d , -f 2 )
+            MINUTES_D=$( cat tmp.txt | cut -d , -f 3 )
+            SUCCESS_D=$( cat tmp.txt | cut -d , -f 6 )
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
             fi
     
-            grep 'optimize_n_given_d,' ${LOG_FILE} > tmp_${THREAD_ID}.txt || echo ""
-            N_LINES=$(wc -l < tmp_${THREAD_ID}.txt)
+            grep 'optimize_n_given_d,' ${LOG_FILE} > tmp.txt || echo ""
+            N_LINES=$(wc -l < tmp.txt)
             if [ ${N_LINES} -eq 0 ]; then
                 echo "0"
                 return 0
             fi
-            HOURS_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 2 )
-            MINUTES_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
-            SUCCESS_ND=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
+            HOURS_ND=$( cat tmp.txt | cut -d , -f 2 )
+            MINUTES_ND=$( cat tmp.txt | cut -d , -f 3 )
+            SUCCESS_ND=$( cat tmp.txt | cut -d , -f 6 )
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
             fi
     
-            grep 'optimize_d_plus_n,' ${LOG_FILE} > tmp_${THREAD_ID}.txt || echo ""
-            N_LINES=$(wc -l < tmp_${THREAD_ID}.txt)
+            grep 'optimize_d_plus_n,' ${LOG_FILE} > tmp.txt || echo ""
+            N_LINES=$(wc -l < tmp.txt)
             if [ ${N_LINES} -eq 0 ]; then
                 echo "0"
                 return 0
             fi
-            HOURS_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 2 )
-            MINUTES_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 3 )
-            SUCCESS_DN=$( cat tmp_${THREAD_ID}.txt | cut -d , -f 6 )
+            HOURS_DN=$( cat tmp.txt | cut -d , -f 2 )
+            MINUTES_DN=$( cat tmp.txt | cut -d , -f 3 )
+            SUCCESS_DN=$( cat tmp.txt | cut -d , -f 6 )
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
