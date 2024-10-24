@@ -63,7 +63,6 @@ task ILPCompressionImpl {
                 echo "0"
                 return 0
             fi
-            cat ${LOG_FILE}
     
             grep 'feasibility,' ${LOG_FILE} > tmp.txt || echo ""
             N_LINES=$(wc -l < tmp.txt)
@@ -133,6 +132,7 @@ task ILPCompressionImpl {
         ls ${INPUT_DIR} | sort --random-sort > list.txt && echo 0 || echo 1
         N_WINDOWS="0"
         while read WINDOW; do
+            cat ${INPUT_DIR}/${WINDOW}/log.csv
             SUCCESS=$(sampleWindow ${INPUT_DIR}/${WINDOW})
             if [ ${SUCCESS} -eq 1 ]; then
                 mkdir -p ${INPUT_DIR_SMALL}/${WINDOW}
