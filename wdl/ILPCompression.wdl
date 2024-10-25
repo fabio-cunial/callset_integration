@@ -5,16 +5,18 @@ version 1.0
 #
 workflow ILPCompression {
     input {
-        File non_sequence_data_tar_gz
+        String remote_run_dir
+        Int min_minutes = 1
         Int max_minutes = 14
-        Int n_windows
+        Int n_windows = 50
     }
     parameter_meta {
     }
     
     call ILPCompressionImpl {
         input:
-            non_sequence_data_tar_gz = non_sequence_data_tar_gz,
+            remote_run_dir = remote_run_dir,
+            min_minutes = min_minutes,
             max_minutes = max_minutes,
             n_windows = n_windows
     }
@@ -28,11 +30,13 @@ workflow ILPCompression {
 #
 task ILPCompressionImpl {
     input {
-        File non_sequence_data_tar_gz
+        String remote_run_dir
+        Int min_minutes
         Int max_minutes
         Int n_windows
     }
     parameter_meta {
+        remote_run_dir: "The parent directory of all the `shard-X` directories."
     }
     
     String docker_dir = "/hapestry"
@@ -51,9 +55,11 @@ task ILPCompressionImpl {
         INPUT_DIR_SMALL="./input_sample"
         OUTPUT_DIR="./output_sample"
         HAPESTRY_COMMAND="~{docker_dir}/sv_merge/build/solve_from_directory"
+        MAX_CHUNK_ID="128"
         
         
-        # Returns 1 iff the window is sampled.
+        # Returns 1 iff the window is sampled, i.e. if all the ILPs took
+        # $<=max_minutes$ and at least one ILP took $>=min_minutes$.
         #
         function sampleWindow() {
             local WINDOW=$1
@@ -63,7 +69,9 @@ task ILPCompressionImpl {
                 echo "0"
                 return 0
             fi
-    
+            
+            MAX_MINS="0"
+            
             grep 'feasibility,' ${LOG_FILE} > tmp.txt || echo ""
             N_LINES=$(wc -l < tmp.txt)
             if [ ${N_LINES} -eq 0 ]; then
@@ -76,6 +84,9 @@ task ILPCompressionImpl {
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
+            fi
+            if [ ${MINUTES_F} -gt ${MAX_MINS} ]; then
+                MAX_MINS=${MINUTES_F}
             fi
     
             grep 'optimize_d,' ${LOG_FILE} > tmp.txt || echo ""
@@ -91,6 +102,9 @@ task ILPCompressionImpl {
                 echo "0"
                 return 0
             fi
+            if [ ${MINUTES_D} -gt ${MAX_MINS} ]; then
+                MAX_MINS=${MINUTES_D}
+            fi
     
             grep 'optimize_n_given_d,' ${LOG_FILE} > tmp.txt || echo ""
             N_LINES=$(wc -l < tmp.txt)
@@ -104,6 +118,9 @@ task ILPCompressionImpl {
             if [ ${SUCCESS_F} -eq 0 -o ${HOURS_F} -ge 1 -o ${MINUTES_F} -gt ~{max_minutes} ]; then
                 echo "0"
                 return 0
+            fi
+            if [ ${MINUTES_ND} -gt ${MAX_MINS} ]; then
+                MAX_MINS=${MINUTES_ND}
             fi
     
             grep 'optimize_d_plus_n,' ${LOG_FILE} > tmp.txt || echo ""
@@ -119,31 +136,59 @@ task ILPCompressionImpl {
                 echo "0"
                 return 0
             fi
+            if [ ${MINUTES_DN} -gt ${MAX_MINS} ]; then
+                MAX_MINS=${MINUTES_DN}
+            fi
             
-            echo "1"
+            if [ ${MAX_MINS} -ge ~{min_minutes} ]; then
+                echo "1"
+            else
+                echo "0"
+            fi
         }
         
         
         # Sampling $n_windows$ that succeeded and that took $<=max_minutes$ in
         # every ILP.
-        mv ~{non_sequence_data_tar_gz} ./archive.tar.gz
-        tar -xzf ./archive.tar.gz
-        rm -f ./archive.tar.gz
-        ls ${INPUT_DIR} | sort --random-sort > list.txt && echo 0 || echo 1
-        N_WINDOWS="0"
-        while read WINDOW; do
-            cat ${INPUT_DIR}/${WINDOW}/log.csv
-            SUCCESS=$(sampleWindow ${INPUT_DIR}/${WINDOW})
-            if [ ${SUCCESS} -eq 1 ]; then
-                mkdir -p ${INPUT_DIR_SMALL}/${WINDOW}
-                mv ${INPUT_DIR}/${WINDOW}/* ${INPUT_DIR_SMALL}/${WINDOW}/
-                N_WINDOWS=$(( ${N_WINDOWS} + 1 ))
-                if [ ${N_WINDOWS} -eq ~{n_windows} ]; then
-                    break
+        CHUNK_ID="0"; N_SAMPLED_WINDOWS="0"
+        while [ ${N_SAMPLED_WINDOWS} -lt ~{n_windows} ]; do
+            TEST=$(gsutil ls ~{remote_run_dir}/shard-${CHUNK_ID}/output/non_sequence_data.tar.gz)
+            if [ -n ${TEST} ]; then
+                gsutil -m cp ~{remote_run_dir}/shard-${CHUNK_ID}/output/non_sequence_data.tar.gz .
+            else
+                TEST=$(gsutil ls ~{remote_run_dir}/shard-${CHUNK_ID}/attempt-2/output/non_sequence_data.tar.gz)
+                if [ -n ${TEST} ]; then
+                    gsutil -m cp ~{remote_run_dir}/shard-${CHUNK_ID}/attempt-2/output/non_sequence_data.tar.gz .
+                else 
+                    CHUNK_ID=$(( ${CHUNK_ID} + 1 ))
+                    if [ ${CHUNK_ID} -gt ${MAX_CHUNK_ID} ]; then
+                        break
+                    else
+                        continue
+                    fi
                 fi
             fi
-        done < list.txt
-        rm -rf ${INPUT_DIR}
+            tar -xzf ./non_sequence_data.tar.gz
+            rm -f non_sequence_data.tar.gz
+            ls ${INPUT_DIR} | sort --random-sort > list.txt && echo 0 || echo 1
+            while read WINDOW; do
+                cat ${INPUT_DIR}/${WINDOW}/log.csv
+                SUCCESS=$(sampleWindow ${INPUT_DIR}/${WINDOW})
+                if [ ${SUCCESS} -eq 1 ]; then
+                    mkdir -p ${INPUT_DIR_SMALL}/${WINDOW}
+                    mv ${INPUT_DIR}/${WINDOW}/* ${INPUT_DIR_SMALL}/${WINDOW}/
+                    N_SAMPLED_WINDOWS=$(( ${N_SAMPLED_WINDOWS} + 1 ))
+                    if [ ${N_SAMPLED_WINDOWS} -eq ~{n_windows} ]; then
+                        break
+                    fi
+                fi
+            done < list.txt
+            rm -rf ${INPUT_DIR}
+            CHUNK_ID=$(( ${CHUNK_ID} + 1 ))
+            if [ ${CHUNK_ID} -gt ${MAX_CHUNK_ID} ]; then
+                break
+            fi
+        done
         
         # Starting resource monitoring
         export MONITOR_MOUNT_POINT=~{work_dir}
