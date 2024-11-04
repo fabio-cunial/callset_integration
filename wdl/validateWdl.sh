@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigV11.wdl
 java -jar ${WOMTOOL_PATH} validate -l ILPCompression.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsView.wdl
 java -jar ${WOMTOOL_PATH} validate -l MergeSVsSNPs.wdl

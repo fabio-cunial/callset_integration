@@ -240,3 +240,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/ILPCompression.wdl
   testParameterFiles:
+- name: GetRegenotypedVcfKanpigV11
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpigV11.wdl
+  testParameterFiles:
