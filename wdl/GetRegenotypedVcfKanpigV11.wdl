@@ -56,8 +56,8 @@ task GetRegenotypedVcfImpl {
     parameter_meta {
     }
     
-    String docker_dir = "/hgsvc2"
-    String work_dir = "/cromwell_root/hgsvc2"
+    String docker_dir = "/kanpig_experiments"
+    String work_dir = "/cromwell_root/kanpig_experiments"
     String output_prefix = "kanpig_regenotyped"
     String kanpig_params_singlesample = "--sizemin 20 --sizemax 10000 --chunksize 1000 --gpenalty 0.02 --hapsim 0.9999 --sizesim 0.90 --seqsim 0.85 --maxpaths 10000"
     Int disk_size_gb = 200 + ceil(size(reference_fa,"GB")) + 100*ceil(size(truvari_collapsed_vcf_gz,"GB")) + 2*ceil(size(alignments_bam,"GB"))
