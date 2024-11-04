@@ -109,8 +109,7 @@ task GetRegenotypedVcfImpl {
 
 
         # Main program
-        rm -f ~{alignments_bai}
-        samtools index -@ ${N_THREADS} ~{alignments_bam}
+        touch ~{alignments_bai}
     
         # Formatting the merged VCF
         HAS_SUPP=$(bcftools view --header-only ~{truvari_collapsed_vcf_gz} | grep '##FORMAT=<ID=SUPP,' && echo 1 || echo 0)
