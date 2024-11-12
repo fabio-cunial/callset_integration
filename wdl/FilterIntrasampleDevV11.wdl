@@ -51,6 +51,8 @@ workflow FilterIntrasampleDevV11 {
 
         String gatk_docker
         File? gatk_override
+        
+        Int svlen_max = 100000
 
         RuntimeAttributes? extract_runtime_attributes
         RuntimeAttributes? train_runtime_attributes
@@ -73,7 +75,8 @@ workflow FilterIntrasampleDevV11 {
             is_training_resource_split_and_resolved = is_training_resource_split_and_resolved,
             output_prefix = sample_name,
             docker = preprocess_and_postprocess_docker,
-            monitoring_script = monitoring_script
+            monitoring_script = monitoring_script,
+            svlen_max = svlen_max
     }
 
     call IdentifyTrainingSites {
@@ -164,6 +167,7 @@ task PreprocessVCF {
         Boolean is_sniffles
         Boolean is_training_resource_split_and_resolved
         String output_prefix
+        Int svlen_max = 100000
 
         String docker
         File? monitoring_script
@@ -245,9 +249,16 @@ EOF
         # replace SUPP column in format.supp.tsv with SUPP_PAV, SUPP_SNIFFLES, SUPP_PBSV columns
         awk -v OFS='\t' 'FNR==NR{a[NR]=$1;b[NR]=$2;c[NR]=$3;next}{$5=a[FNR];$6=b[FNR];$7=c[FNR]}1' format.supp_binary.tsv format.supp.tsv | bgzip -c > format.supp_binary.tsv.gz
         tabix -s1 -b2 -e2 format.supp_binary.tsv.gz
-
+        
+        
+        # FC> Removing excessively long calls, since they make $bcftools
+        # annotate$ segfault.
+        bcftools filter -i "SVLEN<=~{svlen_max} && SVLEN>=-~{svlen_max}" --output-type z ~{regenotyped_vcf_gz} > tmp.vcf.gz
+        tabix -f tmp.vcf.gz
+        
+        
         echo 'Annotating SUPP_* for each caller...'
-        bcftools annotate -a format.supp_binary.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,SUPP_PAV,SUPP_SNIFFLES,SUPP_PBSV ~{regenotyped_vcf_gz} -Oz -o format.supp_binary.vcf.gz
+        bcftools annotate -a format.supp_binary.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,SUPP_PAV,SUPP_SNIFFLES,SUPP_PBSV tmp.vcf.gz -Oz -o format.supp_binary.vcf.gz
         bcftools index -t format.supp_binary.vcf.gz
 
         echo 'Annotating non-SUPP_* annotations...'
