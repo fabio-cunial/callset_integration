@@ -216,10 +216,10 @@ task PreprocessVCF {
             do
                 bcftools view -h ~{regenotyped_vcf_gz} | grep ID=$format_annot, | sed -e 's/FORMAT/INFO/g' >> format.hdr.txt
             done
-            echo '##INFO=<ID=AD_NON_ALT,Number=1,Type=Integer,Description="Coverage for non-alternate alleles">' >> format.hdr.txt
-            echo '##INFO=<ID=AD_ALL,Number=1,Type=Integer,Description="Coverage for all alleles">' >> format.hdr.txt
-            echo '##INFO=<ID=KS_1,Number=1,Type=Integer,Description="Kanpig score 1">' >> format.hdr.txt
-            echo '##INFO=<ID=KS_2,Number=1,Type=Integer,Description="Kanpig score 2">' >> format.hdr.txt
+            echo '##INFO=<ID=AD_NON_ALT,Number=1,Type=String,Description="Coverage for non-alternate alleles">' >> format.hdr.txt
+            echo '##INFO=<ID=AD_ALL,Number=1,Type=String,Description="Coverage for all alleles">' >> format.hdr.txt
+            echo '##INFO=<ID=KS_1,Number=1,Type=String,Description="Kanpig score 1">' >> format.hdr.txt
+            echo '##INFO=<ID=KS_2,Number=1,Type=String,Description="Kanpig score 2">' >> format.hdr.txt
         fi
         echo '##INFO=<ID=SUPP_PAV,Number=1,Type=Integer,Description="Supported by PAV">' >> format.hdr.txt
         echo '##INFO=<ID=SUPP_SNIFFLES,Number=1,Type=Integer,Description="Supported by Sniffles2">' >> format.hdr.txt
