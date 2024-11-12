@@ -245,3 +245,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpigV11.wdl
   testParameterFiles:
+- name: FilterIntrasampleDevV11
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/FilterIntrasampleDevV11.wdl
+  testParameterFiles:
