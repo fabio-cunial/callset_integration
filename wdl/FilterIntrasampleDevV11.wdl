@@ -252,7 +252,7 @@ EOF
         tabix -s1 -b2 -e2 format.supp_binary.tsv.gz
         
         echo 'Annotating SUPP_* for each caller...'
-        bcftools annotate -a format.supp_binary.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,SUPP_PAV,SUPP_SNIFFLES,SUPP_PBSV tmp.vcf.gz -Oz -o format.supp_binary.vcf.gz
+        bcftools annotate -a format.supp_binary.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,SUPP_PAV,SUPP_SNIFFLES,SUPP_PBSV ~{regenotyped_vcf_gz} -Oz -o format.supp_binary.vcf.gz
         bcftools index -t format.supp_binary.vcf.gz
 
         # FC> Ensuring that every record has a unique ID. We need to join by
