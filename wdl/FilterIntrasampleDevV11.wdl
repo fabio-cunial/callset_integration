@@ -216,7 +216,7 @@ task PreprocessVCF {
                 bcftools view -h ~{regenotyped_vcf_gz} | grep ID=$format_annot, | sed -e 's/FORMAT/INFO/g' >> format.hdr.txt
             done
         else
-            # KS, SQ, GQ, DP, AD from kanpig-regenotyped VCF
+            # KS, SQ, GQ, DP, AD, GT from kanpig-regenotyped VCF
             for format_annot in SQ GQ DP
             do
                 bcftools view -h ~{regenotyped_vcf_gz} | grep ID=$format_annot, | sed -e 's/FORMAT/INFO/g' >> format.hdr.txt
@@ -225,6 +225,7 @@ task PreprocessVCF {
             echo '##INFO=<ID=AD_ALL,Number=1,Type=Integer,Description="Coverage for all alleles">' >> format.hdr.txt
             echo '##INFO=<ID=KS_1,Number=1,Type=Integer,Description="Kanpig score 1">' >> format.hdr.txt
             echo '##INFO=<ID=KS_2,Number=1,Type=Integer,Description="Kanpig score 2">' >> format.hdr.txt
+            echo '##INFO=<ID=GT_COUNT,Number=1,Type=Integer,Description="GT converted into an int in {0,1,2}.">' >> format.hdr.txt
         fi
         echo '##INFO=<ID=SUPP_PAV,Number=1,Type=Integer,Description="Supported by PAV">' >> format.hdr.txt
         echo '##INFO=<ID=SUPP_SNIFFLES,Number=1,Type=Integer,Description="Supported by Sniffles2">' >> format.hdr.txt
@@ -270,17 +271,21 @@ EOF
             tabix -s1 -b2 -e2 format.tsv.gz
             bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,GQ,DR,DV tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         else
-            # KS, SQ, GQ, DP, AD from kanpig-regenotyped VCF; TODO nicer AD
-            bcftools query -f '%CHROM\t%POS\tID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\n' tmp.vcf.gz | awk '{ \
+            # KS, SQ, GQ, DP, AD, GT from kanpig-regenotyped VCF; TODO nicer AD
+            bcftools query -f '%CHROM\t%POS\tID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\t[%GT]\n' tmp.vcf.gz | awk '{ \
+                gt=0;
+                if ($9=="0/0" || $9=="0|0" || $9=="./."  || $9==".|." || $9=="./0" || $9==".|0" || $9=="0/." || $9=="0|.") gt=0;
+                else if ($9=="0/1" || $9=="0|1" || $9=="1/0" || $9=="1|0" || $9=="./1" || $9==".|1" || $9=="1/." || $9=="1|.") gt=1;
+                else if ($9=="1/1" || $9=="1|1") gt=2;
                 p=0; \
                 for (i=1; i<=length($4); i++) { \
                     if (substr($4,i,1)==",") { p=i; break; } \
                 } \
-                if (p==0) printf("%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\n",$1,$2,$3,$4,$4,$5,$6,$7,$8); \
-                else printf("%s\n",$0); \
+                if (p==0) printf("%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\t%d\n",$1,$2,$3,$4,$4,$5,$6,$7,$8,gt); \
+                else printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",$1,$2,$3,$4,$5,$6,$7,$8,gt); \
             }' | sed -E 's/,/\t/g' | sed -E 's/\./0/g' | bgzip -c > format.tsv.gz
             tabix -s1 -b2 -e2 format.tsv.gz
-            bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
+            bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL,GT_COUNT tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         fi
 
         bcftools index -t ~{output_prefix}.preprocessed.vcf.gz
