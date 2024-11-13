@@ -263,7 +263,7 @@ EOF
         bcftools view --no-header format.supp_binary.vcf.gz | awk 'BEGIN { i=0; } { printf("%s\t%s\t%d-%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",$1,$2,++i,$3,$4,$5,$6,$7,$8,$9,$10); }' >> tmp.vcf
         bgzip tmp.vcf
         tabix -f tmp.vcf.gz
-        bcftools view --no-header tmp.vcf.gz | head -n 10
+        bcftools view --no-header tmp.vcf.gz | head -n 10 || echo "0"
         
         echo 'Annotating non-SUPP_* annotations...'
         if ~{is_sniffles}; then
@@ -288,7 +288,7 @@ EOF
             tabix -s1 -b2 -e2 format.tsv.gz
             bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL,GT_COUNT tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         fi
-        bcftools view --no-header ~{output_prefix}.preprocessed.vcf.gz | head -n 10
+        bcftools view --no-header ~{output_prefix}.preprocessed.vcf.gz | head -n 10 || echo "0"
         bcftools index -t ~{output_prefix}.preprocessed.vcf.gz
 
         # TODO do we still need to hard-filter SVLEN >= 50 for extract, and should we clear existing filters?
