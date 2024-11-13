@@ -179,7 +179,12 @@ task PreprocessVCF {
     String training_resource_prefix = basename(training_resource_vcf_gz, ".vcf.gz")
 
     command <<<
-        set -eou pipefail
+        set -euxo pipefail
+        
+        N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
+        N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
+        N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
+        
 
         if [ -s ~{monitoring_script} ]; then
           bash ~{monitoring_script} > monitoring.log &
@@ -264,21 +269,21 @@ EOF
         echo 'Annotating non-SUPP_* annotations...'
         if ~{is_sniffles}; then
             # GQ, DR, DV from Sniffles-regenotyped VCF
-            bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%GQ]\t[%DR]\t[%DV]\n' ~{regenotyped_vcf_gz} | bgzip -c > format.tsv.gz
+            bcftools query -f '%CHROM\t%POS\t%ID\t[%GQ]\t[%DR]\t[%DV]\n' ~{regenotyped_vcf_gz} | bgzip -c > format.tsv.gz
             tabix -s1 -b2 -e2 format.tsv.gz
-            bcftools annotate -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,GQ,DR,DV format.supp_binary.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
+            bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,GQ,DR,DV format.supp_binary.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         else
             # KS, SQ, GQ, DP, AD from kanpig-regenotyped VCF; TODO nicer AD
-            bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\n' ~{regenotyped_vcf_gz} | awk '{ \
+            bcftools query -f '%CHROM\t%POS\tID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\n' ~{regenotyped_vcf_gz} | awk '{ \
                 p=0; \
-                for (i=1; i<=length($5); i++) { \
-                    if (substr($5,i,1)==",") { p=i; break; } \
+                for (i=1; i<=length($4); i++) { \
+                    if (substr($4,i,1)==",") { p=i; break; } \
                 } \
-                if (p==0) printf("%s\t%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\n",$1,$2,$3,$4,$5,$5,$6,$7,$8,$9); \
+                if (p==0) printf("%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\n",$1,$2,$3,$4,$4,$5,$6,$7,$8); \
                 else printf("%s\n",$0); \
             }' | sed -E 's/,/\t/g' | sed -E 's/\./0/g' | bgzip -c > format.tsv.gz
             tabix -s1 -b2 -e2 format.tsv.gz
-            bcftools annotate -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL format.supp_binary.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
+            bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL format.supp_binary.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         fi
 
         bcftools index -t ~{output_prefix}.preprocessed.vcf.gz
