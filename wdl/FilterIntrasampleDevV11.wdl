@@ -273,7 +273,7 @@ EOF
             bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,GQ,DR,DV tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         else
             # KS, SQ, GQ, DP, AD, GT from kanpig-regenotyped VCF; TODO nicer AD
-            bcftools query -f '%CHROM\t%POS\tID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\t[%GT]\n' tmp.vcf.gz | awk '{ \
+            bcftools query -f '%CHROM\t%POS\t%ID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\t[%GT]\n' tmp.vcf.gz | awk '{ \
                 gt=0;
                 if ($9=="0/0" || $9=="0|0" || $9=="./."  || $9==".|." || $9=="./0" || $9==".|0" || $9=="0/." || $9=="0|.") gt=0;
                 else if ($9=="0/1" || $9=="0|1" || $9=="1/0" || $9=="1|0" || $9=="./1" || $9==".|1" || $9=="1/." || $9=="1|.") gt=1;
