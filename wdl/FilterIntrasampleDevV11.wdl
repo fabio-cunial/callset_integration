@@ -276,7 +276,7 @@ EOF
                 } \
                 if (p==0) printf("%s\t%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\n",$1,$2,$3,$4,$5,$5,$6,$7,$8,$9); \
                 else printf("%s\n",$0); \
-            }' | sed -E 's/,/\t/g' | bgzip -c > format.tsv.gz
+            }' | sed -E 's/,/\t/g' | sed -E 's/\./0/g' | bgzip -c > format.tsv.gz
             tabix -s1 -b2 -e2 format.tsv.gz
             bcftools annotate -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,REF,ALT,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL format.supp_binary.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         fi
