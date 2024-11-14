@@ -274,17 +274,42 @@ EOF
         else
             # KS, SQ, GQ, DP, AD, GT from kanpig-regenotyped VCF; TODO nicer AD
             bcftools query -f '%CHROM\t%POS\t%ID\t[%KS]\t[%SQ]\t[%GQ]\t[%DP]\t[%AD]\t[%GT]\n' tmp.vcf.gz | awk '{ \
-                gt=0;
-                if ($9=="0/0" || $9=="0|0" || $9=="./."  || $9==".|." || $9=="./0" || $9==".|0" || $9=="0/." || $9=="0|.") gt=0;
-                else if ($9=="0/1" || $9=="0|1" || $9=="1/0" || $9=="1|0" || $9=="./1" || $9==".|1" || $9=="1/." || $9=="1|.") gt=1;
-                else if ($9=="1/1" || $9=="1|1") gt=2;
+                KS_1=0; KS_2=0; \
                 p=0; \
                 for (i=1; i<=length($4); i++) { \
                     if (substr($4,i,1)==",") { p=i; break; } \
                 } \
-                if (p==0) printf("%s\t%s\t%s\t%s,%s\t%s\t%s\t%s\t%s\t%d\n",$1,$2,$3,$4,$4,$5,$6,$7,$8,gt); \
-                else printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",$1,$2,$3,$4,$5,$6,$7,$8,gt); \
-            }' | sed -E 's/,/\t/g' | sed -E 's/\./0/g' | bgzip -c > format.tsv.gz
+                if (p==0) { KS_1=$4; KS_2=$4; } \
+                else { KS_1=substr($4,1,p-1); KS_2=substr($4,p+1); } \
+                if (KS_1==".") KS_1=0; \
+                if (KS_2==".") KS_2=0; \
+                \
+                SQ=$5; \
+                if (SQ==".") SQ=0; \
+                \
+                GQ=$6; \
+                if (GQ==".") GQ=0; \
+                \
+                DP=$7; \
+                if (DP==".") DP=0; \
+                \
+                AD_NON_ALT=0; AD_ALL=0; \
+                p=0; \
+                for (i=1; i<=length($8); i++) { \
+                    if (substr($8,i,1)==",") { p=i; break; } \
+                } \
+                if (p==0) { AD_NON_ALT=$8; AD_ALL=$8; } \
+                else { AD_NON_ALT=substr($8,1,p-1); AD_ALL=substr($8,p+1); } \
+                if (AD_NON_ALT==".") AD_NON_ALT=0; \
+                if (AD_ALL==".") AD_ALL=0; \
+                \
+                GT_COUNT=0; \
+                if ($9=="0/0" || $9=="0|0" || $9=="./."  || $9==".|." || $9=="./0" || $9==".|0" || $9=="0/." || $9=="0|.") GT_COUNT=0; \
+                else if ($9=="0/1" || $9=="0|1" || $9=="1/0" || $9=="1|0" || $9=="./1" || $9==".|1" || $9=="1/." || $9=="1|.") GT_COUNT=1; \
+                else if ($9=="1/1" || $9=="1|1") GT_COUNT=2; \
+                \
+                printf("%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",$1,$2,$3,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL,GT_COUNT); \
+            }' | bgzip -c > format.tsv.gz
             tabix -s1 -b2 -e2 format.tsv.gz
             bcftools annotate --threads ${N_THREADS} -a format.tsv.gz -h format.hdr.txt -c CHROM,POS,ID,KS_1,KS_2,SQ,GQ,DP,AD_NON_ALT,AD_ALL,GT_COUNT tmp.vcf.gz -Oz -o ~{output_prefix}.preprocessed.vcf.gz
         fi
