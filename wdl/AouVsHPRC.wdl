@@ -45,10 +45,26 @@ task AouVsHPRCImpl {
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( 2 * ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
-        ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --drop-genotypes --output-type z ~{aou_vcf_gz} > aou.vcf.gz
-        tabix aou.vcf.gz
-        ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --drop-genotypes --output-type z ~{hprc_dipcall_vcf_gz} > hprc.vcf.gz
-        tabix hprc.vcf.gz
+        
+        function format() {
+            local INPUT_VCF_GZ=$1
+            local OUTPUT_FILE=$2
+            
+            ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --drop-genotypes --output-type z ${INPUT_VCF_GZ > tmp.vcf.gz
+            tabix tmp.vcf.gz
+            bcftools view --header-only tmp.vcf.gz > header.txt
+            N_ROWS=$(wc -l < header.txt)
+            head -n $(( ${N_ROWS} - 1 )) header.txt > out.vcf
+            echo "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> out.vcf
+            bcftools view --no-header tmp.vcf.gz | awk '{ printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tGT\t0/1\n",$1,$2,$3,$4,$5,$6,$7,$8); }' >> out.vcf
+            bgzip -c out.vcf > ${OUTPUT_FILE}
+            tabix ${OUTPUT_FILE}
+            rm -f tmp.vcf* header.txt out.vcf*
+        }
+        
+        
+        format ~{aou_vcf_gz} aou.vcf.gz
+        format ~{hprc_dipcall_vcf_gz} hprc.vcf.gz
         ${TIME_COMMAND} truvari bench ~{truvari_args} -b hprc.vcf.gz -c aou.vcf.gz -o ./truvari_dir
         tar -czf output.tar.gz ./truvari_dir/
     >>>
