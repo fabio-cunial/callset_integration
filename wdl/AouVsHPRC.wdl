@@ -55,6 +55,7 @@ task AouVsHPRCImpl {
             bcftools view --header-only tmp.vcf.gz > header.txt
             N_ROWS=$(wc -l < header.txt)
             head -n $(( ${N_ROWS} - 1 )) header.txt > out.vcf
+            echo -e  "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">" >> out.vcf
             echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> out.vcf
             bcftools view --no-header tmp.vcf.gz | awk '{ printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tGT\t0/1\n",$1,$2,$3,$4,$5,$6,$7,$8); }' >> out.vcf
             bgzip -c out.vcf > ${OUTPUT_FILE}
