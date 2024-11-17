@@ -250,3 +250,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/FilterIntrasampleDevV11.wdl
   testParameterFiles:
+- name: AouVsHPRC
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/AouVsHPRC.wdl
+  testParameterFiles:      
