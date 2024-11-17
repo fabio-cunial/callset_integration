@@ -50,7 +50,7 @@ task AouVsHPRCImpl {
             local INPUT_VCF_GZ=$1
             local OUTPUT_FILE=$2
             
-            ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --drop-genotypes --output-type z ${INPUT_VCF_GZ > tmp.vcf.gz
+            ${TIME_COMMAND} bcftools view --threads ${N_THREADS} --drop-genotypes --output-type z ${INPUT_VCF_GZ} > tmp.vcf.gz
             tabix tmp.vcf.gz
             bcftools view --header-only tmp.vcf.gz > header.txt
             N_ROWS=$(wc -l < header.txt)
