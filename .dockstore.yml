@@ -260,3 +260,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/RemoveSamplesV11.wdl
   testParameterFiles:
+- name: GetRegenotypedVcfKanpigMergedV11
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpigMergedV11.wdl
+  testParameterFiles:

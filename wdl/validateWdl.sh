@@ -3,6 +3,7 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigMergedV11.wdl
 java -jar ${WOMTOOL_PATH} validate -l RemoveSamplesV11.wdl
 java -jar ${WOMTOOL_PATH} validate -l AouVsHPRC.wdl
 java -jar ${WOMTOOL_PATH} validate -l FilterIntrasampleDevV11.wdl
