@@ -6,8 +6,8 @@ version 1.0
 workflow GetRegenotypedVcfKanpigMergedV11 {
     input {
         String sample_id
-        Boolean is_male
-        String sex
+        Boolean is_male = false
+        String sex = "F"
         File intersample_vcf_gz
         File intersample_tbi
         File alignments_bam
