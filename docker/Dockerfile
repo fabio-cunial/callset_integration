@@ -70,7 +70,7 @@ RUN wget https://github.com/samtools/htslib/releases/download/${htslib_version}/
     && rm htslib-${htslib_version}.tar.bz2 \
     && cd htslib-${htslib_version} \
     && ./configure \
-    && make \
+    && make -j 16 \
     && make install \
     && cd ${work_dir} \
     && rm -rf htslib-${htslib_version} \
@@ -83,7 +83,7 @@ RUN wget https://github.com/samtools/samtools/releases/download/${samtools_versi
     && rm samtools-${samtools_version}.tar.bz2 \
     && cd samtools-${samtools_version} \
     && ./configure --without-curses \
-    && make \
+    && make -j 16 \
     && make install \
     && cd ${work_dir} \
     && rm -rf samtools-${samtools_version} \
@@ -96,7 +96,7 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${bcftools_versi
     && rm bcftools-${bcftools_version}.tar.bz2 \
     && cd bcftools-${bcftools_version} \
     && ./configure --without-curses \
-    && make \
+    && make -j 16 \
     && make install \
     && cd ${work_dir} \
     && bcftools --help

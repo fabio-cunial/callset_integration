@@ -13,6 +13,8 @@ public class ROCcurve {
     private static final String SCORE_STR = "HAPESTRY_READS_MAX";
     private static final String AD_STR = "AD";
     private static final String AD_SEPARATOR = ",";
+    private static final String KS_STR = "KS";
+    private static final String KS_SEPARATOR = ",";
     private static String TAG_STR;
     
     private static int[] N_TRUE_CALLS, N_TRUE_DEL, N_TRUE_INS;
@@ -239,6 +241,15 @@ public class ROCcurve {
                     p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
                     value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
                 }
+                else if (TAG_STR.equals(KS_STR)) {
+                    p=tokensPrime[tagIndex].indexOf(KS_SEPARATOR);
+                    if (p<0) value=Integer.parseInt(tokensPrime[tagIndex]);
+                    else {
+                        int value1 = (int)Double.parseDouble(tokensPrime[tagIndex].substring(0,p));
+                        int value2 = (int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+                        value=value1>value2?value1:value2;
+                    }
+                }
                 else value=Integer.parseInt(tokensPrime[tagIndex]);
             }
             if (value>out) out=value;
@@ -301,6 +312,15 @@ public class ROCcurve {
                 else if (TAG_STR.equals(AD_STR)) {
                     p=tokensPrime[tagIndex].indexOf(AD_SEPARATOR);
                     value=(int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+                }
+                else if (TAG_STR.equals(KS_STR)) {
+                    p=tokensPrime[tagIndex].indexOf(KS_SEPARATOR);
+                    if (p<0) value=Integer.parseInt(tokensPrime[tagIndex]);
+                    else {
+                        int value1 = (int)Double.parseDouble(tokensPrime[tagIndex].substring(0,p));
+                        int value2 = (int)Double.parseDouble(tokensPrime[tagIndex].substring(p+1));
+                        value=value1>value2?value1:value2;
+                    }
                 }
                 else value=Integer.parseInt(tokensPrime[tagIndex]);
             }
