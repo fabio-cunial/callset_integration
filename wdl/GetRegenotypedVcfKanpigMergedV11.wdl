@@ -97,7 +97,7 @@ task GetRegenotypedVcfImpl {
             PLOIDY_BED=$(echo ~{ploidy_bed_female})
         fi
         export RUST_BACKTRACE="full"
-        ${TIME_COMMAND} ~{docker_dir}/kanpig --threads $(( ${N_THREADS} - 1)) --ploidy-bed ${PLOIDY_BED} ${KANPIG_PARAMS} --reference ~{reference_fa} --input tmp1.vcf.gz --bam ~{alignments_bam} --out tmp2.vcf.gz
+        ${TIME_COMMAND} ~{docker_dir}/kanpig --threads $(( ${N_THREADS} - 1)) --ploidy-bed ${PLOIDY_BED} ~{kanpig_params_multisample} --reference ~{reference_fa} --input tmp1.vcf.gz --bam ~{alignments_bam} --out tmp2.vcf.gz
         rm -f tmp1.vcf.gz
         bcftools sort --max-mem ${EFFECTIVE_MEM_GB}G --output-type z tmp2.vcf.gz > ~{output_prefix}.vcf.gz
         tabix -f ~{output_prefix}.vcf.gz
