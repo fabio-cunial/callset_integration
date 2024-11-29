@@ -2,7 +2,10 @@ version 1.0
 
 
 # Replaces all sample columns with a single sample column where all calls have
-# 0/1 GT.
+# 0/1 GT. Assigns a unique integer ID to every call, moving the original ID to
+# the INFO field (this is necessary for kanpig, which otherwise complains
+# about duplicated IDs, which arise naturally from the previous steps of the 
+# pipeline).
 #
 workflow RemoveSamplesV11 {
     input {
@@ -52,8 +55,9 @@ task RemoveSamplesV11Impl {
         bcftools view --header-only ~{intersample_vcf_gz} > header.txt
         N_ROWS=$(wc -l < header.txt)
         head -n $(( ${N_ROWS} - 1 )) header.txt > cleaned.vcf
+        echo '##INFO=<ID=ORIGINAL_ID,Number=1,Type=String,Description="Original ID from truvari collapse">' >> cleaned.vcf
         echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE" >> cleaned.vcf
-        bcftools view --no-header ~{intersample_vcf_gz} | awk '{ printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tGT\t0/1\n",$1,$2,$3,$4,$5,$6,$7,$8); }' >> cleaned.vcf
+        bcftools view --no-header ~{intersample_vcf_gz} | awk 'BEGIN { i=0; } { gsub(/;/,"_",$3); printf("%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s;ORIGINAL_ID=%s\tGT\t0/1\n",$1,$2,++i,$4,$5,$6,$7,$8,$3); }' >> cleaned.vcf
         rm -f ~{intersample_vcf_gz}
         bgzip -@ ${N_THREADS} cleaned.vcf
         tabix -f cleaned.vcf.gz
