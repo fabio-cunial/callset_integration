@@ -85,8 +85,9 @@ task GetRegenotypedVcfImpl {
         
         # Making sure the VCF has the right sample ID
         echo ~{sample_id} > samples.txt
-        ${TIME_COMMAND} bcftools reheader --samples samples.txt --output-type z --threads ${N_THREADS} ~{intersample_vcf_gz} > tmp1.vcf.gz
+        ${TIME_COMMAND} bcftools reheader --threads ${N_THREADS} --samples samples.txt ~{intersample_vcf_gz} > tmp1.vcf
         rm -f ~{intersample_vcf_gz}
+        bgzip -@ ${N_THREADS} tmp1.vcf
         tabix -f tmp1.vcf.gz
         
         # Re-genotyping
