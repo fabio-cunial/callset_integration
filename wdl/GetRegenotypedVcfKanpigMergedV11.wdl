@@ -104,8 +104,8 @@ task GetRegenotypedVcfImpl {
     >>>
 
     output {
-        File regenotyped_kanpig = work_dir + "/regenotyped_kanpig.vcf.gz"
-        File regenotyped_kanpig_tbi = work_dir + "/regenotyped_kanpig.vcf.gz.tbi"
+        File regenotyped_kanpig = work_dir + "/" + output_prefix + ".vcf.gz"
+        File regenotyped_kanpig_tbi = work_dir + "/" + output_prefix + ".vcf.gz.tbi"
     }
     runtime {
         docker: "fcunial/kanpig_experiments"
