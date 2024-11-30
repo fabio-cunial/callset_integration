@@ -62,7 +62,7 @@ task MergeImpl {
             while read ADDRESS; do
                 i=$(( $i + 1 ))
                 # Adding the new sample to the set of columns
-                gsutil -m cp ${ADDRESS} ${TMP_PREFIX}.vcf.gz
+                ${TIME_COMMAND} gsutil -m cp ${ADDRESS} ${TMP_PREFIX}.vcf.gz
                 bcftools view --header-only ${TMP_PREFIX}.vcf.gz > ${TMP_PREFIX}.txt
                 N_ROWS=$(wc -l < ${TMP_PREFIX}.txt)
                 tail -n 1 ${TMP_PREFIX}.txt | cut -f 10 > sample_${THREAD_ID}.txt
@@ -78,7 +78,7 @@ task MergeImpl {
                 if [ $i = "1" ]; then
                     mv ${TMP_PREFIX}.txt ${OUTPUT_FILE}
                 else
-                    paste ${OUTPUT_FILE} ${TMP_PREFIX}.txt > ${OUTPUT_FILE}.prime
+                    ${TIME_COMMAND} paste ${OUTPUT_FILE} ${TMP_PREFIX}.txt > ${OUTPUT_FILE}.prime
                     mv ${OUTPUT_FILE}.prime ${OUTPUT_FILE}
                 fi
             done < list_${THREAD_ID}
@@ -97,7 +97,7 @@ task MergeImpl {
         bcftools view --no-header first.vcf.gz | cut -f 1,2,3,4,5,6,7,8,9 > calls.txt
         rm -f first.vcf.gz
         
-        # Appending all remaining files
+        # Appending all the remaining files
         N_ROWS=$(wc -l < ~{regenotyped_vcfs_list})
         N_ROWS=$(( ${N_ROWS} / ${N_THREADS} ))
         split -d -l ${N_ROWS} ~{regenotyped_vcfs_list} list_
