@@ -63,7 +63,7 @@ task TestILPCompressionImpl {
 
             # Compressed
             rm -rf ${OUTPUT_DIR} log_compressed.txt && echo 0 || echo 1
-            ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_compressed.txt || echo "0"
+            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_compressed.txt || echo "0"
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv
             fi
@@ -73,7 +73,7 @@ task TestILPCompressionImpl {
 
             # Uncompressed
             rm -rf ${OUTPUT_DIR} log_uncompressed.txt && echo 0 || echo 1
-            timeout ${MAX_TIMEOUT}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_uncompressed.txt || echo "0"
+            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_uncompressed.txt || echo "0"
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv
             fi
