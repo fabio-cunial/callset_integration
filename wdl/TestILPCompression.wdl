@@ -67,9 +67,13 @@ task TestILPCompressionImpl {
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv
             fi
-            cat log_compressed.txt
+            if [ -e log_compressed.txt ]; then
+                cat log_compressed.txt
+            fi
             echo "---- COMPRESSED log.csv:"
-            cat ${OUTPUT_DIR}/${WINDOW}/log.csv
+            if [ -e ${OUTPUT_DIR}/${WINDOW}/log.csv ]; then
+                cat ${OUTPUT_DIR}/${WINDOW}/log.csv
+            fi
 
             # Uncompressed
             rm -rf ${OUTPUT_DIR} log_uncompressed.txt && echo 0 || echo 1
@@ -78,7 +82,9 @@ task TestILPCompressionImpl {
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv
             fi
             echo "---- UNCOMPRESSED log.csv:"
-            cat ${OUTPUT_DIR}/${WINDOW}/log.csv
+            if [ -e ${OUTPUT_DIR}/${WINDOW}/log.csv ]; then
+                cat ${OUTPUT_DIR}/${WINDOW}/log.csv
+            fi
 
             if [ ! -e ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv -o ! -e ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv ]; then
                 # Next iteration
