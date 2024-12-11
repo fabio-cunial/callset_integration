@@ -270,3 +270,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TestILPCompression.wdl
   testParameterFiles:
+- name: TruvariCollapse
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/TruvariCollapse.wdl
+  testParameterFiles:
