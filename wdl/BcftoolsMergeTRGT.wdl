@@ -72,8 +72,8 @@ task BcftoolsMergeTRGTImpl {
             
             # Removing identical records
             # See <https://github.com/samtools/bcftools/issues/1089>.
-            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --rm-dup exact --output-type v tmp2.vcf.gz > ${OUTPUT_VCF}
-            rm -f tmp2.vcf.gz*
+            ${TIME_COMMAND} bcftools norm --threads ${N_THREADS} --rm-dup exact --output-type v tmp1.vcf.gz > ${OUTPUT_VCF}
+            rm -f tmp1.vcf.gz*
             
             ${TIME_COMMAND} bgzip --threads ${N_THREADS} --compress-level ~{compression_level} ${OUTPUT_VCF}
             tabix -f ${OUTPUT_VCF}.gz
