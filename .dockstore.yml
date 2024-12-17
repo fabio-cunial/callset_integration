@@ -275,3 +275,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/TruvariCollapse.wdl
   testParameterFiles:
+- name: BcftoolsMergeTRGT
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BcftoolsMergeTRGT.wdl
+  testParameterFiles:
