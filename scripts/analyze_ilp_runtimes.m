@@ -1,4 +1,4 @@
-A=load('table_compressionTimes.txt');
+A=load('~/Downloads/TestILPCompression/runtimes.txt');
 
 
 
@@ -27,71 +27,71 @@ set(gca,'fontsize',18);
 
 
 
-% figure(2);
-% nBins=100;
-%
-% [y,x]=hist(A(:,1),nBins);
-% [yPrime,xPrime]=hist(A(:,4),nBins);
-% subplot(1,3,1); hold on;
-% loglog(x,y);
-% loglog(xPrime,yPrime);
-% title('d'); xlabel('milliseconds'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-% legend('compressed','original');
-%
-% [y,x]=hist(A(:,2),nBins);
-% [yPrime,xPrime]=hist(A(:,5),nBins);
-% subplot(1,3,2); hold on;
-% loglog(x,y);
-% loglog(xPrime,yPrime);
-% title('n given d'); xlabel('milliseconds'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-% [y,x]=hist(A(:,3),nBins);
-% [yPrime,xPrime]=hist(A(:,6),nBins);
-% subplot(1,3,3); hold on;
-% loglog(x,y);
-% loglog(xPrime,yPrime);
-% title('d plus n'); xlabel('milliseconds'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-%
-% figure(3);
-%
-% [y,x]=hist(A(:,4)./A(:,1),nBins);
-% subplot(1,3,1); hold on;
-% loglog(x,y);
-% title('d'); xlabel('speedup'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-% [y,x]=hist(A(:,5)./A(:,2),nBins);
-% subplot(1,3,2); hold on;
-% loglog(x,y);
-% title('n given d'); xlabel('speedup'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-% [y,x]=hist(A(:,6)./A(:,3),nBins);
-% subplot(1,3,3); hold on;
-% loglog(x,y);
-% title('d plus n'); xlabel('speedup'); ylabel('n. windows');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-%
-% figure(4);
-%
-% subplot(1,3,1);
-% plot(A(:,6),A(:,4)./A(:,1),'.');
-% title('d'); ylabel('speedup'); xlabel('n. egdes (original)');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-%
-% subplot(1,3,2);
-% plot(A(:,7),A(:,5)./A(:,2),'.');
-% title('n given d'); ylabel('speedup'); xlabel('n. egdes (original)');
-% axis square; grid on; set(gca,'fontsize',18);
-%
-%
-% subplot(1,3,3);
-% plot(A(:,8),A(:,6)./A(:,3),'.');
-% title('d plus n'); ylabel('speedup'); xlabel('n. egdes (original)');
-% axis square; grid on; set(gca,'fontsize',18);
+figure(2);
+nBins=100;
+
+[y,x]=hist(A(:,1),nBins);
+[yPrime,xPrime]=hist(A(:,7),nBins);
+subplot(1,3,1); hold on;
+loglog(x,y);
+loglog(xPrime,yPrime);
+title('d'); xlabel('milliseconds'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+legend('compressed','original');
+
+[y,x]=hist(A(:,3),nBins);
+[yPrime,xPrime]=hist(A(:,8),nBins);
+subplot(1,3,2); hold on;
+loglog(x,y);
+loglog(xPrime,yPrime);
+title('n given d'); xlabel('milliseconds'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+
+[y,x]=hist(A(:,5),nBins);
+[yPrime,xPrime]=hist(A(:,9),nBins);
+subplot(1,3,3); hold on;
+loglog(x,y);
+loglog(xPrime,yPrime);
+title('d plus n'); xlabel('milliseconds'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+
+
+figure(3);
+
+[y,x]=hist(A(:,7)./A(:,1),nBins);
+subplot(1,3,1); hold on;
+loglog(x,y);
+title('d'); xlabel('speedup'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+
+[y,x]=hist(A(:,8)./A(:,3),nBins);
+subplot(1,3,2); hold on;
+loglog(x,y);
+title('n given d'); xlabel('speedup'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+
+[y,x]=hist(A(:,9)./A(:,5),nBins);
+subplot(1,3,3); hold on;
+loglog(x,y);
+title('d plus n'); xlabel('speedup'); ylabel('n. windows');
+axis square; grid on; set(gca,'fontsize',18);
+
+
+figure(4);
+
+subplot(1,3,1);
+plot(A(:,10),A(:,7)./A(:,1),'.');
+title('d'); ylabel('speedup'); xlabel('n. egdes (original)');
+axis square; grid on; set(gca,'fontsize',18);
+
+
+subplot(1,3,2);
+plot(A(:,11),A(:,8)./A(:,3),'.');
+title('n given d'); ylabel('speedup'); xlabel('n. egdes (original)');
+axis square; grid on; set(gca,'fontsize',18);
+
+
+subplot(1,3,3);
+plot(A(:,9),A(:,9)./A(:,5),'.');
+title('d plus n'); ylabel('speedup'); xlabel('n. egdes (original)');
+axis square; grid on; set(gca,'fontsize',18);

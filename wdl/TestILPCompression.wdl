@@ -7,6 +7,7 @@ workflow TestILPCompression {
         File non_sequence_data_tar_gz
         Int max_timeout_minutes = 60
         String docker = "fcunial/hapestry:compression"
+        File? gurobi_license
     }
     parameter_meta {
     }
@@ -28,6 +29,7 @@ task TestILPCompressionImpl {
         File non_sequence_data_tar_gz
         Int max_timeout_minutes
         String docker
+        File? gurobi_license
     }
     parameter_meta {
     }
@@ -51,6 +53,14 @@ task TestILPCompressionImpl {
         OUTPUT_DIR="./output_small"
         IDENTICAL_LOG="./identical.log"
         
+        # If a license is provided, we just place it in the conventional
+        # location to be found automatically
+        SOLVER_FLAG="--solver scip"
+        if ~{defined(gurobi_license)}
+        then
+            mv ~{gurobi_license} /opt/gurobi/
+            SOLVER_FLAG="--solver gurobi"
+        fi
         
         tar -xzf ~{non_sequence_data_tar_gz}
         rm -rf ${INPUT_DIR_SMALL} list.txt ${IDENTICAL_LOG}
@@ -63,7 +73,7 @@ task TestILPCompressionImpl {
 
             # Compressed
             rm -rf ${OUTPUT_DIR} log_compressed.txt && echo 0 || echo 1
-            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_compressed.txt || echo "0"
+            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} &> log_compressed.txt || echo "0"
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv
             fi
@@ -77,7 +87,7 @@ task TestILPCompressionImpl {
 
             # Uncompressed
             rm -rf ${OUTPUT_DIR} log_uncompressed.txt && echo 0 || echo 1
-            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} --solver scip --n_threads ${N_THREADS} &> log_uncompressed.txt || echo "0"
+            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} &> log_uncompressed.txt || echo "0"
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv
             fi
