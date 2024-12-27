@@ -33,7 +33,7 @@ while read WINDOW; do
         mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv
     fi
     
-    # Checking if solutions are identical
+    # Checking if objective values are identical
     cut -d ',' -f 1,3 ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv | sort | uniq > uncompressed_solution.txt
     cut -d ',' -f 1,3 ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv | sort | uniq > compressed_solution.txt
     diff --brief uncompressed_solution.txt compressed_solution.txt &> test.txt || echo 0
@@ -61,12 +61,12 @@ while read WINDOW; do
     else
         FIELD_3="1"
     fi
-#    grep "d_min" log_uncompressed.txt
-#    grep "d_min" log_compressed.txt
-#    grep "n_max" log_uncompressed.txt
-#    grep "n_max" log_compressed.txt
-    if [ ${FIELD_1} -eq 0 -a ${FIELD_3} -eq 0 ]; then
-        echo "ERROR: compressed and uncompressed differ in window ${WINDOW}"
+   grep "d_min" log_uncompressed.txt
+   grep "d_min" log_compressed.txt
+   grep "n_max" log_uncompressed.txt
+   grep "n_max" log_compressed.txt
+    if [ ${FIELD_2} -eq 0 -o ${FIELD_3} -eq 0 ]; then
+        echo "ERROR: compressed and uncompressed objectives differ in window ${WINDOW}"
         exit 1
     fi
     echo "${FIELD_1},${FIELD_2},${FIELD_3}" >> ${IDENTICAL_LOG}

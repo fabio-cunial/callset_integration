@@ -107,7 +107,7 @@ task TestILPCompressionImpl {
                     continue
                 fi
 
-                # Checking if solutions are identical
+                # Checking if objective values are identical
                 cut -d ',' -f 1,3 ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv | sort | uniq > uncompressed_solution.txt
                 cut -d ',' -f 1,3 ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv | sort | uniq > compressed_solution.txt
                 diff --brief uncompressed_solution.txt compressed_solution.txt &> test.txt || echo 0
@@ -142,9 +142,9 @@ task TestILPCompressionImpl {
                 grep "d_min" log_compressed.txt
                 grep "n_max" log_uncompressed.txt
                 grep "n_max" log_compressed.txt
-                if [ ${FIELD_1} -eq 0 -a ${FIELD_3} -eq 0 ]; then
-                    echo "ERROR: compressed and uncompressed differ in window ${WINDOW}"
-                    return 1
+                if [ ${FIELD_2} -eq 0 -o ${FIELD_3} -eq 0 ]; then
+                    echo "ERROR: compressed and uncompressed objectives differ in window ${WINDOW}"
+                    exit 1
                 fi
                 echo "${FIELD_1},${FIELD_2},${FIELD_3}" >> ${IDENTICAL_LOG}
             fi
