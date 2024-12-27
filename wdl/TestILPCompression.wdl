@@ -114,6 +114,7 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_1="0"
+                    diff uncompressed_solution.txt compressed_solution.txt
                 else
                     FIELD_1="1"
                 fi
@@ -123,6 +124,7 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_2="0"
+                    diff uncompressed_optimum.txt compressed_optimum.txt
                 else
                     FIELD_2="1"
                 fi
@@ -132,6 +134,7 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_3="0"
+                    diff uncompressed_objective.txt compressed_objective.txt
                 else
                     FIELD_3="1"
                 fi
@@ -141,7 +144,7 @@ task TestILPCompressionImpl {
                 grep "n_max" log_compressed.txt
                 if [ ${FIELD_1} -eq 0 -a ${FIELD_3} -eq 0 ]; then
                     echo "ERROR: compressed and uncompressed differ in window ${WINDOW}"
-                    break
+                    return 1
                 fi
                 echo "${FIELD_1},${FIELD_2},${FIELD_3}" >> ${IDENTICAL_LOG}
             fi
