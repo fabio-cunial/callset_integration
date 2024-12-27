@@ -1,4 +1,16 @@
-A=load('~/Downloads/TestILPCompression/runtimes.txt');
+A=load('~/Downloads/TestILPCompression/latest/gurobi/runtimes.txt');
+ASSUME_TIMEOUT_MS=15*60*1000;  % 15 mins
+
+
+WOULD_TIMEOUT_UNCOMPRESSED=length( find(A(:,7)>ASSUME_TIMEOUT_MS) )  % d
+WOULD_TIMEOUT_COMPRESSED=length( find(A(:,1)>ASSUME_TIMEOUT_MS) )  % d
+
+WOULD_TIMEOUT_UNCOMPRESSED=length( find(A(:,8)>ASSUME_TIMEOUT_MS) )  % n|d
+WOULD_TIMEOUT_COMPRESSED=length( find(A(:,3)>ASSUME_TIMEOUT_MS) )  % n|d
+
+WOULD_TIMEOUT_UNCOMPRESSED=length( find(A(:,9)>ASSUME_TIMEOUT_MS) )  % d+n
+WOULD_TIMEOUT_COMPRESSED=length( find(A(:,5)>ASSUME_TIMEOUT_MS) )  % d+n
+
 
 
 

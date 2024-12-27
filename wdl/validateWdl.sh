@@ -3,10 +3,10 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l TestILPCompression.wdl
 java -jar ${WOMTOOL_PATH} validate -l V11HprcAnalysis.wdl
 java -jar ${WOMTOOL_PATH} validate -l BcftoolsMergeTRGT.wdl
 java -jar ${WOMTOOL_PATH} validate -l TruvariCollapse.wdl
-java -jar ${WOMTOOL_PATH} validate -l TestILPCompression.wdl
 java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigMergedV11.wdl
 java -jar ${WOMTOOL_PATH} validate -l RemoveSamplesV11.wdl
 java -jar ${WOMTOOL_PATH} validate -l AouVsHPRC.wdl
