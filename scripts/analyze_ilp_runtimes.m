@@ -1,4 +1,9 @@
-A=load('~/Downloads/TestILPCompression/latest/gurobi/runtimes.txt');
+A1=load('/Users/fcunial/Downloads/TestILPCompression/latest/scip_easy_samples/runtimes-1.txt');
+A2=load('/Users/fcunial/Downloads/TestILPCompression/latest/scip_easy_samples/runtimes-2.txt');
+A3=load('/Users/fcunial/Downloads/TestILPCompression/latest/scip_easy_samples/runtimes-3.txt');
+A4=load('/Users/fcunial/Downloads/TestILPCompression/latest/scip_easy_samples/runtimes-4.txt');
+A=[A1;A2;A3;A4];
+
 ASSUME_TIMEOUT_MS=15*60*1000;  % 15 mins
 
 
