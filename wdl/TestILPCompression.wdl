@@ -114,7 +114,6 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_1="0"
-                    diff uncompressed_solution.txt compressed_solution.txt
                 else
                     FIELD_1="1"
                 fi
@@ -124,7 +123,7 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_2="0"
-                    diff uncompressed_optimum.txt compressed_optimum.txt
+                    diff uncompressed_optimum.txt compressed_optimum.txt || echo 0
                 else
                     FIELD_2="1"
                 fi
@@ -134,7 +133,7 @@ task TestILPCompressionImpl {
                 TEST=$(wc -l < test.txt)
                 if [ ${TEST} -gt 0 ]; then
                     FIELD_3="0"
-                    diff uncompressed_objective.txt compressed_objective.txt
+                    diff uncompressed_objective.txt compressed_objective.txt || echo 0
                 else
                     FIELD_3="1"
                 fi

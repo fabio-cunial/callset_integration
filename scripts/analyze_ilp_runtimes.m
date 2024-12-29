@@ -25,10 +25,10 @@ set(gca,'fontsize',18);
 
 
 figure(2);
-B=[sum(A(:,13))./1000,sum(A(:,14))./1000,sum(A(:,15))./1000,sum(A(:,16))./1000,sum(A(:,17))./1000];
+B=[sum(A(:,13))./1000,sum(A(:,14))./1000,sum(A(:,15))./1000,sum(A(:,16))./1000,sum(A(:,17))./1000,sum(A(:,18))./1000,sum(A(:,19))./1000 ];
 bar(B);
-xticklabels({'mandatory','hapsGlobal','hapsLocal','reads','samples'});
-ylabel('Total runtime over all windows (seconds)'); title('Compression steps');
+xticklabels({'mandatory','hapsGlobal','hapsLocal','reads','samples','hasLargeWeight','easySamples'});
+ylabel('Total d+n runtime over all windows (seconds)'); title('Compression steps');
 grid on;
 set(gca,'fontsize',18);
 

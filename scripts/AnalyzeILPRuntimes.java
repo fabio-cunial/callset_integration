@@ -25,6 +25,7 @@ public class AnalyzeILPRuntimes {
         long uncompressed_d, uncompressed_n_given_d, uncompressed_d_plus_n;
         long compression_d, compression_n_given_d, compression_d_plus_n;
         long mandatory, hapsGlobal, hapsLocal, reads, samples;
+        long hasLargeWeight1, hasLargeWeight2, easySamples;
 		String str;
 		BufferedReader br;
         String[] tokens;
@@ -35,6 +36,7 @@ public class AnalyzeILPRuntimes {
         uncompressed_d=-1; uncompressed_n_given_d=-1; uncompressed_d_plus_n=-1;
         compressed_n_timeouts=0; uncompressed_n_timeouts=0;
         nEdges_d=0; nEdges_n_given_d=0; nEdges_d_plus_n=0;
+        hasLargeWeight1=0; hasLargeWeight2=0; easySamples=0;
         br = new BufferedReader(new FileReader(INPUT_LOG));
 		str=br.readLine();
         while (str!=null) {
@@ -43,10 +45,10 @@ public class AnalyzeILPRuntimes {
                 if (uncompressed_d==-1 || uncompressed_n_given_d==-1 || uncompressed_d_plus_n==-1) uncompressed_n_timeouts++;
                 if ( compressed_d!=-1 && compressed_n_given_d!=-1 && compressed_d_plus_n!=-1 && 
                      uncompressed_d!=-1 && uncompressed_n_given_d!=-1 && uncompressed_d_plus_n!=-1
-                   ) System.out.println(compressed_d+","+compression_d+","+compressed_n_given_d+","+compression_n_given_d+","+compressed_d_plus_n+","+compression_d_plus_n+","+    uncompressed_d+","+uncompressed_n_given_d+","+uncompressed_d_plus_n+","+    nEdges_d+","+nEdges_n_given_d+","+nEdges_d_plus_n+","+    mandatory+","+hapsGlobal+","+hapsLocal+","+reads+","+samples);
+                   ) System.out.println(compressed_d+","+compression_d+","+compressed_n_given_d+","+compression_n_given_d+","+compressed_d_plus_n+","+compression_d_plus_n+","+    uncompressed_d+","+uncompressed_n_given_d+","+uncompressed_d_plus_n+","+    nEdges_d+","+nEdges_n_given_d+","+nEdges_d_plus_n+","+    mandatory+","+hapsGlobal+","+hapsLocal+","+reads+","+samples+","+(hasLargeWeight1+hasLargeWeight2)+","+easySamples);
                 inCompressed=true; inUncompressed=false;
                 compressed_d=-1; compression_d=-1; compressed_n_given_d=-1; compression_n_given_d=-1; compressed_d_plus_n=-1; compression_d_plus_n=-1;
-                mandatory=-1; hapsGlobal=-1; hapsLocal=-1; reads=-1; samples=-1;
+                mandatory=-1; hapsGlobal=-1; hapsLocal=-1; reads=-1; samples=-1; hasLargeWeight1=-1; hasLargeWeight2=-1; easySamples=-1;
                 nEdges_d=0; nEdges_n_given_d=0; nEdges_d_plus_n=0;
             }
             else if (str.indexOf(UNCOMPRESSED_FLAG)==0) {
@@ -92,7 +94,10 @@ public class AnalyzeILPRuntimes {
                 hapsLocal=Integer.parseInt(tokens[3]);
                 reads=Integer.parseInt(tokens[4]);
                 samples=Integer.parseInt(tokens[5]);
-                compression_d_plus_n=mandatory+hapsGlobal+hapsLocal+reads+samples;
+                hasLargeWeight1=Integer.parseInt(tokens[6]);
+                hasLargeWeight2=Integer.parseInt(tokens[7]);
+                easySamples=Integer.parseInt(tokens[8]);
+                compression_d_plus_n=mandatory+hapsGlobal+hapsLocal+reads+samples+hasLargeWeight1+hasLargeWeight2+easySamples;
             }
             str=br.readLine();
         }
