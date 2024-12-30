@@ -44,7 +44,7 @@ set(gca,'fontsize',18);
 
 
 
-figure(2);
+figure(3);
 nBins=100;
 
 [y,x]=hist(A(:,1),nBins);
@@ -73,7 +73,7 @@ title('d plus n'); xlabel('milliseconds'); ylabel('n. windows');
 axis square; grid on; set(gca,'fontsize',18);
 
 
-figure(3);
+figure(4);
 
 [y,x]=hist(A(:,7)./A(:,1),nBins);
 subplot(1,3,1); hold on;
@@ -94,7 +94,7 @@ title('d plus n'); xlabel('speedup'); ylabel('n. windows');
 axis square; grid on; set(gca,'fontsize',18);
 
 
-figure(4);
+figure(5);
 
 subplot(1,3,1);
 plot(A(:,10),A(:,7)./A(:,1),'.');
