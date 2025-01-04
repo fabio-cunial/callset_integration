@@ -5,6 +5,8 @@ version 1.0
 workflow TestILPCompression {
     input {
         File non_sequence_data_tar_gz
+        Float d_weight = 4
+        Float n_weight = 1
         Int max_timeout_minutes = 60
         Boolean run_uncompressed = true
         String gurobi_license = "null"
@@ -17,6 +19,8 @@ workflow TestILPCompression {
         input:
             non_sequence_data_tar_gz = non_sequence_data_tar_gz,
             max_timeout_minutes = max_timeout_minutes,
+            d_weight = d_weight,
+            n_weight = n_weight,
             run_uncompressed = run_uncompressed,
             gurobi_license = gurobi_license,
             docker = docker
@@ -30,6 +34,8 @@ workflow TestILPCompression {
 task TestILPCompressionImpl {
     input {
         File non_sequence_data_tar_gz
+        Float d_weight
+        Float n_weight
         Int max_timeout_minutes
         Boolean run_uncompressed
         String gurobi_license
@@ -77,7 +83,7 @@ task TestILPCompressionImpl {
 
             # Compressed
             rm -rf ${OUTPUT_DIR} log_compressed.txt && echo 0 || echo 1
-            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} &> log_compressed.txt || echo "0"
+            timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --compress_transmap true --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} --d_weight ~{d_weight} --n_weight ~{n_weight} &> log_compressed.txt || echo "0"
             if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                 mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_compressed.csv
             fi
@@ -92,7 +98,7 @@ task TestILPCompressionImpl {
             if ~{run_uncompressed} ; then
                 # Uncompressed
                 rm -rf ${OUTPUT_DIR} log_uncompressed.txt && echo 0 || echo 1
-                timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} &> log_uncompressed.txt || echo "0"
+                timeout ~{max_timeout_minutes}m ${HAPESTRY_COMMAND} --input ${INPUT_DIR_SMALL} --output_dir ${OUTPUT_DIR} ${SOLVER_FLAG} --n_threads ${N_THREADS} --d_weight ~{d_weight} --n_weight ~{n_weight} &> log_uncompressed.txt || echo "0"
                 if [ -e ${OUTPUT_DIR}/${WINDOW}/solution.csv ]; then
                     mv ${OUTPUT_DIR}/${WINDOW}/solution.csv ${INPUT_DIR_SMALL}/${WINDOW}/solution_uncompressed.csv
                 fi
