@@ -8,12 +8,12 @@ public class AnalyzeILPRuntimes {
      */
 	public static void main(String[] args) throws IOException {
 		final String INPUT_LOG = args[0];
-		
-        final String COMPRESSED_FLAG = "---- COMPRESSED";
-        final String UNCOMPRESSED_FLAG = "---- UNCOMPRESSED";
-        final String OPTIMIZE_D_FLAG = "optimize_d";
-        final String OPTIMIZE_N_GIVEN_D_FLAG = "optimize_n_given_d";
-        final String OPTIMIZE_D_PLUS_N_FLAG = "optimize_d_plus_n";
+        final String COMPRESSED_FLAG = "---- COMPRESSED RYAN";
+        final String UNCOMPRESSED_FLAG = "---- UNCOMPRESSED RYAN";
+        
+        final String OPTIMIZE_D_FLAG = "optimize_d,";
+        final String OPTIMIZE_N_GIVEN_D_FLAG = "optimize_n_given_d,";
+        final String OPTIMIZE_D_PLUS_N_FLAG = "optimize_d_plus_n,";
         final String COMPRESSION_TIME_D = "Compression time d:";
         final String COMPRESSION_TIME_N_GIVEN_D= "Compression time n_given_d:";
         final String COMPRESSION_TIME_D_PLUS_N = "Compression time d_plus_n:";
@@ -47,15 +47,15 @@ public class AnalyzeILPRuntimes {
             System.err.println("Processing line "+str);            
             if (str.indexOf(COMPRESSED_FLAG)==0) {
                 // Printing stats about the previous window
-                if (compressed_d==-1 || compressed_n_given_d==-1 || compressed_d_plus_n==-1) compressed_n_timeouts++;
-                if (uncompressed_d==-1 || uncompressed_n_given_d==-1 || uncompressed_d_plus_n==-1) uncompressed_n_timeouts++;
-                if ( compressed_d!=-1 && compressed_n_given_d!=-1 && compressed_d_plus_n!=-1 && 
-                     uncompressed_d!=-1 && uncompressed_n_given_d!=-1 && uncompressed_d_plus_n!=-1
+                if (/*compressed_d==-1 || compressed_n_given_d==-1 ||*/ compressed_d_plus_n==-1) compressed_n_timeouts++;
+                if (/*uncompressed_d==-1 || uncompressed_n_given_d==-1 ||*/ uncompressed_d_plus_n==-1) uncompressed_n_timeouts++;
+                if ( /*compressed_d!=-1 && compressed_n_given_d!=-1 &&*/ compressed_d_plus_n!=-1 && 
+                     /*uncompressed_d!=-1 && uncompressed_n_given_d!=-1 &&*/ uncompressed_d_plus_n!=-1
                    ) {
-                       if (compression_d==-1 || compression_n_given_d==-1 || compression_d_plus_n==-1) {
+                       /*if (compression_d==-1 || compression_n_given_d==-1 || compression_d_plus_n==-1) {
                            System.err.println("Error: a compression time is -1");
                            System.exit(1);
-                       }       
+                       }*/
                        System.out.println(compressed_d+","+compression_d+","+compressed_n_given_d+","+compression_n_given_d+","+compressed_d_plus_n+","+compression_d_plus_n+","+    uncompressed_d+","+uncompressed_n_given_d+","+uncompressed_d_plus_n+","+    nEdges_d+","+nEdges_n_given_d+","+nEdges_d_plus_n+","+    mandatory+","+hapsGlobal+","+hapsLocal+","+reads+","+samples+","+(hasLargeWeight1+hasLargeWeight2)+","+easySamples);
                 }
                 compression_d=compression_d_next; compression_n_given_d=compression_n_given_d_next; compression_d_plus_n=compression_d_plus_n_next;
@@ -76,7 +76,7 @@ public class AnalyzeILPRuntimes {
                 if (inCompressed) compressed_d_plus_n=value;
                 else { 
                     uncompressed_d_plus_n=value;
-                    nEdges_d_plus_n=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
+                    if (tokens[6].lastIndexOf("=")>=0) nEdges_d_plus_n=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
                 }
             }
             else if (str.indexOf(OPTIMIZE_D_FLAG)==0) {
@@ -85,7 +85,7 @@ public class AnalyzeILPRuntimes {
                 if (inCompressed) compressed_d=value;
                 else {
                     uncompressed_d=value;
-                    nEdges_d=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
+                    if (tokens[6].indexOf("=")>=0) nEdges_d=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
                 }
             }
             else if (str.indexOf(OPTIMIZE_N_GIVEN_D_FLAG)==0) {
@@ -94,7 +94,7 @@ public class AnalyzeILPRuntimes {
                 if (inCompressed) compressed_n_given_d=value;
                 else {
                     uncompressed_n_given_d=value;
-                    nEdges_n_given_d=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
+                    if (tokens[6].indexOf("=")>=0) nEdges_n_given_d=Integer.parseInt(tokens[6].substring(tokens[6].lastIndexOf("=")+1));
                 }
             }
             else if (str.indexOf(COMPRESSION_TIME_D)==0) {
@@ -120,8 +120,8 @@ public class AnalyzeILPRuntimes {
             str=br.readLine();
         }
         // Last window
-        if ( compressed_d!=-1 && compressed_n_given_d!=-1 && compressed_d_plus_n!=-1 && 
-             uncompressed_d!=-1 && uncompressed_n_given_d!=-1 && uncompressed_d_plus_n!=-1
+        if ( /*compressed_d!=-1 && compressed_n_given_d!=-1 &&*/ compressed_d_plus_n!=-1 && 
+             /*uncompressed_d!=-1 && uncompressed_n_given_d!=-1 &&*/ uncompressed_d_plus_n!=-1
            ) System.out.println(compressed_d+","+compression_d+","+compressed_n_given_d+","+compression_n_given_d+","+compressed_d_plus_n+","+compression_d_plus_n+","+    uncompressed_d+","+uncompressed_n_given_d+","+uncompressed_d_plus_n+","+    nEdges_d+","+nEdges_n_given_d+","+nEdges_d_plus_n+","+    mandatory+","+hapsGlobal+","+hapsLocal+","+reads+","+samples+","+(hasLargeWeight1+hasLargeWeight2)+","+easySamples);
 	    br.close();
         System.err.println("Windows with a timeout: uncompressed="+(uncompressed_n_timeouts-1)+" compressed="+(compressed_n_timeouts-1));
