@@ -2,6 +2,8 @@ version 1.0
 
 
 # Reproduces the AoU Phase 2 production pipeline at:
+#
+# https://app.terra.bio/#workspaces/allofus-drc-wgs-lr-prod/AoU_DRC_WGS_LongReads_BI_CCS/workflows/allofus-drc-wgs-lr-prod/IngestSMRTcode.GRCh38
 # https://github.com/broadinstitute/long-read-pipelines/blob/sh_ingest_singlerg/wdl/tasks/Alignment/AlignHiFiUBAM.wdl
 # https://github.com/broadinstitute/long-read-pipelines/blob/sh_ingest_singlerg/wdl/tasks/Utility/PBUtils.wdl
 #
@@ -54,8 +56,7 @@ task MapCCSImpl {
     }
     
     Int disk_size_gb = ceil(size(reads_fastq_gz, "GB")) + ceil(size(reference_fa, "GB")) + disk_gb
-    String docker_dir = "/hapestry"
-    String work_dir = "/cromwell_root/hapestry"
+    String work_dir = "/cromwell_root/callset_integration"
     
     command <<<
         set -euxo pipefail
