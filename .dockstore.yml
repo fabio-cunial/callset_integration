@@ -280,3 +280,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BcftoolsMergeTRGT.wdl
   testParameterFiles:
+- name: BuildTrainingResourceIntrasample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BuildTrainingResourceIntrasample.wdl
+  testParameterFiles:

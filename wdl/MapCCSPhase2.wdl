@@ -63,15 +63,14 @@ task MapCCSImpl {
         mkdir -p ~{work_dir}
         cd ~{work_dir}
         
-        TIME_COMMAND="time"
         N_SOCKETS="$(lscpu | grep '^Socket(s):' | awk '{print $NF}')"
         N_CORES_PER_SOCKET="$(lscpu | grep '^Core(s) per socket:' | awk '{print $NF}')"
         N_THREADS=$(( ${N_SOCKETS} * ${N_CORES_PER_SOCKET} ))
         
         # Remark: pbmm2 automatically uses all cores.
-        ${TIME_COMMAND} pbmm2 align --preset CCS --sort --sample ~{sample_id} ~{reference_fa} ~{reads_fastq_gz} out.bam
-        ${TIME_COMMAND} samtools calmd -@ ${N_THREADS} --no-PG -b out.bam ~{reference_fa} > ~{sample_id}.bam
-        ${TIME_COMMAND} samtools index -@ ${N_THREADS} ~{sample_id}.bam
+        pbmm2 align --preset CCS --sort --sample ~{sample_id} ~{reference_fa} ~{reads_fastq_gz} out.bam
+        samtools calmd -@ ${N_THREADS} --no-PG -b out.bam ~{reference_fa} > ~{sample_id}.bam
+        samtools index -@ ${N_THREADS} ~{sample_id}.bam
     >>>
     
     output {
