@@ -23,6 +23,8 @@ workflow BuildTrainingResourceIntersample {
 }
 
 
+# Simply runs `bcftools merge` and forces the output to have a single sample
+# with all calls `0|0`.
 #
 task BuildTrainingResourceIntersampleImpl {
     input {
@@ -51,7 +53,23 @@ task BuildTrainingResourceIntersampleImpl {
         for INPUT_FILE in ${INPUT_FILES}; do
             echo ${INPUT_FILE} >> list.txt
         done
-        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type z > merged.vcf.gz
+        ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type v > tmp1.vcf
+        bcftools view --header-only tmp1.vcf > header.txt
+        N_ROWS=$(wc -l < header.txt)
+        head -n $(( ${N_ROWS} - 1 )) header.txt > merged.vcf
+        tail -n 1 header.txt | awk '{ \
+            printf("%s",$1); \
+            for (i=2; i<=9; i++) printf("\t%s",$i); \
+            printf("DUMMY_SAMPLE_NAME\n"); \
+        }' >> merged.vcf
+        rm -f header.txt
+        bcftools view --no-header tmp1.vcf | awk '{ \
+            printf("%s",$1); \
+            for (i=2; i<=8; i++) printf("\t%s",$i); \
+            printf("GT\t0|0\n"); \
+        }' >> merged.vcf
+        rm -f tmp1.vcf
+        bgzip --threads ${N_THREADS} --compress-level 1 merged.vcf
         tabix -f merged.vcf.gz
     >>>
 
