@@ -285,3 +285,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BuildTrainingResourceIntrasample.wdl
   testParameterFiles:
+- name: BuildTrainingResourceIntersample
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/BuildTrainingResourceIntersample.wdl
+  testParameterFiles:
