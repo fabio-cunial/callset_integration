@@ -58,7 +58,9 @@ task BuildTrainingResourceIntrasampleImpl {
         EFFECTIVE_RAM_GB=$(( ~{ram_gb} - 2 ))
         TRUVARI_BENCH_SETTINGS="--sizemin 0 --sizemax ~{svlen_max} --sizefilt 0"
         
-        ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_SETTINGS} --includebed ~{truth_bed} -b ~{truth_vcf_gz} -c ~{regenotyped_vcf_gz} -o truvari/
+        mv ~{truth_vcf_gz} truth.vcf.gz
+        mv ~{truth_vcf_gz_tbi} truth.vcf.gz.tbi
+        ${TIME_COMMAND} truvari bench ${TRUVARI_BENCH_SETTINGS} --includebed ~{truth_bed} -b truth.vcf.gz -c ~{regenotyped_vcf_gz} -o truvari/
         ${TIME_COMMAND} bcftools sort --max-mem ${EFFECTIVE_RAM_GB}G --output-type z truvari/tp-comp.vcf.gz > tp_comp.vcf.gz
         tabix -f tp_comp.vcf.gz
     >>>
