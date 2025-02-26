@@ -60,7 +60,7 @@ task BuildTrainingResourceIntersampleImpl {
         tail -n 1 header.txt | awk '{ \
             printf("%s",$1); \
             for (i=2; i<=9; i++) printf("\t%s",$i); \
-            printf("DUMMY_SAMPLE_NAME\n"); \
+            printf("\tDUMMY_SAMPLE_NAME\n"); \
         }' >> merged.vcf
         rm -f header.txt
         bcftools view --no-header tmp1.vcf | awk '{ \
