@@ -66,7 +66,7 @@ task BuildTrainingResourceIntersampleImpl {
         bcftools view --no-header tmp1.vcf | awk '{ \
             printf("%s",$1); \
             for (i=2; i<=8; i++) printf("\t%s",$i); \
-            printf("GT\t0|0\n"); \
+            printf("\tGT\t0|0\n"); \
         }' >> merged.vcf
         rm -f tmp1.vcf
         bgzip --threads ${N_THREADS} --compress-level 1 merged.vcf
