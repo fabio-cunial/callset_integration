@@ -5,15 +5,13 @@ version 1.0
 workflow BuildTrainingResourceIntersample {
     input {
         Array[File] intrasample_vcf_gz
-        Array[File] intrasample_tbi
     }
     parameter_meta {
     }
     
     call BuildTrainingResourceIntersampleImpl {
         input:
-            intrasample_vcf_gz = intrasample_vcf_gz,
-            intrasample_tbi = intrasample_tbi
+            intrasample_vcf_gz = intrasample_vcf_gz
     }
     
     output {
@@ -29,7 +27,6 @@ workflow BuildTrainingResourceIntersample {
 task BuildTrainingResourceIntersampleImpl {
     input {
         Array[File] intrasample_vcf_gz
-        Array[File] intrasample_tbi
     }
     parameter_meta {
     }
@@ -51,6 +48,7 @@ task BuildTrainingResourceIntersampleImpl {
         INPUT_FILES=$(echo ${INPUT_FILES} | tr ',' ' ')
         rm -f list.txt
         for INPUT_FILE in ${INPUT_FILES}; do
+            tabix -f ${INPUT_FILE}
             echo ${INPUT_FILE} >> list.txt
         done
         ${TIME_COMMAND} bcftools merge --threads ${N_THREADS} --merge none --force-samples --file-list list.txt --output-type v > tmp1.vcf
