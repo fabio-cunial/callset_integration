@@ -146,7 +146,7 @@ task GetRegenotypedVcfImpl {
         File regenotyped_kanpig_tbi = work_dir + "/" + output_prefix + ".vcf.gz.tbi"
     }
     runtime {
-        docker: "fcunial/kanpig_experiments"
+        docker: "fcunial/callset_integration"
         cpu: n_cpu
         memory: mem_gb + "GB"
         disks: "local-disk " + disk_size_gb + " HDD"

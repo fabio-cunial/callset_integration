@@ -152,7 +152,18 @@ RUN pip install setuptools==58 scikit-learn \
     && cuteSV -h
 
 # KANPIG
-COPY ./kanpig .
+
+# Old version of kanpig, used in Phase 1, v1.1b:
+#COPY ./kanpig .
+
+# Latest version of kanpig:
+ARG kanpig_version=1.0.2
+RUN wget https://github.com/ACEnglish/kanpig/releases/download/v${kanpig_version}/kanpig-v${kanpig_version}-x86_64-unknown-linux-musl.tar.gz \
+    && tar xzf kanpig-v${kanpig_version}-x86_64-unknown-linux-musl.tar.gz \
+    && ls -laht kanpig-v${kanpig_version}-x86_64-unknown-linux-musl \
+    && mv ./kanpig-v${kanpig_version}-x86_64-unknown-linux-musl/kanpig . \
+    && chmod +x ./kanpig \
+    && ./kanpig --help
 
 # LRCALLER 1.0
 RUN wget https://github.com/DecodeGenetics/LRcaller/releases/download/v1.0/lrcaller-1.0_linux-x86-64.tgz \
