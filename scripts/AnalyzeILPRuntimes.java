@@ -8,8 +8,8 @@ public class AnalyzeILPRuntimes {
      */
 	public static void main(String[] args) throws IOException {
 		final String INPUT_LOG = args[0];
-        final String COMPRESSED_FLAG = "---- COMPRESSED RYAN";
-        final String UNCOMPRESSED_FLAG = "---- UNCOMPRESSED RYAN";
+        final String COMPRESSED_FLAG = "---- COMPRESSED";
+        final String UNCOMPRESSED_FLAG = "---- UNCOMPRESSED";
         
         final String OPTIMIZE_D_FLAG = "optimize_d,";
         final String OPTIMIZE_N_GIVEN_D_FLAG = "optimize_n_given_d,";

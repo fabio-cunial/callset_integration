@@ -3,6 +3,8 @@
 set -x
 WOMTOOL_PATH="/Users/fcunial/apps/cromwell/womtool-84.jar"
 
+java -jar ${WOMTOOL_PATH} validate -l GetRegenotypedVcfKanpigV11Kanpig102.wdl
+java -jar ${WOMTOOL_PATH} validate -l Phase2RocInvestigation.wdl
 java -jar ${WOMTOOL_PATH} validate -l BuildTrainingResourceIntersample.wdl
 java -jar ${WOMTOOL_PATH} validate -l BuildTrainingResourceIntrasample.wdl
 java -jar ${WOMTOOL_PATH} validate -l MapCCSPhase2.wdl

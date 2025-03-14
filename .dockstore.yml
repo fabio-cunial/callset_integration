@@ -290,3 +290,8 @@ workflows:
   publish: True
   primaryDescriptorPath: /wdl/BuildTrainingResourceIntersample.wdl
   testParameterFiles:
+- name: GetRegenotypedVcfKanpigV11Kanpig102
+  subclass: wdl
+  publish: True
+  primaryDescriptorPath: /wdl/GetRegenotypedVcfKanpigV11Kanpig102.wdl
+  testParameterFiles:

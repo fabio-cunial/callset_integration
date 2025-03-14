@@ -4,7 +4,7 @@
 % A4=load('/Users/fcunial/Downloads/TestILPCompression/latest/scip_easy_samples/runtimes-4.txt');
 % A=[A1;A2;A3;A4];
 
-A=load('/Users/fcunial/Downloads/TestILPCompression/matrix.txt');
+A=load('/Users/fcunial/Downloads/compare_compress_for_fabio/matrix.txt');
 
 ASSUME_TIMEOUT_MS=15*60*1000;  % 15 mins
 
